@@ -1,24 +1,3 @@
-<!--
-Sync Impact Report (temporary review material; remove before committing)
-Version change: unratified committed template -> 1.0.0 (initial adoption).
-Replaces the uncommitted 1.0.0 draft; no amendment version bump.
-Modified principles:
-- I. Flow-Forward: merged feature directories are immutable.
-- II. Living Spec: retain the contract/derived-artifact distinction and DEC decisions.
-- III. Spec of Specs: decompose all work framed as an epic.
-- IV. Enforced Gates -> IV. Enforced Quality Gates: mandatory automated tests,
-  without adding a mandatory test-first methodology.
-- V. Repository Canonical, Tracker as Projection -> V. Repository Canonical:
-  include generated tasks in the Linear projection for this pilot.
-Added sections: Technical Rules and Project Pins (replaces Delivery Constraints).
-Removed sections/rules: infrastructure prerequisites, cloud-agent policy, pilot
-metrics, central-spec requirements, feature-numbering policy, and lightweight task
-traceability exemptions.
-Development Workflow and Quality Gates and Governance are retained in concise form.
-Deferred items: CODEX_VERSION, CODING_MODEL, PROCESS_REFERENCE_PATH.
-Dependent templates and commands read this constitution at runtime; no edits made.
--->
-
 # Fava Constitution
 
 ## Core Principles
