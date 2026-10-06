@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "extensions": {
+    "fava-roadmap": {
+      "version": "0.1.0",
+      "source": "local",
+      "manifest_hash": "sha256:63e523d6123bf8a3baa215a2978cc818bcc6796425ec674927ae86f74503ef87",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "codex": [
+          "speckit.fava-roadmap.create"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-10-06T18:50:15.178266+00:00"
+    }
+  }
+}
