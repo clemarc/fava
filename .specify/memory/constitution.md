@@ -89,8 +89,6 @@ retired keys MUST NOT be reused for different work.
   passing applicable deterministic checks, and preservation of merged feature history.
 
 The detailed delivery-process reference is `docs/process/sdd-playbook.md`.
-TODO(PROCESS_REFERENCE_PATH): that path is absent; the existing playbook is
-`docs/process/Spec-Driven Delivery Playbook.md`. Align the reference path separately.
 The Linear task-projection rule above is an explicit pilot exception to the playbook's
 normal convention of keeping tasks out of trackers.
 

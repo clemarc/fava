@@ -1,0 +1,24 @@
+schema_version: "1.0"
+
+extension:
+  id: "fava-roadmap"
+  name: "Fava Roadmap"
+  version: "0.1.0"
+  description: "Create an SDD epic roadmap from a Linear project"
+  author: "Fava"
+  repository: "https://github.com/clemarc/fava"
+  license: "MIT"
+
+requires:
+  speckit_version: ">=1.0.6,<2.0.0"
+
+provides:
+  commands:
+    - name: "speckit.fava-roadmap.create"
+      file: "commands/create.md"
+      description: "Create a draft epic roadmap from a Linear project"
+
+tags:
+  - "process"
+  - "roadmap"
+  - "linear"
