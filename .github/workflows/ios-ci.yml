@@ -8,6 +8,10 @@ jobs:
     name: ios-build-test
     runs-on: macos-26
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [iPhone, iPad]
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
@@ -15,13 +19,13 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Build and test on an available iPhone simulator
-        run: python3 .github/checks/native.py test
+      - name: Build and test on an available simulator
+        run: python3 .github/checks/native.py test --family ${{ matrix.family }}
       - name: Preserve diagnostics and test results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: ios-diagnostics-${{ github.event.pull_request.head.sha || github.sha }}
+          name: ios-diagnostics-${{ matrix.family }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             artifacts/*.log
             artifacts/*.xcresult
