@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "linear-cli": {
+      "source": "schpet/linear-cli",
+      "sourceType": "github",
+      "skillPath": "skills/linear-cli/SKILL.md",
+      "computedHash": "d86e69e247f168dc8c71bbe40e3644e1becdaec849d268e196e41c3bfd8bdb82"
+    }
+  }
+}

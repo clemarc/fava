@@ -1,0 +1,7 @@
+{
+  "name": "fava-tooling",
+  "private": true,
+  "devDependencies": {
+    "@schpet/linear-cli": "3.0.0"
+  }
+}
