@@ -3,3 +3,7 @@ url = "https://mcp.linear.app/mcp"
 
 [mcp_servers.linear.tools.save_issue]
 approval_mode = "approve"
+
+[mcp_servers.linear_token]
+url = "https://mcp.linear.app/mcp"
+bearer_token_env_var = "FAVA_LINEAR_API_KEY"
