@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct FavaApp: App {
     @StateObject private var access: HealthAccessModel
+    @StateObject private var ingestion: RunIngestionModel
 
     init() {
         var provider: HealthAccessProviding = HealthKitAccess()
@@ -13,11 +14,12 @@ struct FavaApp: App {
         }
         #endif
         _access = StateObject(wrappedValue: HealthAccessModel(provider: provider))
+        _ingestion = StateObject(wrappedValue: RunIngestionModel(reader: HealthKitWorkoutReader(), snapshotStore: FileRunSnapshotStore()))
     }
 
     var body: some Scene {
         WindowGroup {
-            RootView(access: access)
+            RootView(access: access).environmentObject(ingestion)
         }
     }
 }
