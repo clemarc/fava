@@ -1,5 +1,7 @@
 // !$*UTF8*$!
 { archiveVersion = 1; classes = {}; objectVersion = 56; objects = {
+6440B13D2890FF6A258C7833 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DistanceSettings.swift"; sourceTree = "<group>"; };
+56A3C786248A5E3383B4E248 = { isa = PBXBuildFile; fileRef = 6440B13D2890FF6A258C7833; };
 EC66443B486D3F9F8F2A32C6 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FavaApp.swift"; sourceTree = "<group>"; };
 9C18432A6217F02A9283F615 = { isa = PBXBuildFile; fileRef = EC66443B486D3F9F8F2A32C6; };
 4985F82AFDCEEFE73C17185C = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthAccess.swift"; sourceTree = "<group>"; };
@@ -12,12 +14,18 @@ C8ACBCE215D73460F2A2CF56 = { isa = PBXFileReference; lastKnownFileType = sourcec
 A254FD5DC88F0D42EFAAEDEA = { isa = PBXBuildFile; fileRef = C8ACBCE215D73460F2A2CF56; };
 9DC07F67DF799B428AFDD052 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RunIngestion.swift"; sourceTree = "<group>"; };
 0C3A3529BD3F649AF20E46E9 = { isa = PBXBuildFile; fileRef = 9DC07F67DF799B428AFDD052; };
+3708F55BA54F53B8B199998E = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RunLibraryPresentation.swift"; sourceTree = "<group>"; };
+88D0AC15052EF9DF8DF9E90B = { isa = PBXBuildFile; fileRef = 3708F55BA54F53B8B199998E; };
+FD43E506A96F19CB87CC1F37 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RunLibraryView.swift"; sourceTree = "<group>"; };
+7426FEFCFC6534587D7DB6BE = { isa = PBXBuildFile; fileRef = FD43E506A96F19CB87CC1F37; };
 4CBE13BAB7FC539696A911C8 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RunRecord.swift"; sourceTree = "<group>"; };
 BB85B1365C394964A2299CC1 = { isa = PBXBuildFile; fileRef = 4CBE13BAB7FC539696A911C8; };
 644A4327CE0729E95AA0878E = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RunSnapshotStore.swift"; sourceTree = "<group>"; };
 EC530B904D7391A712B7A116 = { isa = PBXBuildFile; fileRef = 644A4327CE0729E95AA0878E; };
-05F73E1A8A911FD1FC8C7C63 = { isa = PBXGroup; children = (EC66443B486D3F9F8F2A32C6,4985F82AFDCEEFE73C17185C,82F92ECDD79BE98E1B4870B7,5B4962F2F741F990F0572FED,C8ACBCE215D73460F2A2CF56,9DC07F67DF799B428AFDD052,4CBE13BAB7FC539696A911C8,644A4327CE0729E95AA0878E,); path = Fava; sourceTree = "<group>"; };
-70B2420F8CAE07AD124D4FFB = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (9C18432A6217F02A9283F615,7BD84ED28EC292D620B25724,7F1BCDC40DB71AF5BC23FE41,5C07F268F8EF5F0D91D70AB8,A254FD5DC88F0D42EFAAEDEA,0C3A3529BD3F649AF20E46E9,BB85B1365C394964A2299CC1,EC530B904D7391A712B7A116,); runOnlyForDeploymentPostprocessing = 0; };
+E3CD9C7F4E1CA1CE28751344 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyntheticLibraryFixtures.swift"; sourceTree = "<group>"; };
+4E32A553A97525F14ED8EBDE = { isa = PBXBuildFile; fileRef = E3CD9C7F4E1CA1CE28751344; };
+05F73E1A8A911FD1FC8C7C63 = { isa = PBXGroup; children = (6440B13D2890FF6A258C7833,EC66443B486D3F9F8F2A32C6,4985F82AFDCEEFE73C17185C,82F92ECDD79BE98E1B4870B7,5B4962F2F741F990F0572FED,C8ACBCE215D73460F2A2CF56,9DC07F67DF799B428AFDD052,3708F55BA54F53B8B199998E,FD43E506A96F19CB87CC1F37,4CBE13BAB7FC539696A911C8,644A4327CE0729E95AA0878E,E3CD9C7F4E1CA1CE28751344,); path = Fava; sourceTree = "<group>"; };
+70B2420F8CAE07AD124D4FFB = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (56A3C786248A5E3383B4E248,9C18432A6217F02A9283F615,7BD84ED28EC292D620B25724,7F1BCDC40DB71AF5BC23FE41,5C07F268F8EF5F0D91D70AB8,A254FD5DC88F0D42EFAAEDEA,0C3A3529BD3F649AF20E46E9,88D0AC15052EF9DF8DF9E90B,7426FEFCFC6534587D7DB6BE,BB85B1365C394964A2299CC1,EC530B904D7391A712B7A116,4E32A553A97525F14ED8EBDE,); runOnlyForDeploymentPostprocessing = 0; };
 C5EFF6B34D59F3936B2BF7D6 = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 C9C613A79A6ABAF248E5F226 = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 3B37C60B447A3D3E771CAB2F = { isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fava.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -26,8 +34,10 @@ B33115C6E3F5AAA08D3DC3F4 = { isa = PBXFileReference; lastKnownFileType = sourcec
 49F9EC8C859A538666A15D05 = { isa = PBXBuildFile; fileRef = B33115C6E3F5AAA08D3DC3F4; };
 7C0ED056621FF50B226969F1 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RunIngestionTests.swift"; sourceTree = "<group>"; };
 73FF789BB9F8E84D6A5F6E92 = { isa = PBXBuildFile; fileRef = 7C0ED056621FF50B226969F1; };
-D2C6A460528D15F219C5FD84 = { isa = PBXGroup; children = (B33115C6E3F5AAA08D3DC3F4,7C0ED056621FF50B226969F1,); path = FavaTests; sourceTree = "<group>"; };
-DFB6147C9536CBC5AF599E5C = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (49F9EC8C859A538666A15D05,73FF789BB9F8E84D6A5F6E92,); runOnlyForDeploymentPostprocessing = 0; };
+1125A87834C3E71B03C157C4 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RunLibraryTests.swift"; sourceTree = "<group>"; };
+A8C0CD88FEF77C2F999FBC7B = { isa = PBXBuildFile; fileRef = 1125A87834C3E71B03C157C4; };
+D2C6A460528D15F219C5FD84 = { isa = PBXGroup; children = (B33115C6E3F5AAA08D3DC3F4,7C0ED056621FF50B226969F1,1125A87834C3E71B03C157C4,); path = FavaTests; sourceTree = "<group>"; };
+DFB6147C9536CBC5AF599E5C = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (49F9EC8C859A538666A15D05,73FF789BB9F8E84D6A5F6E92,A8C0CD88FEF77C2F999FBC7B,); runOnlyForDeploymentPostprocessing = 0; };
 74C76707A842D32AE865BAA3 = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 B178533EBC2A6E7B1A4BE36B = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 142020A2EFF4CFEACEC12A33 = { isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FavaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -36,8 +46,10 @@ D66743EFB47B4A1879B468C0 = { isa = PBXTargetDependency; target = 3EE9D4FC6F156DF
 189611D16E47913AC7B3620D = { isa = PBXNativeTarget; buildConfigurationList = 629715FBE40F0087697BDC44; buildPhases = (DFB6147C9536CBC5AF599E5C,74C76707A842D32AE865BAA3,B178533EBC2A6E7B1A4BE36B,); buildRules = (); dependencies = (D66743EFB47B4A1879B468C0); name = FavaTests; productName = FavaTests; productReference = 142020A2EFF4CFEACEC12A33; productType = "com.apple.product-type.bundle.unit-test"; };
 BB24C6A87C65C5E7122DFD50 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FoundationUITests.swift"; sourceTree = "<group>"; };
 EA128C7008E691FDC75B3000 = { isa = PBXBuildFile; fileRef = BB24C6A87C65C5E7122DFD50; };
-F2C01846A666F9A40161F1A4 = { isa = PBXGroup; children = (BB24C6A87C65C5E7122DFD50,); path = FavaUITests; sourceTree = "<group>"; };
-AFBDFAACB7E14414C0F39342 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (EA128C7008E691FDC75B3000,); runOnlyForDeploymentPostprocessing = 0; };
+299BCCC99A9340BAA23229E9 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RunLibraryUITests.swift"; sourceTree = "<group>"; };
+05391A75DC361A9AD3BC7619 = { isa = PBXBuildFile; fileRef = 299BCCC99A9340BAA23229E9; };
+F2C01846A666F9A40161F1A4 = { isa = PBXGroup; children = (BB24C6A87C65C5E7122DFD50,299BCCC99A9340BAA23229E9,); path = FavaUITests; sourceTree = "<group>"; };
+AFBDFAACB7E14414C0F39342 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (EA128C7008E691FDC75B3000,05391A75DC361A9AD3BC7619,); runOnlyForDeploymentPostprocessing = 0; };
 16B5FD4B86FD33050FB39A1F = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 FFCCF285F9FE103AD8987D8E = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 7DCE35F55251E20F44941A90 = { isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FavaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };

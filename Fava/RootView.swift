@@ -3,6 +3,8 @@ import UIKit
 
 struct RootView: View {
     @ObservedObject var access: HealthAccessModel
+    @EnvironmentObject private var ingestion: RunIngestionModel
+    @State private var libraryVisible = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -24,8 +26,10 @@ struct RootView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(!access.canRequest)
                     .accessibilityIdentifier("request-access")
-                    NavigationLink("Run library") {
-                        LibraryFoundationView()
+                    Button("Run library") {
+                        guard !libraryVisible else { return }
+                        libraryVisible = true
+                        ingestion.requestRead()
                     }
                     .accessibilityIdentifier("open-library")
                 }
@@ -34,6 +38,7 @@ struct RootView: View {
                 .frame(maxWidth: .infinity)
             }
             .navigationTitle("Fava")
+            .navigationDestination(isPresented: $libraryVisible) { RunLibraryView() }
         }
         .onChange(of: access.state) { _, value in
             UIAccessibility.post(notification: .announcement, argument: value.message)
@@ -41,17 +46,5 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, value in
             if value == .active { access.updateAvailability() }
         }
-    }
-}
-
-struct LibraryFoundationView: View {
-    var body: some View {
-        ScrollView {
-            Text("This is where you will browse your running workouts.")
-                .padding()
-                .frame(maxWidth: 640, alignment: .leading)
-                .frame(maxWidth: .infinity)
-        }
-        .navigationTitle("Run library")
     }
 }
