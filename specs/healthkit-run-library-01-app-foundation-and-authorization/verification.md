@@ -1,6 +1,6 @@
-# R1 implementation evidence — native checkpoint pending
+# R1 implementation and verification record
 
-Phase: IMPLEMENT → TEST → COMMIT → CI. No tasks marked complete yet.
+Initial publication phase: IMPLEMENT → TEST → COMMIT → CI. Tasks were left open pending native evidence; the verified checkpoint follows below.
 Approved contract: PR #3, main d6a2f4be72f51f5f734b4c22de362fae07341572.
 Preceding signed planning checkpoint: 898d6f67e75baf5bbb5fa6bf8ecd30c73c186648.
 PR: https://github.com/clemarc/fava/pull/7 (draft).

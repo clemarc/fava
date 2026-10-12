@@ -1,6 +1,6 @@
-# R2 implementation evidence — CI pending
+# R2 implementation and verification record
 
-Phase IMPLEMENT → TEST → COMMIT → CI. tasks remain open pending native tests.
+Initial publication phase: IMPLEMENT → TEST → COMMIT → CI. Tasks remained open pending native tests; the verified checkpoint follows below.
 R1 validated checkpoint: 7bcfec6f49e142f3dc85fa99f3227201f79b636e / run 38305400468.
 R2 signed planning: 0182d3f842cf6b73e1dda3a13d5a216483e9a2cc; prerequisites,
 analysis and deterministic SDD/tooling passed. 22 validator/tooling and 7 builder

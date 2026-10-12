@@ -28,3 +28,7 @@ Milestone: 51e5ab6a-e8c8-44cb-96fe-5dc23619348c
 No duplicate keys observed; all writes via pinned project-local CLI.
 
 Status projection: all stories/tasks In Progress; native verification pending. Source checkpoint: 49397491c47c90b1eea9398032e46bdc0478d9a2.
+
+Status projection: tasks Done after native evidence; stories In Review pending physical/owner acceptance. Source checkpoint: f112ed33ffeb6a31256f1ffb764aceda88ccd523.
+
+Final authenticated CLI read verified 33 unique repository-keyed project issues: 23 tasks Done, 10 stories In Review. All identities and states match Git records; no duplicates or unmatched entities. Three roadmap milestones preserved. Physical/owner acceptance remains pending; no story marked Done.
