@@ -26,3 +26,5 @@ Milestone: 51e5ab6a-e8c8-44cb-96fe-5dc23619348c
 - T009: FAV-35 (Todo; verification pending)
 
 No duplicate keys observed; all writes via pinned project-local CLI.
+
+Status projection: all stories/tasks In Progress; native verification pending. Source checkpoint: 49397491c47c90b1eea9398032e46bdc0478d9a2.

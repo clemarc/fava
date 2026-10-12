@@ -4,23 +4,23 @@ import XCTest
 @MainActor
 final class RunLibraryTests: XCTestCase {
     private let english = Locale(identifier: "en_US")
-    private func run(id: UUID = UUID(), start: Double = 1_704_067_200, duration: Double = 90, distance: WorkoutDistance? = nil) -> RunRecord {
+    private func fixtureRun(id: UUID = UUID(), start: Double = 1_704_067_200, duration: Double = 90, distance: WorkoutDistance? = nil) -> RunRecord {
         RunRecord(id: id, startDate: Date(timeIntervalSince1970: start), duration: duration, distance: distance)
     }
 
     func testChronologyStableTiesAndFullIdentityCollection() {
-        let a = run(id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!)
-        let b = run(id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!)
-        let old = run(start: 1_000_000)
+        let a = fixtureRun(id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!)
+        let b = fixtureRun(id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!)
+        let old = fixtureRun(start: 1_000_000)
         XCTAssertEqual(RunLibraryPresentation.rows([old, b, a]).map(\.id), [a.id, b.id, old.id])
         XCTAssertEqual(RunLibraryPresentation.rows([b, old, a]).map(\.id), [a.id, b.id, old.id])
-        let history = (0..<2000).map { run(start: Double($0)) }
+        let history = (0..<2000).map { fixtureRun(start: Double($0)) }
         XCTAssertEqual(RunLibraryPresentation.rows(history).count, history.count)
         XCTAssertEqual(RunLibraryPresentation.rows(history).first?.id, history.last?.id)
     }
 
     func testDateUsesCurrentLocaleAndTimeZoneWithoutChangingSource() {
-        let record = run()
+        let record = fixtureRun()
         let utc = RunFormatting.start(record.startDate, locale: english, timeZone: TimeZone(secondsFromGMT: 0)!)
         let pacific = RunFormatting.start(record.startDate, locale: english, timeZone: TimeZone(identifier: "America/Los_Angeles")!)
         let french = RunFormatting.start(record.startDate, locale: Locale(identifier: "fr_FR"), timeZone: TimeZone(secondsFromGMT: 0)!)
@@ -74,7 +74,7 @@ final class RunLibraryTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let reader = RunIngestionTests.Reader(); let cache = RunIngestionTests.MemoryStore()
-        let record = run(distance: WorkoutDistance(value: 1, unit: .miles)); cache.snapshot = RunSnapshot(runs: [record])
+        let record = fixtureRun(distance: WorkoutDistance(value: 1, unit: .miles)); cache.snapshot = RunSnapshot(runs: [record])
         let ingestion = RunIngestionModel(reader: reader, snapshotStore: cache)
         let settings = DistanceSettings(defaults: defaults)
         settings.mode = .miles
@@ -86,7 +86,7 @@ final class RunLibraryTests: XCTestCase {
     }
 
     func testSelectionHandsOffExactUUIDForMatchingSummaries() {
-        let a = run();let b = run();var handedOff: [UUID] = []
+        let a = fixtureRun();let b = fixtureRun();var handedOff: [UUID] = []
         let selection = RunSelection { handedOff.append($0) }
         selection.select(a.id); XCTAssertEqual(selection.selectedID, a.id)
         selection.select(b.id); XCTAssertEqual(selection.selectedID, b.id)
@@ -105,7 +105,7 @@ final class RunLibraryTests: XCTestCase {
     }
 
     func testSavedRowsAndEmptyProvenanceSurviveLoadingFailureAndUnavailability() {
-        for runs in [[run()], []] {
+        for runs in [[fixtureRun()], []] {
             let cache = RunIngestionTests.MemoryStore(); cache.snapshot = RunSnapshot(runs: runs)
             let reader = RunIngestionTests.Reader();let ingestion = RunIngestionModel(reader: reader, snapshotStore: cache)
             ingestion.requestRead()

@@ -37,3 +37,18 @@ run, compare successful counts and test logs. At most two scoped corrective cycl
 if failing. After passing: convergence, evidence/task/Linear completion, final
 consistency, signed evidence commit and latest-SHA CI. Mark PR ready only then;
 never merge or enable auto-merge. Do not duplicate any recorded Linear key.
+
+## Native corrective cycle 1
+
+Source 49397491c47c90b1eea9398032e46bdc0478d9a2 was signed and branch-verified, but
+GitHub PR head initially remained b65f196 and no source workflow appeared. Closed
+and reopened the same draft PR (no merge); head then matched 4939749 and
+https://github.com/clemarc/fava/actions/runs/38310496498 started against that SHA.
+This publication/event reconciliation is recorded separately from native fixes.
+
+Run 38310496498: SDD, tooling/actionlint and required applicability passed. Actual
+Xcode 26.6 application builds succeeded on iPhone and iPad. Test compilation failed:
+RunLibraryTests fixture helper run() collided with inherited XCTestCase.run(), so
+no-argument fixture calls returned Void. Renamed to fixtureRun throughout that
+file, preserving every test/assertion and all production behavior. No native test
+success/count claimed from the failed run. Native corrective cycle 1 of 2.
