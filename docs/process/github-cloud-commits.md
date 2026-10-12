@@ -173,3 +173,21 @@ The available GitHub connector did not expose arbitrary GraphQL requests.
 This is an API access/configuration blocker, not evidence that
 `createCommitOnBranch` cannot sign commits. Record a successful mutation and
 actual verification here only after the configured environment passes the test.
+
+
+On 2026-10-12, this CI setup task used the already-bound cloud network secret
+and successfully executed createCommitOnBranch on `chore/ci-agent-verification`.
+Commit `4652930e8c7940c92bf1f930f3a7cb1630fa0b71` was verified through GraphQL
+(isValid true, state VALID, wasSignedByGitHub true) and REST (verified true,
+reason valid). Authenticated author: Clement Le Marc (`clemarc`); committer:
+GitHub. The remote branch head, expected parent, full message and fetched tree
+matched the staged tree containing all 17 intended files. No unsigned local
+commit or git push was used. This resolves the earlier access blocker above.
+
+[PR #6](https://github.com/clemarc/fava/pull/6) and
+[the initial Actions run](https://github.com/clemarc/fava/actions/runs/38276897331)
+record the test: sdd-quality, tooling-validation, ci-applicability and ci-required
+passed against that SHA; ios-build-test was explicitly skipped in native onboarding.
+This verifies API publication and applicable CI, not a native build. Subsequent
+commits must still be individually verified and monitored; the PR's latest head
+and run are the final delivery evidence. Rulesets were not changed.

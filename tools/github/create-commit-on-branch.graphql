@@ -4,6 +4,8 @@ mutation CreateVerifiedCommit($input: CreateCommitOnBranchInput!) {
       oid
       url
       tree { oid }
+      author { name user { login } }
+      committer { name user { login } }
       signature {
         isValid
         state
