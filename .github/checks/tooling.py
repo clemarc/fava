@@ -14,7 +14,8 @@ def validate(root):
         text = (root / file).read_text()
         for target in re.findall(r'`((?:docs/|\.agents/|\.specify/|\.github/|tools/)[^` *<>]+)`', text):
             if not (root / target).exists(): errors.append(f'{file}: missing reference {target}')
-    workflows = list(root.glob('.github/workflows/*.yml'))
+    workflows = sorted(path for path in root.glob('.github/workflows/*')
+                       if path.is_file() and path.suffix in {'.yml', '.yaml'})
     for path in workflows:
         text = path.read_text()
         for action in re.findall(r'uses:\s*([^\s#]+)', text):
@@ -30,7 +31,7 @@ def validate(root):
         if path.name == 'export.xml' or path.suffix.lower() in {'.p12', '.mobileprovision'}: errors.append(f'{path}: HealthKit export or signing credential must not be public')
         try: text = path.read_text()
         except (UnicodeError, OSError): continue
-        patterns = [r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----', r'\bgh[pousr]_[A-Za-z0-9]{30,}', r'\blin_api_[A-Za-z0-9]{30,}']
+        patterns = [r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----', r'\bgh[pousr]_[A-Za-z0-9]{30,}', r'\bgithub_pat_[A-Za-z0-9_]{30,}', r'\blin_api_[A-Za-z0-9]{30,}']
         if any(re.search(p, text) for p in patterns): errors.append(f'{path}: potential credential; remove it and review exposure without printing contents')
     return errors
 
