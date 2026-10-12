@@ -82,6 +82,25 @@ class CommitRequestTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual((self.root / 'request.json').read_text(), 'reviewed request')
 
+    def test_main_destination_is_rejected(self):
+        (self.root / 'old.txt').write_text('changed')
+        self.git('add', 'old.txt')
+        result = subprocess.run(['python3', BUILDER, '--repository', 'clemarc/fava',
+            '--branch', 'main', '--parent', self.parent,
+            '--message-file', str(self.root / 'message.txt'),
+            '--output', str(self.root / 'request.json')], cwd=self.root, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('never publish directly to main', result.stderr)
+        self.assertFalse((self.root / 'request.json').exists())
+
+    def test_parent_mismatch_is_rejected(self):
+        (self.root / 'old.txt').write_text('changed')
+        self.git('add', 'old.txt')
+        self.git('-c', 'commit.gpgsign=false', 'commit', '-qm', 'advanced fixture')
+        result = self.build()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('reconcile explicitly', result.stderr)
+
     def test_no_change_is_rejected(self):
         result = self.build()
         self.assertNotEqual(result.returncode, 0)

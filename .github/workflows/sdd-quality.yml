@@ -1,0 +1,106 @@
+name: Fava CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fava-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  sdd-quality:
+    name: sdd-quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Validate SDD contracts and commit trailers
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != 0000000000000000000000000000000000000000 ]; then
+            BASE_SHA=$(git merge-base "$BASE_SHA" HEAD)
+            python3 .github/checks/sdd.py --base "$BASE_SHA"
+          else
+            python3 .github/checks/sdd.py
+          fi
+  tooling-validation:
+    name: tooling-validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Validator and commit-builder fixtures
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 -m unittest discover -s .github/checks -p 'test_*.py' -v
+          python3 -m unittest discover -s tools/github -p 'test_*.py' -v
+          python3 .github/checks/tooling.py
+          find .specify/scripts/bash .specify/extensions/git/scripts/bash -name '*.sh' -exec bash -n {} \;
+      - name: Validate workflow syntax with pinned actionlint
+        env:
+          ACTIONLINT_DIR: ${{ runner.temp }}/fava-actionlint
+        run: |
+          mkdir -p "$ACTIONLINT_DIR"
+          curl --fail --silent --show-error --location https://github.com/rhysd/actionlint/releases/download/v1.7.7/actionlint_1.7.7_linux_amd64.tar.gz -o "$ACTIONLINT_DIR/actionlint.tar.gz"
+          echo "023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757  $ACTIONLINT_DIR/actionlint.tar.gz" | sha256sum --check
+          tar -xzf "$ACTIONLINT_DIR/actionlint.tar.gz" -C "$ACTIONLINT_DIR" actionlint
+          "$ACTIONLINT_DIR/actionlint" -shellcheck=
+  changes:
+    name: ci-applicability
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      native: ${{ steps.native.outputs.native }}
+      state: ${{ steps.native.outputs.state }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - id: native
+        name: Determine native applicability
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != 0000000000000000000000000000000000000000 ]; then
+            BASE_SHA=$(git merge-base "$BASE_SHA" HEAD)
+            python3 .github/checks/native.py classify --base "$BASE_SHA"
+          else
+            python3 .github/checks/native.py classify
+          fi
+  ios-build-test:
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
+    uses: ./.github/workflows/ios-ci.yml
+  ci-required:
+    name: ci-required
+    needs: [sdd-quality, tooling-validation, changes, ios-build-test]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Evaluate all applicable mandatory jobs
+        env:
+          SDD_RESULT: ${{ needs.sdd-quality.result }}
+          TOOLING_RESULT: ${{ needs.tooling-validation.result }}
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          NATIVE_RESULT: ${{ needs.ios-build-test.result }}
+          NATIVE_STATE: ${{ needs.changes.outputs.state }}
+        run: |
+          python3 .github/checks/aggregate.py --sdd "$SDD_RESULT" --tooling "$TOOLING_RESULT" --changes "$CHANGES_RESULT" --native "$NATIVE_RESULT" --state "$NATIVE_STATE"

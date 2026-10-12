@@ -20,6 +20,35 @@ Copy it into the new repo as `docs/process/sdd-playbook.md`, fill the placeholde
 | One-way tracker sync contract | Whether to keep the central spec after the pilot |
 | Extension governance and upgrade path | What qualifies for the lightweight path |
 
+## Fava pilot applicability
+
+The constitution governs the generic reference below. For this solo Codex Cloud
+pilot, the owner reviews agent-prepared PRs and merges manually; no extra reviewer
+or CODEOWNERS approval is required. Deterministic GitHub Actions gates enforce
+applicable checks; checklist/analyze/converge run as agent reviews with reports,
+not a headless CI agent or API-key dependency. Cloud PR authoring is authorized
+for this pilot, with latest-commit monitoring and two automatic correction cycles.
+
+A merged specification controls requirements, while an active feature may gain
+planning/tasks and implementation decisions in later PRs. Only a **completed**
+feature directory is fully frozen. Changed approved requirements use a new feature
+with `Supersedes:`. `Status: completed` is the explicit completion boundary.
+Features use the agreed roadmap's epic-NN-slug names; sequential NNN-slug and
+Spec Kit timestamp names remain valid for standalone changes. FR/US/T IDs are
+scoped to a feature; reconciliation qualifies FRs with their source feature.
+Set `SPECIFY_FEATURE_DIRECTORY` explicitly to the correct existing feature.
+Mandatory tests override the core templates' optional-test examples.
+
+Fava's Linear projection is Project → epic, milestone → roadmap slice, parent
+issue → user story, sub-issue → task, keyed by repository paths and stable IDs.
+Cloud uses the existing CLI/skill and local Codex retains MCP. Projection/status
+synchronization remains pending and does not gate CI. Do not build the generic
+custom tracker API adapter described below for this pilot.
+
+See [CI and agent verification](ci-and-agent-verification.md) for enforced task
+syntax, lifecycle gates, trailer exceptions, native onboarding and main rulesets.
+These project-specific rules replace conflicting generic table entries below.
+
 ## Principles
 
 Five rules carry the method. The first four are Spec Kit conventions; the fifth governs the work tracker. Record all five in the constitution so agents load them on every run.

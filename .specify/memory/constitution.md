@@ -4,9 +4,13 @@
 
 ### I. Flow-Forward
 
-Merged feature directories under `specs/` MUST be immutable. A changed requirement
-MUST create a new feature/change directory that explicitly identifies the previous
-directory with `Supersedes:`. Historical feature specs MUST NOT be rewritten.
+Requirements in a feature whose specification PR has merged MUST be controlled
+contracts: changed requirements MUST create a new feature/change directory naming
+the predecessor with `Supersedes:`. Active features MAY add or regenerate derived
+planning/task artifacts in subsequent planning and implementation PRs. Decision logs
+MUST remain append-only. After verified completion, mark `Status: completed` in
+`spec.md`; the entire completed feature directory MUST then remain frozen.
+Completion metadata does not permit rewriting historical requirements.
 This preserves the requirements and decisions that governed delivered work.
 
 ### II. Living Spec
@@ -29,8 +33,10 @@ update the roadmap and affected specs before implementation proceeds.
 Tests MUST be mandatory. Every user-story implementation MUST be verifiable by
 automated tests appropriate to its component, including acceptance behavior and
 relevant failure cases. Automated tests and applicable deterministic checks MUST
-pass before work is considered complete; configured CI checks MUST pass before
-merge. Spec Kit analysis MUST supplement deterministic checks and MUST NOT be
+pass before work is considered complete; applicable GitHub Actions deterministic PR checks MUST pass against the latest
+commit before merge. Xcode compilation and simulator tests MUST run on macOS CI
+for native changes. HealthKit authorization and real workout access on a physical
+device MUST be verified separately before HealthKit feature acceptance. Spec Kit analysis MUST supplement deterministic checks and MUST NOT be
 the sole blocking quality gate. Critical consistency findings MUST be resolved
 before the affected work proceeds.
 
@@ -86,7 +92,20 @@ retired keys MUST NOT be reused for different work.
   Before completion, acceptance behavior MUST have automated test evidence, task
   status MUST reflect verified work, and durable decisions MUST be recorded.
 - Review MUST verify constitution compliance, resolvable requirement/task references,
-  passing applicable deterministic checks, and preservation of merged feature history.
+  passing applicable deterministic checks, and preservation of approved requirements and completed feature history.
+
+Codex Cloud MUST prefer GitHub GraphQL `createCommitOnBranch` using existing
+API authorization and MUST verify the actual GitHub signature, branch and intended
+tree before claiming a signed delivery. The signing policy does not replace SDD
+trailers; no unsigned local/REST fallback may be silently published. Non-feature
+commits MUST use an explicit documented `SDD-Type:` exception without fabricated
+FR/task references. Agent-driven Spec Kit checks supplement deterministic Actions
+and MUST NOT require an OpenAI API key in CI.
+
+Human owner review MUST precede merge; agents MUST NOT merge or enable auto-merge.
+For this solo pilot no additional-person approval is required. In Codex Cloud,
+Linear operations MUST use the pinned project-local CLI/skill, while local MCP
+configuration remains supported. Linear connectivity MUST NOT gate CI.
 
 The detailed delivery-process reference is `docs/process/sdd-playbook.md`.
 The Linear task-projection rule above is an explicit pilot exception to the playbook's
@@ -106,4 +125,10 @@ or materially expanded obligations, and PATCH for clarifications without changed
 The original ratification date MUST be preserved; the amendment date MUST reflect the
 latest content change. Remove the temporary Sync Impact Report before committing.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-05
+Amendment 1.1.0 (proposed for owner review in the CI setup PR): clarifies the
+staged Flow-Forward lifecycle and adds latest-commit Actions, verified API signing,
+solo human review and physical-device acceptance obligations. Existing product
+requirements and roadmap are unchanged. No historical features exist to migrate;
+R1 activates native CI using `docs/process/ci-and-agent-verification.md`.
+
+**Version**: 1.1.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-12

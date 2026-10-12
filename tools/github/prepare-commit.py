@@ -25,9 +25,13 @@ def main():
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", args.repository):
         parser.error("repository must be owner/name")
     subprocess.run(["git", "check-ref-format", "--branch", args.branch], check=True, stdout=subprocess.DEVNULL)
+    if args.branch in {"main", "refs/heads/main"}:
+        parser.error("never publish directly to main; select a maintenance/feature branch")
     if not re.fullmatch(r"[0-9a-f]{40}", args.parent):
         parser.error("parent must be a full SHA-1 commit ID")
     git("cat-file", "-e", args.parent + "^{commit}")
+    if git("rev-parse", "HEAD").decode().strip() != args.parent:
+        parser.error("local HEAD differs from expected parent; fetch and reconcile explicitly")
     if git("ls-files", "--unmerged"):
         parser.error("resolve index conflicts before preparing a commit")
 
