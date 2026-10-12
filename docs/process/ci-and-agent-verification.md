@@ -18,7 +18,7 @@ validation compares its merge base with the PR base and checks every new commit.
 | `sdd-quality` | ubuntu-24.04 | Structure, lifecycle, scoped IDs, traceability, per-commit trailers |
 | `tooling-validation` | ubuntu-24.04 | Positive/negative fixtures, existing commit-builder tests, skill/guidance checks, workflow syntax and shell syntax |
 | `ci-applicability` | ubuntu-24.04 | Determine native requirement; fail if native onboarding is abused |
-| `ios-build-test` (reusable job) | macos-15 | Real Xcode build and simulator tests when required |
+| `ios-build-test` (reusable job) | macos-26 | Real Xcode build and simulator tests when required |
 | `ci-required` | ubuntu-24.04 | Aggregate all applicable job results; fail closed |
 
 The aggregate requires successful SDD, tooling and applicability jobs. Required
@@ -124,7 +124,7 @@ python3 .github/checks/sdd.py
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s .github/checks -p 'test_*.py' -v
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/github -p 'test_*.py' -v
 python3 .github/checks/tooling.py
-# With the reviewed actionlint 1.7.7 binary on PATH:
+# With the reviewed actionlint 1.7.12 binary on PATH:
 actionlint -shellcheck=
 # After staging, validate a proposed message:
 python3 .github/checks/sdd.py --message-file /tmp/fava-commit-message.txt
@@ -190,9 +190,12 @@ R1 must:
    after verified R1 activation. The code exception automatically stops applying
    as soon as the project exists; no toggle can keep native validation disabled.
 
-The reusable `.github/workflows/ios-ci.yml` uses standard **macos-15** with explicit
-**Xcode 16.4** (`DEVELOPER_DIR`); missing Xcode fails instead of selecting latest.
-See the [runner image documentation](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md).
+The reusable `.github/workflows/ios-ci.yml` uses standard Apple Silicon **macos-26**
+with explicit **Xcode 26.6** (`DEVELOPER_DIR`); missing Xcode fails instead of
+selecting latest. The image includes iOS simulators; xcodebuild launches them for
+unit, integration and UI tests. The build SDK pin does not set Fava's minimum iOS
+deployment target, which belongs in R1's approved design.
+See the [runner image documentation](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md).
 Runner images evolve: review a pin update if that version is removed. No larger
 runner, Apple membership, signing certificate, provisioning profile or store
 credential is required. Simulator code signing is disabled. Dependency resolution

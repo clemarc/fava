@@ -52,8 +52,8 @@ jobs:
           ACTIONLINT_DIR: ${{ runner.temp }}/fava-actionlint
         run: |
           mkdir -p "$ACTIONLINT_DIR"
-          curl --fail --silent --show-error --location https://github.com/rhysd/actionlint/releases/download/v1.7.7/actionlint_1.7.7_linux_amd64.tar.gz -o "$ACTIONLINT_DIR/actionlint.tar.gz"
-          echo "023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757  $ACTIONLINT_DIR/actionlint.tar.gz" | sha256sum --check
+          curl --fail --silent --show-error --location https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz -o "$ACTIONLINT_DIR/actionlint.tar.gz"
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $ACTIONLINT_DIR/actionlint.tar.gz" | sha256sum --check
           tar -xzf "$ACTIONLINT_DIR/actionlint.tar.gz" -C "$ACTIONLINT_DIR" actionlint
           "$ACTIONLINT_DIR/actionlint" -shellcheck=
   changes:

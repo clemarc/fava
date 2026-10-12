@@ -33,3 +33,15 @@ agent reviews and human acceptance remain necessary. No API-key CI agent, custom
 Linear API client, community gate extension or fabricated Swift app is introduced.
 Native execution cannot be proven until R1; public logs must use synthetic data.
 Detailed operations live in docs/process/ci-and-agent-verification.md.
+
+Runner pin update, 2026-10-12: use standard Apple Silicon macos-26 and explicit
+Xcode 26.6, both listed in the current GitHub runner image documentation, instead
+of the initial macos-15/Xcode 16.4 pair. This aligns the new app's CI toolchain with
+the current supported image without changing product scope or the minimum iOS
+deployment target. Native execution still awaits the permanent R1 project, shared
+test scheme and real tests following specification/planning approval.
+
+The workflow linter moves from actionlint 1.7.7 to 1.7.12 because the older release
+does not recognize macos-26. The release notes and runner-label source were reviewed;
+the Linux archive is pinned to its verified SHA-256. Runner-label validation stays
+enabled, with no custom-label exception or new credential dependency.
