@@ -14,6 +14,13 @@
 
 Scope boundary: R1 establishes installation, launch, the initial screen and navigation, and the HealthKit access-request experience. R2 owns retrieving running workouts and handling empty read results; R3 owns the populated run library and its loading, empty, and read-failure presentations; R4 owns individual run details. R1 does not retrieve workouts, display workout summaries, or write health data. Accounts, cloud services, iCloud sync, sharing, AI analysis, and advanced analytics remain outside the epic.
 
+## Clarifications
+
+### Session 2026-10-12
+
+- Q: What accessibility support must R1 provide for navigation and the HealthKit access flow? → A: VoiceOver support and all Dynamic Type sizes, including accessibility sizes.
+- Q: When the system reports that a HealthKit request was cancelled, what should Fava show? → A: A neutral “Request not completed” message, with retry when HealthKit is available.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Launch and navigate Fava (Priority: P1)
@@ -32,6 +39,7 @@ As a person installing Fava on my iPhone or iPad, I want a usable initial screen
 2. **Given** the initial screen before any request, **When** the person opens the run-library destination, **Then** the destination identifies itself as the future place to browse runs without claiming that workouts were imported or that none exist.
 3. **Given** the run-library destination, **When** the person uses the provided return navigation, **Then** the initial screen and access action are reachable without restarting.
 4. **Given** Fava has been closed, **When** the person reopens it, **Then** it opens a usable screen without automatically requesting access or requiring an account or network connection to navigate.
+5. **Given** VoiceOver is enabled or any system Dynamic Type size is selected, including accessibility sizes, **When** the person uses navigation or the app-owned HealthKit access flow on either device family, **Then** purpose text and state messages can be read, each action has an accessible name and communicates its role and enabled state, and all content and actions remain reachable without clipped or overlapping content; scrolling is permitted.
 
 ---
 
@@ -58,31 +66,33 @@ As a person who wants to use my running workouts in Fava, I want to understand w
 
 ### User Story 3 - Recover from an unavailable or failed request (Priority: P2)
 
-**Requirements**: FR-005, FR-006, FR-008, FR-009, FR-010, FR-012.
+**Requirements**: FR-005, FR-006, FR-008, FR-009, FR-010, FR-012, FR-013.
 
 As a person unable to complete a health-access request, I want a clear explanation and a usable way forward, so I can understand what happened and try again when appropriate.
 
 **Why this priority**: Recoverable states keep the foundation useful when access cannot proceed.
 
-**Independent Test**: Supply unavailable and request-error outcomes independently of workout data. Automated checks verify messages, navigation, retry, and absence of overlapping requests.
+**Independent Test**: Supply unavailable, request-error, and system-reported cancellation outcomes independently of workout data. Automated checks verify distinct failure/cancellation messages, navigation, retry, and absence of overlapping requests.
 
 **Acceptance Scenarios**:
 
 1. **Given** HealthKit is unavailable in the current device environment, **When** the person opens the access experience, **Then** Fava explains the unavailability, prevents request initiation, and leaves navigation usable.
-2. **Given** HealthKit is available, **When** a request reports an error, **Then** Fava ends its progress indication, shows a readable request-failure message without labeling read permission as denied, and provides retry.
-3. **Given** a previous request failed and HealthKit remains available, **When** the person retries, **Then** exactly one new request begins and follows the same completion or failure rules as the initial attempt.
-4. **Given** a request is interrupted while Fava is temporarily in the background, **When** the person returns, **Then** navigation remains usable, any reported completion or error is reflected, and no extra request begins automatically.
+2. **Given** HealthKit is available, **When** a request reports an error other than cancellation, **Then** Fava ends its progress indication, shows a readable request-failure message without labeling read permission as denied, and provides retry.
+3. **Given** a previous request failed or was reported as cancelled and HealthKit remains available, **When** the person retries, **Then** exactly one new request begins and follows the same completion, failure, or cancellation rules as the initial attempt.
+4. **Given** a request is interrupted while Fava is temporarily in the background, **When** the person returns, **Then** navigation remains usable, any reported completion, error, or cancellation is reflected, and no extra request begins automatically.
+5. **Given** a request is active, **When** the system reports cancellation, **Then** Fava ends its progress indication, shows “Request not completed” rather than a technical-failure message, leaves navigation usable, and offers retry when HealthKit is available without claiming to know the person's read-permission choice.
 
 ### Edge Cases
 
 - Read access is declined or partly allowed: completion remains neutral; Fava does not infer the permission choice.
+- System-reported cancellation: show “Request not completed” and permit a deliberate retry when HealthKit is available. Do not infer cancellation from declined read access, an empty result, backgrounding, or the absence of a permission sheet.
 - Permissions are changed outside Fava: prior completion is not proof of current access and relaunch does not automatically request access.
 - A repeated request completes without displaying a sheet: Fava accepts completion without fabricating a prompt.
 - Rapid repeated taps: at most one request can be active.
 - The app is backgrounded or terminated during a request: return remains usable; a fresh launch must not restore a stale in-progress indication or start another request automatically.
 - HealthKit is unavailable: navigation works and no request is attempted.
 - No running workouts exist: R1 behaves identically because it does not read workouts; empty-result handling belongs to R2.
-- Compact iPhone layouts and resized iPad layouts: purpose text, access actions, state messages, and navigation remain readable and operable.
+- Compact iPhone layouts and resized iPad layouts at every system Dynamic Type size, including accessibility sizes: purpose text, access actions, state messages, and navigation remain readable and operable without clipped or overlapping content; scrolling is permitted. With VoiceOver enabled, content and actions remain discoverable and request-state changes are conveyed.
 
 ## Requirements *(mandatory)*
 
@@ -94,16 +104,17 @@ As a person unable to complete a health-access request, I want a clear explanati
 - **FR-004**: Before initiation, Fava MUST explain that workout-record read access supports browsing running workouts. It MUST request only workout-record read access and MUST NOT request health-data writes or additional health categories in R1. Acceptance: US2 scenario 1.
 - **FR-005**: Fava MUST check HealthKit availability before initiating a request. If unavailable, it MUST explain why initiation is unavailable, prevent the request, and preserve navigation. Acceptance: US3 scenario 1.
 - **FR-006**: When HealthKit is available, explicit user action MUST initiate the system-managed request. Fava MUST indicate an active request and prevent concurrent requests from repeated actions. Acceptance: US2 scenarios 1 and 2; US3 scenario 3.
-- **FR-007**: On completion without error, Fava MUST end its progress indication and remain usable with neutral completion wording. It MUST NOT assert that read permission was granted, denied, or unchanged, or that ingestion succeeded. Acceptance: US2 scenarios 3 and 4.
-- **FR-008**: On a reported request error, Fava MUST end its progress indication, display a readable request-failure message distinct from a read-permission denial claim, and offer retry when HealthKit is available. Acceptance: US3 scenarios 2 and 3.
-- **FR-009**: After completion or failure, Fava MUST allow another user-initiated request when HealthKit is available, respect system-managed choices, and avoid promising another permission sheet. Acceptance: US2 scenario 5; US3 scenario 3.
+- **FR-007**: When the system reports request completion without an error or cancellation, Fava MUST end its progress indication and remain usable with neutral completion wording. It MUST NOT assert that read permission was granted, denied, or unchanged, or that ingestion succeeded. Acceptance: US2 scenarios 3 and 4.
+- **FR-008**: On a reported request error other than cancellation, Fava MUST end its progress indication, display a readable request-failure message distinct from a read-permission denial claim, and offer retry when HealthKit is available. Acceptance: US3 scenarios 2 and 3.
+- **FR-009**: After completion, failure, or system-reported cancellation, Fava MUST allow another user-initiated request when HealthKit is available, respect system-managed choices, and avoid promising another permission sheet. Acceptance: US2 scenario 5; US3 scenarios 3 and 5.
 - **FR-010**: Return from the background MUST preserve navigation and reflect any reported outcome without automatically starting another request. A fresh launch MUST NOT present an earlier interrupted request as active. Acceptance: US3 scenario 4 and the interruption edge case.
 - **FR-011**: Fava MUST NOT treat prior completion as proof of current read access. R1 MUST NOT retrieve workouts or infer authorization from workout results; retrieval and empty-result handling belong to R2. Acceptance: US2 scenario 6 and the externally changed permissions and no-workouts edge cases.
-- **FR-012**: Navigation, purpose text, access actions, and outcome messages MUST remain readable and operable on compact iPhone and resized iPad layouts. Launch, navigation, and request initiation MUST NOT require a Fava account, backend service, or network connection. Acceptance: US1 scenarios 1–4 and the layout edge case; exercise request initiation offline where HealthKit is available.
+- **FR-012**: Navigation, purpose text, access actions, and outcome messages MUST remain readable and operable on compact iPhone and resized iPad layouts at all system Dynamic Type sizes, including accessibility sizes. App-owned content and actions MUST support VoiceOver with accessible names, roles, enabled states, and conveyed request-state changes. Text MUST remain readable without clipped or overlapping content, and all actions MUST remain reachable; scrolling is permitted. Launch, navigation, and request initiation MUST NOT require a Fava account, backend service, or network connection. Acceptance: US1 scenarios 1–5 and the layout/accessibility edge case; exercise request initiation offline where HealthKit is available.
+- **FR-013**: On system-reported cancellation, Fava MUST end its progress indication, display the neutral message “Request not completed”, preserve navigation, and offer retry when HealthKit is available. It MUST NOT present cancellation as a technical failure or infer the person's read-permission choice. Cancellation MUST NOT be inferred from declined read access, an empty result, backgrounding, or the absence of a permission sheet. Acceptance: US3 scenarios 3–5 and the cancellation edge case.
 
 ### Key Entities
 
-- **Health Access Request**: A user-initiated request to read workout records, with observable states of not in progress, in progress, completed without error, and failed. These states describe the request, not the person's read-permission choices. R1 stores no workout records.
+- **Health Access Request**: A user-initiated request to read workout records, with observable states of not in progress, in progress, completed without error, failed, and cancelled when reported by the system. These states describe the request, not the person's read-permission choices. R1 stores no workout records.
 - **Health Access Availability**: Whether the current device environment supports the requested access. Unavailability prevents initiation but does not prevent navigation.
 
 ## Success Criteria *(mandatory)*
@@ -112,9 +123,10 @@ As a person unable to complete a health-access request, I want a clear explanati
 
 - **SC-001**: On both supported device families, at least 95% of 20 measured launches per family show the usable initial screen within 3 seconds, without an automatic access request.
 - **SC-002**: From the initial screen, a person can find the access explanation and initiate a request in no more than two app actions, and reach the run-library destination and return in no more than two navigation actions total.
-- **SC-003**: Across all defined completion, decline, repeated-request, failure, unavailability, and interruption cases, 100% leave navigation usable, produce no concurrent requests, and display no unsupported claim about read permission or imported workouts.
+- **SC-003**: Across all defined completion, decline, repeated-request, failure, cancellation, unavailability, and interruption cases, 100% leave navigation usable, produce no concurrent requests, and display no unsupported claim about read permission or imported workouts. Every system-reported cancellation case displays “Request not completed” and allows a deliberate retry when HealthKit is available.
 - **SC-004**: The installation-to-access journey can be demonstrated on one supported iPhone and one supported iPad, including launch, deliberate initiation, neutral completion, and return to navigation.
 - **SC-005**: In a walkthrough on each device family, a reviewer can use the visible purpose text and explanation to accurately describe why workout access is requested and recognize that completion does not guarantee readable workouts, without additional verbal guidance.
+- **SC-006**: On compact iPhone and resized iPad layouts, all app-owned navigation and access-flow actions and messages remain reachable and readable at every system Dynamic Type size, including accessibility sizes, with no clipped or overlapping content. VoiceOver users can discover and operate every action and perceive not-in-progress, in-progress, completed, failed, cancelled, and unavailable presentations. Automated checks cover accessibility names, roles, and states and layout reachability; device walkthroughs confirm VoiceOver operation and request-state announcements on both device families.
 
 ## Assumptions
 
