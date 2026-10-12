@@ -6,12 +6,12 @@ R2 signed planning: 0182d3f842cf6b73e1dda3a13d5a216483e9a2cc; prerequisites,
 analysis and deterministic SDD/tooling passed. 22 validator/tooling and 7 builder
 fixtures passed locally. No Xcode or component-test success claimed on Linux.
 
-RunIngestionTests authors 11 acceptance tests: mixed/indoor/outdoor/multi-year
+RunIngestionTests authors 12 acceptance tests: mixed/indoor/outdoor/multi-year
 HealthKit workouts and query parameters, exact source recorded values/nil/zero,
 partial/error/malformed rejection, ten-repeat UUID dedup/tied summaries, 2000-record
 no-cap result, overlap and saved/current separation, successful empty/full replacement,
 unavailable/later retry, nonempty/empty relaunch after interruption, cache failures,
-file snapshot round-trip/replacement/corruption and independent R1 request state.
+file snapshot round-trip/replacement/corruption, recorded zero duration/distance-unit preservation, and independent R1 request state.
 No unit or simulator result is marked passed before actual Actions evidence.
 
 Actual HealthKit store issues one running-workout query with no date predicate and

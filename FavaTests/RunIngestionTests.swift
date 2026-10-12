@@ -104,6 +104,19 @@ final class RunIngestionTests: XCTestCase {
         XCTAssertEqual(model.savedSnapshot?.runs.count, runs.count)
     }
 
+    func testRecordedZeroDurationAndDistanceUnitsAreNotInferredOrRewritten() {
+        let reader = Reader(); let cache = MemoryStore()
+        let model = RunIngestionModel(reader: reader, snapshotStore: cache)
+        let zero = RunRecord(id: UUID(), startDate: Date(timeIntervalSince1970: 1_500_000_000), duration: 0,
+                             distance: WorkoutDistance(value: 0, unit: .kilometres))
+        let missing = RunRecord(id: UUID(), startDate: zero.startDate, duration: 0, distance: nil)
+        model.requestRead(); reader.completion?(.success([zero, missing]))
+        XCTAssertEqual(cache.snapshot?.runs, [zero, missing])
+        XCTAssertEqual(model.savedSnapshot?.runs.first?.duration, 0)
+        XCTAssertEqual(model.savedSnapshot?.runs.first?.distance?.unit, .kilometres)
+        XCTAssertNil(model.savedSnapshot?.runs.last?.distance)
+    }
+
     func testOverlapGuardAndSavedCollectionRemainSeparateFromActiveAttempt() {
         let reader = Reader();let cache = MemoryStore();let old = record()
         cache.snapshot = RunSnapshot(runs: [old])
