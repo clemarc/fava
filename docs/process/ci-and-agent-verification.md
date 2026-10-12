@@ -248,6 +248,10 @@ GH_DEBUG= GH_TOKEN="$FAVA_GITHUB_API_TOKEN" gh run view RUN_ID --repo clemarc/fa
 ```
 
 Confirm expected runs started, monitor until terminal and inspect logs/artifacts.
+If gh log downloads are blocked at a redirected Actions storage host, use the
+already-authorized GitHub integration's workflow job-log/artifact tools. In this
+setup the connector retrieved logs successfully while direct downloads were
+proxy-denied; do not bypass the proxy or add credentials to work around it.
 On failure diagnose actual evidence, fix within scope, rerun checks, make a new
 verified GraphQL commit on the same branch and monitor the new SHA. Two automatic
 correction cycles maximum; thereafter report the blocker. A skipped, cancelled,
@@ -256,14 +260,20 @@ missing or old successful check cannot prove the latest native change passed.
 ## Owner's main ruleset
 
 Do not enable a required check until its first successful real PR run is visible.
-After this PR's latest checks pass, the owner can configure Settings → Rules →
-Rulesets → New branch ruleset:
+Inspection on 2026-10-12 found an active `main` ruleset (ID 24928891), targeting
+the default branch with no bypass actors. It already requires PRs, signed commits,
+blocks deletion/force pushes and requires zero approvals. It has no required CI
+checks; review-thread resolution is disabled. Auto-merge is already disabled.
 
-- Name `main-reviewed-delivery`; Enforcement **Active**; target default branch
+After this PR's latest checks pass, the owner should edit Settings → Rules →
+Rulesets → **main**, rather than create a duplicate ruleset:
+
+- Retain name `main`; Enforcement **Active**; target default branch
   `main`; bypass list **empty**, including agents/admin automation.
 - Require a pull request before merging, **0 required approvals** (solo owner
   reviews manually); require conversation resolution. Do not require code-owner
-  or another-person approval. Keep human review as the documented process gate.
+  or another-person approval; disable extra approval for unattributed changes
+  for this solo process. Keep human review as the documented process gate.
 - Require status checks: select **ci-required**, source **GitHub Actions**, with
   branches up to date before merging. This aggregate includes all mandatory gates;
   requiring the skipped native check separately would block legitimate onboarding
@@ -274,7 +284,7 @@ Rulesets → New branch ruleset:
 - Settings → General → Pull Requests: leave **Allow auto-merge disabled**.
   Merge remains a manual human action. Never weaken protection for agent failures.
 
-Ruleset activation is separate from this PR's code. No ruleset is changed by this
+Ruleset updates are separate from this PR's code. No ruleset is changed by this
 setup; verify checks first and let the owner apply these exact settings. Workflow
 changes themselves remain subject to owner review; aggregate logic cannot secure
 an adversarial edit to its own workflow without that review.
