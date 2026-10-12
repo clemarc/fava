@@ -4,7 +4,9 @@ Do not change requirement or task scope in Linear.
 
 For Linear operations in Codex Cloud, use `.agents/skills/linear-cli/SKILL.md`;
 do not rely on MCP availability. Run the project-installed dependency from the
-repository root with `npx --no-install linear` (install with `npm ci` first).
+repository root with `./node_modules/.bin/linear` (install with `npm ci` first).
+Use this explicit local path so missing tooling fails without npm package
+resolution.
 Use `.linear.toml` defaults: workspace `clemarc`, team `FAV`.
 
 Authenticate the cloud CLI only through the injected `LINEAR_API_KEY`; preserve

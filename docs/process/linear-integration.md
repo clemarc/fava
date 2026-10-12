@@ -18,8 +18,8 @@ From the repository root:
 
 ```sh
 npm ci
-npx --no-install linear --version
-npx --no-install linear --help
+./node_modules/.bin/linear --version
+./node_modules/.bin/linear --help
 ```
 
 The original dependency installation is:
@@ -29,10 +29,12 @@ npm install --save-dev --save-exact @schpet/linear-cli@3.0.0
 ```
 
 Do not install the CLI globally. Use the installed dependency with
-`npx --no-install linear` so missing tooling fails rather than fetching an
-unreviewed version. The npm package downloads a platform-specific prebuilt
-binary from its GitHub release during installation. Allow npm registry access
-and GitHub release downloads, including redirect hosts such as
+`./node_modules/.bin/linear` from the repository root so missing tooling fails
+immediately without npm package resolution. `npx --no-install` can still query
+registry metadata or select cached/global tooling when the local binary is absent;
+it does not guarantee local-only execution. The npm package downloads a
+platform-specific prebuilt binary from its GitHub release during installation.
+Allow npm registry access and GitHub release downloads, including redirect hosts such as
 `release-assets.githubusercontent.com`, through the cloud proxy; keep TLS
 verification and the configured CA trust enabled. Linux requires a supported
 glibc platform (3.0.0 specifies glibc 2.35 or newer).
@@ -73,7 +75,7 @@ team_id = "FAV"
 ```
 
 Run commands from the repository root. Validate the team default with
-`npx --no-install linear team id`; it must print `FAV`. Do not run interactive
+`./node_modules/.bin/linear team id`; it must print `FAV`. Do not run interactive
 `linear config`, which could overwrite these defaults. Environment overrides
 such as `LINEAR_TEAM_ID` can take precedence; avoid unintended overrides.
 
@@ -119,11 +121,11 @@ fi
 Inspect supported syntax first:
 
 ```sh
-npx --no-install linear team --help
-npx --no-install linear project --help
-npx --no-install linear auth whoami --help
-npx --no-install linear team list --help
-npx --no-install linear project view --help
+./node_modules/.bin/linear team --help
+./node_modules/.bin/linear project --help
+./node_modules/.bin/linear auth whoami --help
+./node_modules/.bin/linear team list --help
+./node_modules/.bin/linear project view --help
 ```
 
 Then verify from the repository root in a shell with the injected environment:
@@ -131,10 +133,10 @@ Then verify from the repository root in a shell with the injected environment:
 ```sh
 export LINEAR_IGNORE_ENV_FILE=1
 export LINEAR_DEBUG=0
-npx --no-install linear --no-input team id
-npx --no-install linear --no-input auth whoami
-npx --no-install linear --no-input team list --json
-npx --no-install linear --no-input project view f823cc39-b818-460f-8682-bb4ec831885a --json
+./node_modules/.bin/linear --no-input team id
+./node_modules/.bin/linear --no-input auth whoami
+./node_modules/.bin/linear --no-input team list --json
+./node_modules/.bin/linear --no-input project view f823cc39-b818-460f-8682-bb4ec831885a --json
 ```
 
 Success requires actual authenticated API reads: `auth whoami` must resolve a
