@@ -35,3 +35,13 @@ Resume: inspect latest PR SHA and CI logs. Correct at most two failed-checkpoint
 cycles. Only after native build and simulator tests pass, record evidence, complete
 verified tasks and project statuses; publish a signed checkpoint and validate latest
 SHA. R2 remains pending until the R1 gate passes.
+
+## Corrective cycle 1
+
+Run https://github.com/clemarc/fava/actions/runs/38305185988 at signed
+188e696ea10d6e2a7bff3f0c7278852cecff6cc0: SDD, tooling/actionlint and applicability
+passed. Xcode 26.6 started on both families, but compilation failed at
+HealthAccess.swift:36 (wrapped property accessed before initialization). No native
+tests ran. Fixed initialization using a local provider availability value; the
+existing fresh-session and unavailable-init tests cover the affected behavior.
+No requirements, gates or test assertions were relaxed. Correction 1 of 2.

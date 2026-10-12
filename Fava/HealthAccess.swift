@@ -32,8 +32,9 @@ final class HealthAccessModel: ObservableObject {
 
     init(provider: HealthAccessProviding) {
         self.provider = provider
-        isAvailable = provider.isAvailable
-        state = isAvailable ? .idle : .unavailable
+        let available = provider.isAvailable
+        isAvailable = available
+        state = available ? .idle : .unavailable
     }
 
     var canRequest: Bool { isAvailable && state != .requesting }
