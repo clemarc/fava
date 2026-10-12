@@ -1,0 +1,15 @@
+mutation CreateVerifiedCommit($input: CreateCommitOnBranchInput!) {
+  createCommitOnBranch(input: $input) {
+    commit {
+      oid
+      url
+      tree { oid }
+      signature {
+        isValid
+        state
+        wasSignedByGitHub
+      }
+    }
+    ref { name }
+  }
+}

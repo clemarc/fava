@@ -19,3 +19,14 @@ and `tasks.md` before projecting work. Git owns those artifacts; Linear provides
 planning and verified progress visibility. Never modify Linear requirements or
 task definitions independently of the repository. Task synchronization is a
 separate implementation; see `docs/process/linear-integration.md` for its contract.
+
+For commits published from Codex Cloud, use GitHub GraphQL
+`createCommitOnBranch` and verify the returned commit is signed and valid.
+Follow `docs/process/github-cloud-commits.md`; use the request builder and
+mutation in `tools/github/`. This also applies instead of local auto-commit
+hooks in the Spec Kit Git skills. Preserve applicable commit trailers.
+Never publish unsigned `git commit`/`git push` or REST-created commits as a
+fallback, provision personal signing keys in the worker, or weaken signature
+requirements. Use protected GitHub API authentication through the cloud proxy.
+If API access or authentication is unavailable, leave the staged changes ready
+for review and report the blocker. Do not merge without explicit authorization.
