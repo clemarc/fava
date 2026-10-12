@@ -45,3 +45,36 @@ HealthAccess.swift:36 (wrapped property accessed before initialization). No nati
 tests ran. Fixed initialization using a local provider availability value; the
 existing fresh-session and unavailable-init tests cover the affected behavior.
 No requirements, gates or test assertions were relaxed. Correction 1 of 2.
+
+## R1 verified implementation checkpoint
+
+Latest implementation SHA: 7bcfec6f49e142f3dc85fa99f3227201f79b636e.
+GraphQL signature VALID/isValid/signedByGitHub and REST verified/valid; branch
+head, complete tree, parent and message matched. Authenticated author clemarc.
+Run https://github.com/clemarc/fava/actions/runs/38305400468 completed successfully:
+sdd-quality, tooling-validation (including actionlint), ci-applicability required,
+iPhone native job 114998154946, iPad native job 114998154893, ci-required all passed.
+Both Xcode 26.6 builds succeeded; each xcresult reports 13 tests passed, zero failed
+(7 HealthAccessTests, 6 FoundationUITests). Automated launch smoke passed on both.
+One corrective cycle used. No gate skipped or disabled.
+
+Convergence: installed $speckit-converge prerequisite ran after implement/tasks;
+reviewed 13 FRs, 3 story inventories, 8 tasks and DEC-001–003 against actual source
+and successful native evidence. No remaining unbuilt application work, no
+unrequested source scope, no appended convergence tasks. tasks.md unchanged by
+converge; completion markers now updated by implementation verification.
+
+T001: project, test membership and shared scheme validated by both actual builds.
+T002/T003: all six UI tests passed, including launch/back/relaunch and all 12 type sizes.
+T004/T005: request state and adapter scope tests passed; no production query exists.
+T006: availability/failure/cancellation/overlap/background unit and UI checks passed.
+T007: deterministic outcome/navigation/layout UI tests passed; announcements authored,
+actual VoiceOver walkthrough remains manual.
+T008: required native matrix, nonzero results, deterministic checks and aggregate passed.
+All 8 implementation tasks verified; no physical-device check is marked complete.
+Specification remains active (Draft wording preserved) until manual HealthKit
+acceptance. Outstanding physical checks are listed above and in quickstart.md.
+
+Next: R2 PLAN → TASKS → ANALYZE → LINEAR → IMPLEMENT, preserving R1 regression.
+This record and task/Linear updates are carried into the next signed planning
+publication; the verified R1 source checkpoint is the exact SHA/run above.

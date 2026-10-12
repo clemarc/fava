@@ -163,8 +163,11 @@ Use the local deterministic gates first; no OpenAI key is needed in Actions.
 
 ## Native validation and R1 activation
 
-Native CI is **provisioned but unvalidated** until R1 creates the actual project.
-No native status is fabricated. Applicability discovers tracked Xcode containers,
+Native CI was activated and verified by R1 at signed commit
+`7bcfec6f49e142f3dc85fa99f3227201f79b636e` in
+[run 38305400468](https://github.com/clemarc/fava/actions/runs/38305400468):
+Xcode 26.6 built Fava and each iPhone/iPad simulator passed 13 tests.
+This establishes automated validation, not physical-device HealthKit acceptance. Applicability discovers tracked Xcode containers,
 and also checks the base so deleting a project cannot restore onboarding. Swift or
 other native artifacts without a project fail. Once a project exists, all changes
 except an explicit Markdown documentation/spec-only change run native validation.
@@ -186,8 +189,7 @@ R1 must:
 4. Open the R1 implementation PR, verify the applicability state is `required`,
    observe a real macOS `ios-build-test`, inspect logs/xcresult and confirm nonzero
    test count, successful compilation, tests and ci-required on the latest SHA.
-   Record this evidence in the PR and remove this temporary onboarding paragraph
-   after verified R1 activation. The code exception automatically stops applying
+   Record exact SHA, build and nonzero test evidence in the feature and PR. The code exception automatically stops applying
    as soon as the project exists; no toggle can keep native validation disabled.
 
 The reusable `.github/workflows/ios-ci.yml` uses standard Apple Silicon **macos-26**

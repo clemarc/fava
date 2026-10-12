@@ -30,3 +30,7 @@ Milestone: e3751983-4738-4ffa-90cb-9dd122a9eb64
 - T008: FAV-13 (Todo; verification pending)
 
 No duplicate keys observed; all writes via pinned project-local CLI.
+
+Implementation published at 7bcfec6f49e142f3dc85fa99f3227201f79b636e; all R1 stories/tasks moved to In Progress while actual native verification is pending. No Done status claimed.
+
+R1 checkpoint 7bcfec6f49e142f3dc85fa99f3227201f79b636e, run 38305400468: T001–T008 (FAV-6–FAV-13) Done after both-family native results; US1–US3 (FAV-3–FAV-5) In Review pending owner/device acceptance.
