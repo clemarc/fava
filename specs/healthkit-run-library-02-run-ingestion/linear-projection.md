@@ -24,3 +24,5 @@ Milestone: fc29c004-efa3-4336-a637-fc04553897dc
 No duplicate keys observed; all writes via pinned project-local CLI.
 
 Status projection: all stories/tasks In Progress; native verification pending. Source checkpoint: b0981131604f189721c236afefd03fb0253fd6ed.
+
+Status projection: tasks Done after native evidence; stories In Review pending physical/owner acceptance. Source checkpoint: 5c65aa2f4cfdd9335046f7061702e20872d9921f.

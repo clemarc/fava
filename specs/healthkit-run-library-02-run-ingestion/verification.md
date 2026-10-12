@@ -24,3 +24,33 @@ Manual iPhone/iPad access/read demonstrations remain pending; see quickstart.md.
 Resume on PR #7 current branch: inspect latest SHA/run, logs and xcresult; permit
 at most two scoped corrections if failing. R3 begins only after R1/R2 full native
 matrix and mandatory checks pass. Preserve stable Linear keys on any resume.
+
+## R2 verified checkpoint
+
+Latest implementation/source SHA: 5c65aa2f4cfdd9335046f7061702e20872d9921f.
+GraphQL VALID/isValid/signedByGitHub; REST verified/valid; expected branch, parent,
+message and full tree matched. Source planning commit 0182d3f verified likewise.
+Run https://github.com/clemarc/fava/actions/runs/38307744070 passed all mandatory
+jobs: sdd-quality, tooling-validation/actionlint, ci-applicability required,
+iPhone native job 115005964715, iPad native job 115005964693, ci-required.
+Both Xcode 26.6 builds succeeded; both xcresults report 25 passing tests, zero
+failed: 7 R1 unit + 12 R2 unit + 6 R1 simulator UI. No demonstrated R1 regression.
+No corrective cycle required; zero-duration coverage added before validation.
+Superseded planning/source runs were cancelled to release the workflow queue;
+only the exact latest implementation run counts as checkpoint evidence.
+
+T001/T002: query scope, all-history/mixed eligibility, source values and zero/missing
+fixtures passed. T003/T004: ten-repeat dedup, identity, overlap and saved/current
+separation, replacement, snapshot round-trip and interrupted/relaunch tests passed.
+T005: all defined states/failure/unavailability/retry/cache-error assertions passed.
+T006: deterministic/native regression and aggregate gates passed, manual SC-005
+HealthKit demonstrations still pending. All six implementation tasks verified.
+
+Convergence: installed $speckit-converge prerequisite ran after implement/tasks;
+reviewed 14 FRs, 3 stories, 6 tasks and DEC-001–003 against source and actual tests.
+No remaining unbuilt work or unrequested UI/detail/background/services found.
+No convergence tasks appended; completion markers updated by verification.
+Specification unchanged; physical iPhone/iPad acceptance remains open.
+
+Next: R3 PLAN → TASKS → ANALYZE → LINEAR → IMPLEMENT. This checkpoint record and
+Git/Linear completion are persisted in the next signed planning publication.
