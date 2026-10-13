@@ -18,3 +18,14 @@ from approved PR #3 and requires plans/tasks in the preceding commit plus a
 Delivery-Pilot trailer. Preserve all other gates and governance files. Project
 Linear through installed CLI commands with stable keys and duplicate detection;
 no custom sync service. Physical acceptance keeps specification status unchanged.
+
+## DEC-004 Adopt reviewed Xcode build recommendations
+After opening the project in Xcode 27, the owner selected the recommended compiler
+diagnostics, script sandboxing, Debug active-architecture builds, Release
+whole-module compilation and asset/string symbol generation. Retain these shared
+settings for diagnostics, build efficiency and generated resource access. There
+are currently no custom build scripts or asset/string catalogs. Keep Swift 5 mode,
+iOS/iPadOS 17 minimum and CI's Xcode 26.6 pin. Preserve the existing shared-scheme
+launcher identifiers and explicit serial unit/UI tests; Xcode's upgrade-version
+metadata records the editor version without changing the CI toolchain. Verify
+Debug simulator tests and a Release simulator build before declaring readiness.
