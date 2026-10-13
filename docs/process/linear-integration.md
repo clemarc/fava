@@ -215,3 +215,45 @@ synchronization skill must consume this installed CLI and enforce:
 This integration adds no synchronization engine, Fava-specific sync skill,
 tracker workflow, or application feature. It does not change the roadmap or
 existing milestones.
+
+## SDD v2 milestone projection
+
+The earlier future-projection paragraph describes the setup baseline. SDD v2
+now supplies `tools/sdd/linear_projection.py`, using only this pinned CLI (no
+custom API client/service). Owner-started skills resolve an ID and derive the
+feature/tasks from published signed branch state. Publish a draft signed prep PR
+before projecting, so every source link points to a reviewable Git SHA.
+
+```sh
+python3 tools/sdd/linear_projection.py R3.5 --phase prepare
+python3 tools/sdd/linear_projection.py R3.5 --phase prepare --apply
+python3 tools/sdd/linear_projection.py R3.5 --phase implement
+python3 tools/sdd/linear_projection.py R3.5 --phase implement --apply
+```
+
+First review the dry-run. Writes are authorized within the owner-started milestone
+skills, never in this governance update. The tool checks all team items including
+archived ones, reads exact `Repository key:` description markers, fails on
+ambiguous/duplicate keys or wrong projects, then upserts by key, not title/ID.
+Story keys are feature/USN, task keys feature/TNNN. Multiple-story tasks retain all
+mappings in text and use their first story as structural parent. Explicit Setup/
+Foundational tasks without a story belong directly to the milestone. Missing/
+ambiguous milestone projection stops; do not create a new roadmap identity.
+
+CLI 3.0.0 create/update has no JSON output: after each write the tool re-queries
+and verifies canonical description/title, milestone, parent and actual state.
+Unchanged definitions/status perform no mutation. Retired keys are reported and
+never deleted/reused. Task Done requires canonical integrated evidence; stories
+stay In Review after automated tasks until owner physical acceptance. Preserve
+one coordinator writer; competing native state transitions must be disabled
+through owner settings. Partial/ambiguous failures require key reinspection before
+retry, not blind create. Record actual verified URLs/results and pending keys in
+execution ledger/report; do not claim all keys synced when a command failed.
+
+Read-only verification on 2026-10-13 confirmed CLI 3.0.0, clemarc/FAV and existing
+R3.5 milestone `5f470b82-5ad7-40d8-a36d-eea3b2bf7dd3`. Existing R1–R3 story/task
+projections are present, superseding the older blanket statement that no tasks
+exist. No tracker item was changed in the workflow update. New projection logic
+is tested with synthetic CLI clients; live mutations await authorized milestone
+work, whose actual status must be verified independently. Linear remains outside
+credential-free deterministic CI.

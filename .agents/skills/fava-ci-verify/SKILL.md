@@ -1,6 +1,6 @@
 ---
 name: fava-ci-verify
-description: Verify and deliver a scoped Fava change from Codex Cloud through signed GitHub commits, a pull request and the latest applicable CI checks, without merging.
+description: Verify and deliver a scoped Fava change from Codex Cloud through signed GitHub commits, a pull request and the latest applicable CI checks, with lifecycle-specific destinations and no main merge.
 ---
 
 Read `AGENTS.md`, `.specify/memory/constitution.md`,
@@ -36,9 +36,16 @@ invent missing feature artifacts or validation evidence.
    returned SHA is the branch head, parent/message/tree equal the intended
    change, and GitHub GraphQL/REST signature state is valid/Verified. Record the
    actual authenticated authorship. Do not claim signing when verification fails.
-6. Create/update the same PR against main. Describe relevant specs, FRs/tasks,
+6. Resolve the lifecycle destination before publication: roadmap/specification,
+   governance and final milestone → main; preparation/task/checkpoint → registered
+   milestone branch. Use `docs/process/sdd-v2.md` and the shared milestone resolver.
+   Preparation is owner-merged; task integration is allowed only to that milestone
+   after owner governance adoption and every current head/target gate passes.
+   Create/update the same PR against the inspected destination. Describe relevant
+   specs, FRs/tasks,
    local validation, agent findings, decisions and checks unavailable in cloud.
-   Never enable auto-merge or merge. Governance amendments are proposals until
+   Never enable auto-merge or merge to main. Governance amendments are proposals
+   until
    the owner reviews and merges them.
 7. Monitor Actions for the **latest PR head SHA**, including Fava CI and its
    reusable native job. Confirm expected checks started. Poll to terminal state;
@@ -58,7 +65,9 @@ invent missing feature artifacts or validation evidence.
 Linear is optional progress projection, never a CI dependency. For authorized
 cloud operations read `.agents/skills/linear-cli/SKILL.md` and
 `docs/process/linear-integration.md`; use the pinned project-local CLI and injected
-LINEAR_API_KEY, never native MCP or a second API client. Task projection is still
-pending: do not invent mappings, create synchronization infrastructure, or claim
-status updates. Future tested operations may update existing keyed tasks only
-after canonical completion is recorded. Never expose credentials or health data.
+LINEAR_API_KEY, never native MCP or a second API client. Use
+`tools/sdd/linear_projection.py` for dry-run and explicitly authorized
+milestone projection with stable keys and verification. Never claim status
+updates without actual evidence. Git owns task completion; record partial/pending
+results. No new synchronization service or tracker CI dependency. Never expose
+credentials or health data.

@@ -85,6 +85,9 @@ retired keys MUST NOT be reused for different work.
   exists; the exemption MUST be stated in the task.
 - Tasks MUST name exact file paths wherever known and MUST be small enough to execute
   and verify independently.
+- Source-bearing merge commits MUST retain task history, verified signatures and
+  the same resolvable trailers as source commits, using the union of task/FR
+  mappings; non-source preparation/checkpoint merges use SDD-Type: planning.
 - Commits implementing feature work MUST carry `Spec:`, `Task:`, and `Implements:`
   trailers resolving to the feature, task, and applicable FR identifiers. A Setup or
   Foundational FR exemption MUST be explicit rather than inventing a requirement.
@@ -102,14 +105,46 @@ commits MUST use an explicit documented `SDD-Type:` exception without fabricated
 FR/task references. Agent-driven Spec Kit checks supplement deterministic Actions
 and MUST NOT require an OpenAI API key in CI.
 
-Human owner review MUST precede merge; agents MUST NOT merge or enable auto-merge.
-For this solo pilot no additional-person approval is required. In Codex Cloud,
+Roadmap/specification/clarification and governance PRs MUST be owner-reviewed and
+human-merged to main. Preparation PRs MUST be owner-reviewed and human-merged to
+the registered milestone integration branch before source implementation. After
+owner adoption of this amendment, one coordinator MAY merge independently
+reviewed task/checkpoint PRs only into that registered branch after all current
+head/target gates in `docs/process/sdd-v2.md` pass. Agents MUST NOT merge or enable
+auto-merge to main; auto-merge MUST NOT be used. The prior prohibition on all agent
+merges remains effective until the owner approves and merges this governance.
+For this solo pilot no additional-person GitHub approval is required, but task
+integration MUST have review separate from the implementation worker. In Codex Cloud,
 Linear operations MUST use the pinned project-local CLI/skill, while local MCP
 configuration remains supported. Linear connectivity MUST NOT gate CI.
 
-The detailed delivery-process reference is `docs/process/sdd-playbook.md`.
-The Linear task-projection rule above is an explicit pilot exception to the playbook's
-normal convention of keeping tasks out of trackers.
+Owner-started preparation and implementation MUST resolve a milestone from the
+canonical roadmap and live Git/GitHub evidence without previous chat context.
+Stable IDs/directories and approved requirements MUST remain intact. Durable
+execution state MUST be reconciled to actual branches, commits, reviews and
+checks; ledger claims MUST NOT substitute for approval. Reviewed planning MUST
+precede source implementation, including final milestone promotion that introduces
+planning and implementation together. CI MUST remain credential-free and deterministic.
+
+One coordinator MUST serialize integration and shared execution/task/decision
+records. Parallel workers require isolated checkouts, disjoint ownership and
+satisfied dependencies. Every integration MUST verify destination/scope/dependencies,
+trailers/signatures, current deterministic CI/ci-required, applicable actual macOS
+compilation/nonzero simulator tests, independent and configured available Codex
+review, finding dispositions and structural/semantic drift. Head/target movement
+MUST refresh evidence. Two automatic correction cycles per task PR remain the
+limit unless the owner authorizes more; blocked tasks MUST NOT weaken gates.
+
+Final handoff MUST include task/FR/acceptance coverage, tested revision, automated
+and device instructions, migration/persistence/race evidence, accessibility and
+performance results or pending checks, unresolved findings and actual Linear
+status. Physical iPhone AND iPad acceptance MUST precede feature completion/freeze;
+automated readiness MUST NOT be labelled completed.
+
+The detailed delivery-process references are `docs/process/sdd-playbook.md` and
+`docs/process/sdd-v2.md`.
+The Linear task-projection rule remains the Fava pilot policy; the playbook
+mirrors it without granting the tracker requirements authority.
 
 ## Governance
 
@@ -131,4 +166,17 @@ solo human review and physical-device acceptance obligations. Existing product
 requirements and roadmap are unchanged. No historical features exist to migrate;
 R1 activates native CI using `docs/process/ci-and-agent-verification.md`.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-12
+Amendment 2.0.0 (proposed for owner review): introduces two owner-started milestone
+skills and replaces the blanket agent-merge prohibition with narrowly gated task
+integration to registered milestone branches. This is MAJOR because merge
+authority changes incompatibly. Human preparation/main approval, signed history,
+mandatory automated/native tests and physical acceptance remain. Git remains
+canonical; Linear is a verified projection. R3.5 retains its ID, exact directory,
+approved scope/clarifications/acceptance. R1–R3 history and the fixed pilot exception
+are not migrated or rewritten. Active work must reconstruct approvals and create
+reviewed preparation before implementation; no existing draft gains approval from
+this amendment. No R3.5 preparation occurs in the governance PR. Adoption requires
+owner governance merge, separately reviewed ruleset/capability prerequisites, and
+then owner-started preparation; policy changes are not retroactive authorization.
+
+**Version**: 2.0.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-13

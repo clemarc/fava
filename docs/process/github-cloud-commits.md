@@ -191,3 +191,26 @@ passed against that SHA; ios-build-test was explicitly skipped in native onboard
 This verifies API publication and applicable CI, not a native build. Subsequent
 commits must still be individually verified and monitored; the PR's latest head
 and run are the final delivery evidence. Rulesets were not changed.
+
+## SDD v2 integration commits
+
+After owner governance adoption, task/checkpoint PRs may target only the registered
+milestone integration branch under [SDD v2](sdd-v2.md). Preparation and main merges
+remain owner actions. The prior no-agent-merge rule remains until adoption.
+
+GitHub GraphQL publication still signs ordinary commits. PR integration uses
+GitHub's merge operation only after all head/target gates pass, with the expected
+PR-head SHA guard and a just-inspected target. No API provides an atomic lease
+for both PR head and target: serialize integration, require up-to-date protected
+branches and stop/revalidate on target movement; concurrent external writes are
+an acknowledged race requiring owner coordination/settings. Verify the resulting
+merge's REST/GraphQL signature, both parents, full tree, destination and PR linkage
+before declaring integration. A missing/invalid signature blocks further progress;
+never silently assume GitHub merge commits are Verified.
+
+Retain merge commits/source history. Source-bearing merges use the union of real
+Spec/Task/Implements mappings; non-source prep/checkpoint merges use SDD-Type:
+planning. Milestone/Integration-PR trailers aid navigation, never grant approval.
+Main's owner merge must preserve applicable trailers too. The deterministic
+promotion proof verifies the pinned public GitHub owner merge and ancestry;
+local private signing keys are neither installed nor exposed to Cloud.

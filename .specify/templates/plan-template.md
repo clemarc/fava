@@ -6,6 +6,18 @@
 
 **Note**: This template is filled in by the `$speckit-plan` command; its definition describes the execution workflow.
 
+## Milestone baseline and execution
+
+[Canonical roadmap ID/directory/scope, inspected approved main SHA/PRs,
+registered milestone/preparation branches, dependencies and execution ledger.
+No draft marker or branch name substitutes for approval.]
+
+## Test and migration strategy
+
+[Mandatory acceptance/failure tests, legacy adoption and atomic persistence,
+read/clear races, regression, actual macOS/simulator validation, separate physical
+iPhone/iPad acceptance, accessibility/performance results and measurements.]
+
 ## Summary
 
 [Extract from feature spec: primary requirement + technical approach from research]
