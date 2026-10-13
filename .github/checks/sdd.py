@@ -10,6 +10,8 @@ TASK = r'T[0-9]{3}'
 STORY = r'US[1-9][0-9]*'
 EXCEPTIONS = {'bootstrap', 'process', 'roadmap', 'specification', 'planning', 'tooling', 'reconciliation'}
 PILOT_APPROVAL = 'd6a2f4be72f51f5f734b4c22de362fae07341572'
+# Fixed, already published delivery boundary; never use a moving branch/ref here.
+PILOT_DELIVERY_HEAD = '7ad912fc97c94aa87cd45de30e51b6588b2b49d8'
 PILOT_FEATURES = {
     'specs/healthkit-run-library-01-app-foundation-and-authorization',
     'specs/healthkit-run-library-02-run-ingestion',
@@ -18,11 +20,14 @@ PILOT_FEATURES = {
 
 
 def pilot_planning_ref(root, base, sha, feature, message):
-    """Owner-authorized single-PR pilot; require an earlier planning checkpoint."""
-    if feature not in PILOT_FEATURES or trailers(message).get('Delivery-Pilot') != ['healthkit-r1-r3']:
+    """Apply the one-time exception only to the recorded delivery's history."""
+    if (base != PILOT_APPROVAL or sha == PILOT_APPROVAL
+            or feature not in PILOT_FEATURES
+            or trailers(message).get('Delivery-Pilot') != ['healthkit-r1-r3']):
         return base
     try:
-        git(root, 'merge-base', '--is-ancestor', PILOT_APPROVAL, base)
+        git(root, 'merge-base', '--is-ancestor', PILOT_APPROVAL, sha)
+        git(root, 'merge-base', '--is-ancestor', sha, PILOT_DELIVERY_HEAD)
         git(root, 'cat-file', '-e', f'{base}:{feature}/spec.md')
         parent = git(root, 'rev-parse', sha + '^').strip()
         for artifact in ['plan.md', 'tasks.md']:
