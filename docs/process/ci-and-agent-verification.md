@@ -22,7 +22,7 @@ validation compares its merge base with the PR base and checks every new commit.
 | `ci-required` | ubuntu-24.04 | Aggregate all applicable job results; fail closed |
 
 The aggregate requires successful SDD, tooling and applicability jobs. Required
-native validation must succeed. Only `onboarding` or `documentation` permits a
+native validation must succeed. Only `onboarding`, `documentation` or `sdd-only` permits a
 skipped native job; unknown applicability, unexpected skip/success, failure,
 cancellation and missing output fail. If the entire workflow cannot start,
 GitHub's required aggregate remains unsatisfied and merge stays blocked. A green
@@ -172,10 +172,20 @@ Native CI was activated and verified by R1 at signed commit
 Xcode 26.6 built Fava and each iPhone/iPad simulator passed 13 tests.
 This establishes automated validation, not physical-device HealthKit acceptance. Applicability discovers tracked Xcode containers,
 and also checks the base so deleting a project cannot restore onboarding. Swift or
-other native artifacts without a project fail. Once a project exists, all changes
-except an explicit Markdown documentation/spec-only change run native validation.
-Tooling/workflow changes run native CI once the app exists. There is no path-filter
-pending-check problem and no minute-saving exemption for implementation PRs.
+other native artifacts without a project fail. Once a project exists, native
+build/tests skip changes limited to documentation or `specs/` artifacts (including
+roadmaps, contracts and synthetic fixture data). Changes limited to those paths
+plus the SDD validators/fixtures listed in `SDD_ONLY_PATHS` in
+`.github/checks/native.py` use `sdd-only` and also skip native build/tests.
+SDD and tooling tests, applicability and `ci-required` still run on every PR;
+there are no workflow path filters that leave required checks pending.
+
+App source/tests/assets, Xcode files, dependencies, native CI configuration,
+`.github/checks/native.py`, `.github/checks/aggregate.py`, workflow changes and
+unknown paths still require native CI. A mixed application/spec PR must build and
+test; a native artifact cannot gain an exemption merely by moving into `specs/`.
+The classifier/aggregate policy change itself requires native validation once;
+subsequent spec/roadmap or SDD-only changes use the new exemption.
 
 R1 must:
 

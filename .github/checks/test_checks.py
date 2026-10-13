@@ -216,11 +216,33 @@ class NativeAndAggregateTests(unittest.TestCase):
         self.assertEqual(native.select_device(data, 'id=C', 'iPad'), 'C')
         with self.assertRaises(ValueError): native.select_device(data, 'id=B')
 
+    def test_specs_and_sdd_tooling_skip_only_native_jobs(self):
+        project = ['Fava.xcodeproj/project.pbxproj']
+        specs = ['specs/demo/roadmap.md', 'specs/demo-01-read/spec.md',
+                 'specs/demo-01-read/contracts/read.json', 'specs/demo-01-read/fixtures/empty.json']
+        self.assertEqual(native.classify(specs, project), 'documentation')
+        sdd_changes = specs + sorted(native.SDD_ONLY_PATHS)
+        self.assertEqual(native.classify(sdd_changes, project), 'sdd-only')
+        for path in ['Fava/App.swift', 'FavaTests/ReadTests.swift', 'Fava/Info.plist',
+                     'Fava/Assets.xcassets/a.json', 'Fava.xcodeproj/project.pbxproj',
+                     'Package.resolved', '.github/ios.json', '.github/checks/native.py',
+                     '.github/checks/aggregate.py', '.github/workflows/ios-ci.yml',
+                     '.github/workflows/sdd-quality.yml', 'unknown/config.json',
+                     'specs/demo-01-read/fixtures/Reader.swift']:
+            with self.subTest(path=path):
+                self.assertEqual(native.classify(sdd_changes + [path], project), 'required')
+        self.assertEqual(native.classify([], project), 'required')
+        with self.assertRaises(ValueError): native.classify(specs, [], project)
+
     def test_fail_closed_aggregate(self):
         self.assertTrue(aggregate.validate('success', 'success', 'success', 'success', 'required'))
-        for state in ['onboarding', 'documentation']:
+        for state in ['onboarding', 'documentation', 'sdd-only']:
             self.assertTrue(aggregate.validate('success', 'success', 'success', 'skipped', state))
             self.assertFalse(aggregate.validate('success', 'success', 'success', 'success', state))
+            for gate in range(3):
+                results = ['success', 'success', 'success']
+                results[gate] = 'failure'
+                self.assertFalse(aggregate.validate(*results, 'skipped', state))
         for bad in ['failure', 'cancelled', 'skipped', '', 'missing']:
             self.assertFalse(aggregate.validate(bad, 'success', 'success', 'success', 'required'))
             self.assertFalse(aggregate.validate('success', bad, 'success', 'success', 'required'))

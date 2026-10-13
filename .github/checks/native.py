@@ -10,6 +10,14 @@ import xml.etree.ElementTree as ET
 
 from sdd import implementation_paths
 
+SDD_ONLY_PATHS = {
+    '.github/checks/sdd.py',
+    '.github/checks/test_checks.py',
+    '.github/checks/test_pilot.py',
+    '.github/checks/tooling.py',
+    '.github/checks/test_tooling.py',
+}
+
 
 def tracked(ref=None):
     args = ['git', 'ls-tree', '-r', '--name-only', ref] if ref else ['git', 'ls-files']
@@ -29,8 +37,12 @@ def classify(paths, files, base_files=()):
         if native or implementation_paths(paths) or 'Package.swift' in files:
             raise ValueError('Native changes require a real Xcode project, shared test scheme and .github/ios.json; onboarding only permits pre-app tooling/docs')
         return 'onboarding'
-    docs_only = bool(paths) and all(p.endswith('.md') and p.startswith(('docs/', 'specs/', '.agents/')) or p in {'README.md', 'AGENTS.md', '.specify/memory/constitution.md'} for p in paths)
-    return 'documentation' if docs_only and not native else 'required'
+    documentation = lambda p: (p.startswith('specs/')
+        or p.endswith('.md') and p.startswith(('docs/', '.agents/'))
+        or p in {'README.md', 'AGENTS.md', '.specify/memory/constitution.md'})
+    if paths and not native and all(documentation(p) or p in SDD_ONLY_PATHS for p in paths):
+        return 'sdd-only' if any(p in SDD_ONLY_PATHS for p in paths) else 'documentation'
+    return 'required'
 
 
 def run(command, name, capture=False):
