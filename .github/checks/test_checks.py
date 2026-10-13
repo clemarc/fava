@@ -129,6 +129,44 @@ class RepositoryTests(unittest.TestCase):
         self.commit('roadmap')
         self.assertTrue(any('cannot be rewritten' in e for e in self.validate(base)))
 
+    def test_inserted_slice_links_dependencies_and_freeze(self):
+        base = self.git('rev-parse', 'HEAD')
+        inserted = '| R3.5 | Retention | Test | Saved history | R4 detail | R1 | specs/demo-05-retention |\n'
+        detail = '| R4 | Detail | Test | Summary | none | R3.5 | specs/demo-04-detail |\n'
+        amended = ROADMAP + inserted + detail
+        self.put('specs/demo/roadmap.md', amended)
+        self.commit('roadmap')
+        self.assertEqual(self.validate(base), [])
+        self.assertFalse((self.root / 'specs/demo-05-retention').exists())
+        self.put('specs/demo-05-retention/spec.md', SPEC.replace('entry R1', 'entry R3.5'))
+        self.commit('specification')
+        self.assertEqual(self.validate(base), [])
+        for wrong in ['R3', 'R3.50', 'R3.05', 'R3.5.1', 'R3.5x']:
+            with self.subTest(parent=wrong):
+                self.put('specs/demo-05-retention/spec.md', SPEC.replace('entry R1', 'entry ' + wrong))
+                self.assertTrue(self.validate())
+        self.put('specs/demo-05-retention/spec.md', SPEC.replace('entry R1', 'entry R3.5'))
+        approved = self.git('rev-parse', 'HEAD')
+        self.put('specs/demo/roadmap.md', amended.replace('| Saved history |', '| Changed history |'))
+        self.commit('roadmap')
+        self.assertTrue(any('R3.5: agreed roadmap entries cannot be rewritten' in e for e in self.validate(approved)))
+
+    def test_inserted_slice_invalid_ids_dependencies_duplicates_and_cycles(self):
+        inserted = '| R3.5 | Retention | Test | Saved history | none | R1 | specs/demo-05-retention |\n'
+        amended = ROADMAP + inserted
+        for wrong in ['R0.5', 'R03.5', 'R3.0', 'R3.05', 'R3.5.1', 'R3.5x']:
+            with self.subTest(identifier=wrong):
+                self.put('specs/demo/roadmap.md', ROADMAP + inserted.replace('R3.5', wrong))
+                self.assertTrue(any('malformed roadmap entry' in e for e in self.validate()))
+        for depends in ['R3.5', 'R3.50', 'R3.05', 'R1.5', 'R1.5.1', 'R1x']:
+            with self.subTest(dependency=depends):
+                self.put('specs/demo/roadmap.md', ROADMAP + inserted.replace('| R1 | specs/', '| ' + depends + ' | specs/'))
+                self.assertTrue(any('invalid Depends on' in e for e in self.validate()))
+        self.put('specs/demo/roadmap.md', amended + inserted)
+        self.assertTrue(any('duplicate roadmap entry IDs' in e for e in self.validate()))
+        self.put('specs/demo/roadmap.md', amended.replace('| none | none | specs/', '| none | R3.5 | specs/'))
+        self.assertTrue(any('roadmap dependency cycle' in e for e in self.validate()))
+
     def test_reconciliation_coverage(self):
         self.put('specs/demo-01-read/spec.md', SPEC.replace('approved', 'completed'))
         self.put('specs/demo-01-read/plan.md', 'derived')
@@ -178,11 +216,33 @@ class NativeAndAggregateTests(unittest.TestCase):
         self.assertEqual(native.select_device(data, 'id=C', 'iPad'), 'C')
         with self.assertRaises(ValueError): native.select_device(data, 'id=B')
 
+    def test_specs_and_sdd_tooling_skip_only_native_jobs(self):
+        project = ['Fava.xcodeproj/project.pbxproj']
+        specs = ['specs/demo/roadmap.md', 'specs/demo-01-read/spec.md',
+                 'specs/demo-01-read/contracts/read.json', 'specs/demo-01-read/fixtures/empty.json']
+        self.assertEqual(native.classify(specs, project), 'documentation')
+        sdd_changes = specs + sorted(native.SDD_ONLY_PATHS)
+        self.assertEqual(native.classify(sdd_changes, project), 'sdd-only')
+        for path in ['Fava/App.swift', 'FavaTests/ReadTests.swift', 'Fava/Info.plist',
+                     'Fava/Assets.xcassets/a.json', 'Fava.xcodeproj/project.pbxproj',
+                     'Package.resolved', '.github/ios.json', '.github/checks/native.py',
+                     '.github/checks/aggregate.py', '.github/workflows/ios-ci.yml',
+                     '.github/workflows/sdd-quality.yml', 'unknown/config.json',
+                     'specs/demo-01-read/fixtures/Reader.swift']:
+            with self.subTest(path=path):
+                self.assertEqual(native.classify(sdd_changes + [path], project), 'required')
+        self.assertEqual(native.classify([], project), 'required')
+        with self.assertRaises(ValueError): native.classify(specs, [], project)
+
     def test_fail_closed_aggregate(self):
         self.assertTrue(aggregate.validate('success', 'success', 'success', 'success', 'required'))
-        for state in ['onboarding', 'documentation']:
+        for state in ['onboarding', 'documentation', 'sdd-only']:
             self.assertTrue(aggregate.validate('success', 'success', 'success', 'skipped', state))
             self.assertFalse(aggregate.validate('success', 'success', 'success', 'success', state))
+            for gate in range(3):
+                results = ['success', 'success', 'success']
+                results[gate] = 'failure'
+                self.assertFalse(aggregate.validate(*results, 'skipped', state))
         for bad in ['failure', 'cancelled', 'skipped', '', 'missing']:
             self.assertFalse(aggregate.validate(bad, 'success', 'success', 'success', 'required'))
             self.assertFalse(aggregate.validate('success', bad, 'success', 'success', 'required'))

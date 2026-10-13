@@ -5,7 +5,7 @@ import argparse
 def validate(sdd, tooling, changes, native, state):
     if (sdd, tooling, changes) != ('success', 'success', 'success'): return False
     if state == 'required': return native == 'success'
-    if state in {'onboarding', 'documentation'}: return native == 'skipped'
+    if state in {'onboarding', 'documentation', 'sdd-only'}: return native == 'skipped'
     return False
 
 
