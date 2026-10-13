@@ -1,5 +1,6 @@
 """Read-only integration gate assessment; never merges or enables auto-merge."""
 import argparse
+from datetime import datetime
 import json
 from pathlib import Path
 import re
@@ -21,6 +22,21 @@ def check_results(checks):
     if any(name in results for name in families):
         results['ios-build-test'] = 'SUCCESS' if all(results.get(name) == 'SUCCESS' for name in families) else 'INCOMPLETE'
     return results
+
+
+def fresh_bot_reaction(request, reactions, head, number):
+    """Only a new, unedited, single-SHA request on this PR can prove review."""
+    if (request.get('issue_url') != f'https://api.github.com/repos/clemarc/fava/issues/{number}'
+            or request.get('created_at') != request.get('updated_at')
+            or re.findall(r'\b[0-9a-f]{40}\b', request.get('body', '')) != [head]):
+        return False
+    try:
+        requested = datetime.fromisoformat(request['created_at'].replace('Z', '+00:00'))
+        return any(r.get('content') == '+1' and r.get('user', {}).get('login') == 'chatgpt-codex-connector[bot]'
+                   and datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')) >= requested
+                   for r in reactions)
+    except (KeyError, ValueError, TypeError):
+        return False
 
 
 def evaluate(evidence):
@@ -134,7 +150,7 @@ def assess(root, identifier, number, evidence_comment=None):
     if request_id and not bot:
         request = github('api', f'repos/clemarc/fava/issues/comments/{request_id}')
         reactions = github('api', f'repos/clemarc/fava/issues/comments/{request_id}/reactions')
-        if head in request['body'] and any(r['content'] == '+1' and r['user']['login'] == 'chatgpt-codex-connector[bot]' for r in reactions):
+        if fresh_bot_reaction(request, reactions, head, number):
             evidence['codex_review_head'], evidence['codex_review_complete'] = head, True
     evidence['review_comments'] = [{'url': c['html_url'], 'body': c['body']} for c in comments]
     evidence['independent_review'] = False

@@ -56,7 +56,8 @@ feature path or branch argument. Never merge or enable auto-merge into main.
 7. Publish signed GraphQL commits with Spec/Task/Implements trailers. The
    coordinator adds scoped durable progress/evidence in the task branch and
    opens/updates its signed PR against the milestone branch. Request independent
-   review and configured Codex bot review for the full current head SHA. Review
+   review and configured Codex bot review for the full current head SHA using a
+   new unedited SHA-scoped request comment; never reuse old reactions. Review
    requests/comments to GitHub are authorized by this owner-started skill.
 8. Monitor current-head CI, macOS build and **nonzero simulator tests** when
    native applies. Read real failed logs and Codex comments; assess each finding,

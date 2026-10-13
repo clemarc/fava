@@ -27,7 +27,7 @@ Roadmap approval: #8, 0f6b64a2041e015f63369b5ad7c4f871cc053063.
 - Actions remain deterministic/credential-free, using existing discovery of the
   new Python fixtures. No headless AI key gate or orchestration service.
 
-Validation: 46 SDD/tooling/resolver/integration/projection fixtures and seven
+Validation: 49 SDD/tooling/resolver/integration/projection fixtures and seven
 commit-builder fixtures pass locally. Fixtures include real ephemeral signed
 owner merge history, final main merge promotion, missing/wrong/late approval,
 unreviewed task mapping changes, decimal/unknown/ambiguous IDs, existing and dirty/
@@ -44,3 +44,13 @@ boundary without separately provisioned app/owner restrictions. Goal mode is not
 advertised. Native CI and independent review may block unattended execution.
 Live projection mutation behavior is simulated with a CLI client; actual future
 runs must verify results. No settings/credentials are changed by this PR.
+
+## Codex finding dispositions (second correction cycle)
+
+- P1 [reaction freshness](https://github.com/clemarc/fava/pull/10#discussion_r4263849455): justified. Require a new unedited single-SHA request on this PR and a bot reaction no earlier than its creation. Fixtures reject edited requests, old reactions, wrong PR/head and multiple SHA requests.
+- P1 [unfinished completion](https://github.com/clemarc/fava/pull/10#discussion_r4263849465): justified. ready-for-owner/completed requires every retained task verified integrated; completed still also requires both physical acceptances. Fixtures reject each unfinished state even with device evidence and permit complete integrated evidence.
+- P2 [planning amendment selection](https://github.com/clemarc/fava/pull/10#discussion_r4263849472): justified. Select by explicit merge chronology, reject ambiguous ties, then verify target ancestry/signature/merged PR; never depend on REST response order. Both response-order fixtures select the newer amendment.
+
+These dispositions are backed by local regression fixtures. Resolve discussions
+only after verified publication and latest-head CI; refreshed Codex review is
+requested for the final revision. No requirement or gate is weakened.

@@ -143,7 +143,8 @@ target**:
   when native applies; inspect logs/xcresult summaries, exact SHA and run links.
 - Independent review of current head/target, with reviewer and worker identity,
   report revision and findings. Configured available Codex bot review must
-  complete for that head. A pending request, older review or silence is not
+  complete for that head. Reaction-based completion requires a new unedited
+  single-SHA request on this PR and a bot reaction after its creation. A pending request, older review or silence is not
   approval. Prove actual service/configuration unavailability if review cannot
   run, record it and retain independent review; do not silently bypass a timeout.
 - Evidence-backed disposition of **every** finding: link, severity, assessment,

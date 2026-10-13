@@ -80,6 +80,17 @@ class ResolverTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'divergence'):
                 milestone.checkout(Path('/fixture'), context, 'prepare/r3.5')
 
+    def test_latest_preparation_uses_merge_chronology_not_response_position(self):
+        context = self.context()
+        old = dict(number=10, head='prepare/r3.5', merged='2026-10-13T10:00:00Z', merge_sha='old')
+        amendment = dict(number=11, head='prepare/r3.5', merged='2026-10-13T11:00:00Z', merge_sha='new')
+        for ordering in [[amendment, old], [old, amendment]]:
+            context['prs'] = ordering
+            self.assertEqual(milestone.latest_preparation(context)['merge_sha'], 'new')
+        context['prs'] = [old, dict(amendment, merged=old['merged'])]
+        with self.assertRaisesRegex(ValueError, 'ambiguous'):
+            milestone.latest_preparation(context)
+
 
 class IntegrationTests(unittest.TestCase):
     def evidence(self):
@@ -125,6 +136,17 @@ class IntegrationTests(unittest.TestCase):
         for state in ['FAILURE', 'SKIPPED', '', None]:
             self.assertEqual(integration.check_results([phone, dict(tablet, conclusion=state)])['ios-build-test'], 'INCOMPLETE')
 
+    def test_bot_reaction_cannot_survive_an_edited_request_or_precede_it(self):
+        head = 'a' * 40
+        request = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10', body='@codex review ' + head,
+                       created_at='2026-10-13T10:00:00Z', updated_at='2026-10-13T10:00:00Z')
+        reaction = dict(content='+1', user={'login': 'chatgpt-codex-connector[bot]'}, created_at='2026-10-13T10:01:00Z')
+        self.assertTrue(integration.fresh_bot_reaction(request, [reaction], head, 10))
+        for bad in [dict(request, updated_at='2026-10-13T10:02:00Z'), dict(request, body='@codex review ' + 'b'*40),
+                    dict(request, body=request['body'] + ' ' + 'b'*40), dict(request, issue_url=request['issue_url']+'1')]:
+            self.assertFalse(integration.fresh_bot_reaction(bad, [reaction], head, 10))
+        self.assertFalse(integration.fresh_bot_reaction(request, [dict(reaction, created_at='2026-10-13T09:00:00Z')], head, 10))
+
     def test_ledger_retired_ids_completion_and_history(self):
         data = dict(schema=1, milestone='R3.5', feature='specs/demo-01-read', milestone_branch='milestone/r3.5',
                     specification_base='a' * 40, planning_revision=None, state='preparing', retired_task_ids=[],
@@ -136,6 +158,17 @@ class IntegrationTests(unittest.TestCase):
         old = copy.deepcopy(data)
         old['tasks']['T002'] = {'state': 'integrated', 'merge_sha': 'b' * 40}
         self.assertTrue(ledger.history_errors(old, data))
+
+    def test_physical_acceptance_alone_cannot_complete_unfinished_tasks(self):
+        data = dict(schema=1, milestone='R3.5', feature='specs/demo-01-read', milestone_branch='milestone/r3.5',
+                    specification_base='a'*40, planning_revision='b'*40, state='completed', retired_task_ids=[],
+                    physical_acceptance={'iPhone': 'device evidence', 'iPad': 'device evidence'},
+                    tasks={t: {'state': 'pending'} for t in ['T001', 'T002', 'T003']})
+        for state in ['pending', 'working', 'review', 'blocked']:
+            data['tasks']['T003']['state'] = state
+            self.assertTrue(any('every retained task' in error for error in ledger.validate(data, data['feature'], TASKS)))
+        data['tasks'] = {t: {'state': 'integrated', 'merge_sha': 'c'*40, 'pr': 'PR', 'evidence': ['CI']} for t in data['tasks']}
+        self.assertEqual(ledger.validate(data, data['feature'], TASKS.replace('[ ]', '[X]')), [])
 
 
 class SignedLifecycleTests(unittest.TestCase):

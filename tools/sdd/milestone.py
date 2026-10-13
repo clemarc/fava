@@ -90,6 +90,18 @@ def merged_pr(repository, sha, target):
     return pr['html_url']
 
 
+def latest_preparation(result):
+    merged = [p for p in result['prs'] if p['head'] == result['preparation_branch'] and p['merged']]
+    if not merged:
+        raise ValueError('owner-reviewed preparation PR must merge into milestone before implementation')
+    # REST lists newest first by creation, which is not merge order. Explicit
+    # merge chronology selects an amendment regardless of API response order.
+    latest = max(merged, key=lambda p: (p['merged'], p['number']))
+    if any(p['merged'] == latest['merged'] and p['merge_sha'] != latest['merge_sha'] for p in merged):
+        raise ValueError('ambiguous preparation merge chronology; inspect ancestry/owner decision')
+    return latest
+
+
 def inspect(root, identifier, phase):
     repository = 'clemarc/fava'
     main = github('api', f'repos/{repository}/git/ref/heads/main')['object']['sha']
@@ -164,7 +176,7 @@ def inspect(root, identifier, phase):
             pass
     reconcile(result, phase)
     if phase == 'implement':
-        preparation = [p for p in result['prs'] if p['head'] == result['preparation_branch'] and p['merged']][-1]
+        preparation = latest_preparation(result)
         merge = preparation['merge_sha']
         if not target or not ancestor(root, merge, target) or not owner_merge(root, merge, git):
             raise ValueError('reviewed preparation merge is absent from target or lacks signed owner proof')

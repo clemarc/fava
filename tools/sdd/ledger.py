@@ -34,6 +34,8 @@ def validate(ledger, feature, tasks):
             errors.append(ident + ': checked task lacks verified integration state')
     if ledger.get('state') == 'completed' and not all(ledger.get('physical_acceptance', {}).get(family) for family in ['iPhone', 'iPad']):
         errors.append('completion requires separate iPhone and iPad acceptance evidence')
+    if ledger.get('state') in {'ready-for-owner', 'completed'} and (not records or any(record.get('state') != 'integrated' for record in records.values())):
+        errors.append('automated readiness/completion requires every retained task verified integrated')
     return errors
 
 
