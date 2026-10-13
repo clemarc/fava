@@ -12,6 +12,17 @@ from milestone import github, inspect, read, ancestor
 from lifecycle import planning_ref
 
 
+def check_results(checks):
+    results = {c['name']: c.get('conclusion') for c in checks if c.get('name')}
+    # The repository's reusable workflow emits one named check per device family.
+    # Do not mistake an absent aggregate name for missing native execution, or
+    # accept just one successful matrix leg as both-family validation.
+    families = ['ios-build-test / ios-build-test (iPhone)', 'ios-build-test / ios-build-test (iPad)']
+    if any(name in results for name in families):
+        results['ios-build-test'] = 'SUCCESS' if all(results.get(name) == 'SUCCESS' for name in families) else 'INCOMPLETE'
+    return results
+
+
 def evaluate(evidence):
     errors = []
     head, target = evidence.get('head'), evidence.get('target')
@@ -102,7 +113,7 @@ def assess(root, identifier, number, evidence_comment=None):
         if sdd.implementation_paths(changed):
             planning_ref(root, context['main_sha'], sha, feature, sdd.git)
     evidence['trailers'] = not errors
-    evidence['checks'] = {c['name']: c.get('conclusion') for c in pr['statusCheckRollup'] if c.get('name')}
+    evidence['checks'] = check_results(pr['statusCheckRollup'])
     from native import classify
     evidence['native_required'] = classify(paths, sdd.git(root, 'ls-tree', '-r', '--name-only', head).splitlines(),
                                           sdd.git(root, 'ls-tree', '-r', '--name-only', target).splitlines()) == 'required'

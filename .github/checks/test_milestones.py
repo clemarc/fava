@@ -117,6 +117,14 @@ class IntegrationTests(unittest.TestCase):
         evidence['independent_review'] = False
         self.assertTrue(integration.evaluate(evidence))
 
+    def test_native_matrix_requires_both_actual_named_jobs(self):
+        phone = dict(name='ios-build-test / ios-build-test (iPhone)', conclusion='SUCCESS')
+        tablet = dict(name='ios-build-test / ios-build-test (iPad)', conclusion='SUCCESS')
+        self.assertEqual(integration.check_results([phone, tablet])['ios-build-test'], 'SUCCESS')
+        self.assertEqual(integration.check_results([phone])['ios-build-test'], 'INCOMPLETE')
+        for state in ['FAILURE', 'SKIPPED', '', None]:
+            self.assertEqual(integration.check_results([phone, dict(tablet, conclusion=state)])['ios-build-test'], 'INCOMPLETE')
+
     def test_ledger_retired_ids_completion_and_history(self):
         data = dict(schema=1, milestone='R3.5', feature='specs/demo-01-read', milestone_branch='milestone/r3.5',
                     specification_base='a' * 40, planning_revision=None, state='preparing', retired_task_ids=[],

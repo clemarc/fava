@@ -27,12 +27,12 @@ Roadmap approval: #8, 0f6b64a2041e015f63369b5ad7c4f871cc053063.
 - Actions remain deterministic/credential-free, using existing discovery of the
   new Python fixtures. No headless AI key gate or orchestration service.
 
-Validation: 45 SDD/tooling/resolver/integration/projection fixtures and seven
+Validation: 46 SDD/tooling/resolver/integration/projection fixtures and seven
 commit-builder fixtures pass locally. Fixtures include real ephemeral signed
 owner merge history, final main merge promotion, missing/wrong/late approval,
 unreviewed task mapping changes, decimal/unknown/ambiguous IDs, existing and dirty/
 divergent branches, interrupted/open/closed/completed execution, wrong targets,
-stale validation/review, missing native evidence, retired keys and idempotent
+stale validation/review, missing/partial iPhone+iPad matrix evidence, retired keys and idempotent
 projection. Production key verification also resolved actual #8/#9 signed merges.
 Tooling references/skill discovery, SDD repository checks and whitespace pass.
 Latest remote CI, actual native results and Codex review belong in the PR report;
