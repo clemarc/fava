@@ -37,6 +37,9 @@ specs and needs no API credentials. It checks:
 - Constitution presence; roadmap header/table, unique R IDs, explicit scope and
   dependencies, valid dependency references and acyclic ordering. Agreed roadmap
   rows cannot be removed/rewritten; add superseding slices instead.
+  Inserted slices may use a decimal ID such as `R3.5` without renumbering agreed
+  rows. The full ID must resolve in dependencies and parent links; feature
+  directories retain the existing epic-NN-slug format.
 - Approved naming: epic-NN-slug, NNN-slug or YYYYMMDD-HHMMSS-slug. Directory paths
   must match roadmap entries. Roadmap slices intentionally precede feature specs:
   a future expected directory need not exist yet. Once its spec exists, its

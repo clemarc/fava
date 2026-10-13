@@ -8,6 +8,7 @@ FEATURE = r'(?:[0-9]{3}-[a-z0-9]+(?:-[a-z0-9]+)*|[0-9]{8}-[0-9]{6}-[a-z0-9]+(?:-
 FR = r'FR-[0-9]{3}'
 TASK = r'T[0-9]{3}'
 STORY = r'US[1-9][0-9]*'
+ROADMAP_ID = r'R[1-9][0-9]*(?:\.[1-9][0-9]*)?'
 EXCEPTIONS = {'bootstrap', 'process', 'roadmap', 'specification', 'planning', 'tooling', 'reconciliation'}
 PILOT_APPROVAL = 'd6a2f4be72f51f5f734b4c22de362fae07341572'
 # Fixed, already published delivery boundary; never use a moving branch/ref here.
@@ -212,7 +213,7 @@ def validate_repo(root, base=None, head='HEAD', message=None):
         for line in text.splitlines():
             if re.match(r'^\|\s*R', line):
                 cells = [c.strip() for c in line.strip('|').split('|')]
-                if len(cells) != 7 or not re.fullmatch(r'R[1-9][0-9]*', cells[0]):
+                if len(cells) != 7 or not re.fullmatch(ROADMAP_ID, cells[0]):
                     errors.append(f'{prefix}: malformed roadmap entry {line}'); continue
                 rows.append(cells)
         if base:
@@ -233,8 +234,8 @@ def validate_repo(root, base=None, head='HEAD', message=None):
             if not re.fullmatch('specs/' + FEATURE, directory): errors.append(f'{prefix} {ident}: invalid feature directory {directory}')
             if directory in roadmap_entries: errors.append(f'{prefix}: directory {directory} has multiple roadmap entries')
             roadmap_entries[directory] = (prefix, ident)
-            deps = set(re.findall(r'R[0-9]+', depends))
-            if (not deps and depends != 'none') or not deps <= set(ids) or ident in deps: errors.append(f'{prefix} {ident}: invalid Depends on')
+            deps = set() if depends == 'none' else set(re.split(r'[,\s]+', depends)) - {''}
+            if (depends != 'none' and (not deps or any(not re.fullmatch(ROADMAP_ID, d) for d in deps))) or not deps <= set(ids) or ident in deps: errors.append(f'{prefix} {ident}: invalid Depends on')
             graph[ident] = deps
         def cyclic(node, trail):
             return node in trail or any(cyclic(x, trail | {node}) for x in graph.get(node, set()))
@@ -256,7 +257,7 @@ def validate_repo(root, base=None, head='HEAD', message=None):
             decisions = re.findall(r'^#{1,3}\s+(DEC-\S+)', log_path.read_text(), re.M)
             if len(decisions) != len(set(decisions)) or any(not re.fullmatch(r'DEC-[0-9]{3}', d) for d in decisions):
                 errors.append(f'{key}/decision-log.md: use unique DEC-NNN headings')
-        parent = re.search(r'Parent roadmap:\s*(specs/[^\s]+/roadmap.md)\s*→\s*entry\s+(R[0-9]+)', spec)
+        parent = re.search(r'Parent roadmap:\s*(specs/[^\s]+/roadmap.md)\s*→\s*entry\s+(' + ROADMAP_ID + r')(?![\w.])', spec)
         if key in roadmap_entries and (not parent or parent.groups() != roadmap_entries[key]): errors.append(f'{key}: Parent roadmap must match {roadmap_entries[key]}')
         if parent and roadmap_entries.get(key) != parent.groups(): errors.append(f'{key}: parent roadmap entry does not resolve back to this directory')
         if not re.search(r'^\s*(?:##\s+Scope|Scope boundary:)', spec, re.M): errors.append(f'{key}: explicit Scope boundary: or ## Scope required')
