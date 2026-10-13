@@ -78,3 +78,11 @@ acceptance. Outstanding physical checks are listed above and in quickstart.md.
 Next: R2 PLAN → TASKS → ANALYZE → LINEAR → IMPLEMENT, preserving R1 regression.
 This record and task/Linear updates are carried into the next signed planning
 publication; the verified R1 source checkpoint is the exact SHA/run above.
+
+## Partial physical-iPhone observation, 2026-10-13
+
+The owner reports launch and a HealthKit permission request on an iPhone 13 mini
+running iOS 27. Installed revision is unconfirmed. See the sanitized, deliberately
+limited [device report](../../docs/verification/2026-10-13-iphone-manual-acceptance.md).
+Remaining R1 device outcomes, iPad, accessibility and measured launch criteria are
+still open; this report does not establish full R1 acceptance or change task status.

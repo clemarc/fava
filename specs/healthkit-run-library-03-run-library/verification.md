@@ -116,3 +116,12 @@ with the exact final SHA/run and mark ready for owner review. Its SHA is discove
 as branch HEAD; successful final run links are maintained in PR #7. If interrupted,
 resume this step without recreating plans/issues, rewriting requirements, or merging.
 R1/R2 checkpoint links remain above and in their separate verification.md files.
+
+## Partial physical-iPhone observation, 2026-10-13
+
+The owner reports the app launches, requests HealthKit permissions and displays a
+real run on an iPhone 13 mini running iOS 27. Installed revision is unconfirmed.
+See the sanitized [device report](../../docs/verification/2026-10-13-iphone-manual-acceptance.md)
+for the exact evidence boundary and outstanding checklist. Populated-library
+observation is recorded; full R3/device-family acceptance remains open. No story or
+feature is marked complete and no source, test, requirement or task was changed.

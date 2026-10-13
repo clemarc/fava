@@ -54,3 +54,11 @@ Specification unchanged; physical iPhone/iPad acceptance remains open.
 
 Next: R3 PLAN → TASKS → ANALYZE → LINEAR → IMPLEMENT. This checkpoint record and
 Git/Linear completion are persisted in the next signed planning publication.
+
+## Partial physical-iPhone observation, 2026-10-13
+
+The owner reports a real run becoming visible after the HealthKit request on an
+iPhone 13 mini running iOS 27. Installed revision is unconfirmed. See the sanitized
+[device report](../../docs/verification/2026-10-13-iphone-manual-acceptance.md).
+History/source comparisons, repeat/persistence/empty/error/offline checks and iPad
+remain open; this report does not establish full R2 acceptance or change task status.
