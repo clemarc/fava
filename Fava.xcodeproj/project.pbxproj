@@ -1,0 +1,633 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		05391A75DC361A9AD3BC7619 /* RunLibraryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BCCC99A9340BAA23229E9 /* RunLibraryUITests.swift */; };
+		0C3A3529BD3F649AF20E46E9 /* RunIngestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DC07F67DF799B428AFDD052 /* RunIngestion.swift */; };
+		49F9EC8C859A538666A15D05 /* HealthAccessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33115C6E3F5AAA08D3DC3F4 /* HealthAccessTests.swift */; };
+		4E32A553A97525F14ED8EBDE /* SyntheticLibraryFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CD9C7F4E1CA1CE28751344 /* SyntheticLibraryFixtures.swift */; };
+		56A3C786248A5E3383B4E248 /* DistanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6440B13D2890FF6A258C7833 /* DistanceSettings.swift */; };
+		5C07F268F8EF5F0D91D70AB8 /* HealthKitWorkoutReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4962F2F741F990F0572FED /* HealthKitWorkoutReader.swift */; };
+		73FF789BB9F8E84D6A5F6E92 /* RunIngestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C0ED056621FF50B226969F1 /* RunIngestionTests.swift */; };
+		7426FEFCFC6534587D7DB6BE /* RunLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD43E506A96F19CB87CC1F37 /* RunLibraryView.swift */; };
+		7BD84ED28EC292D620B25724 /* HealthAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4985F82AFDCEEFE73C17185C /* HealthAccess.swift */; };
+		7F1BCDC40DB71AF5BC23FE41 /* HealthKitAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82F92ECDD79BE98E1B4870B7 /* HealthKitAccess.swift */; };
+		88D0AC15052EF9DF8DF9E90B /* RunLibraryPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3708F55BA54F53B8B199998E /* RunLibraryPresentation.swift */; };
+		9C18432A6217F02A9283F615 /* FavaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC66443B486D3F9F8F2A32C6 /* FavaApp.swift */; };
+		A254FD5DC88F0D42EFAAEDEA /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8ACBCE215D73460F2A2CF56 /* RootView.swift */; };
+		A8C0CD88FEF77C2F999FBC7B /* RunLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1125A87834C3E71B03C157C4 /* RunLibraryTests.swift */; };
+		BB85B1365C394964A2299CC1 /* RunRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CBE13BAB7FC539696A911C8 /* RunRecord.swift */; };
+		EA128C7008E691FDC75B3000 /* FoundationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB24C6A87C65C5E7122DFD50 /* FoundationUITests.swift */; };
+		EC530B904D7391A712B7A116 /* RunSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644A4327CE0729E95AA0878E /* RunSnapshotStore.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		11152AFB1AA20283FC814C44 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 98F54143AB4E86B28C3AFEE0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3EE9D4FC6F156DF88EDF8FAD;
+			remoteInfo = Fava;
+		};
+		AAE89112C24FF3371E0BC33B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 98F54143AB4E86B28C3AFEE0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3EE9D4FC6F156DF88EDF8FAD;
+			remoteInfo = Fava;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1125A87834C3E71B03C157C4 /* RunLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLibraryTests.swift; sourceTree = "<group>"; };
+		142020A2EFF4CFEACEC12A33 /* FavaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FavaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		299BCCC99A9340BAA23229E9 /* RunLibraryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLibraryUITests.swift; sourceTree = "<group>"; };
+		3708F55BA54F53B8B199998E /* RunLibraryPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLibraryPresentation.swift; sourceTree = "<group>"; };
+		3B37C60B447A3D3E771CAB2F /* Fava.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fava.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4985F82AFDCEEFE73C17185C /* HealthAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthAccess.swift; sourceTree = "<group>"; };
+		4CBE13BAB7FC539696A911C8 /* RunRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunRecord.swift; sourceTree = "<group>"; };
+		5B4962F2F741F990F0572FED /* HealthKitWorkoutReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitWorkoutReader.swift; sourceTree = "<group>"; };
+		6440B13D2890FF6A258C7833 /* DistanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceSettings.swift; sourceTree = "<group>"; };
+		644A4327CE0729E95AA0878E /* RunSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunSnapshotStore.swift; sourceTree = "<group>"; };
+		7C0ED056621FF50B226969F1 /* RunIngestionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunIngestionTests.swift; sourceTree = "<group>"; };
+		7DCE35F55251E20F44941A90 /* FavaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FavaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		82F92ECDD79BE98E1B4870B7 /* HealthKitAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitAccess.swift; sourceTree = "<group>"; };
+		9DC07F67DF799B428AFDD052 /* RunIngestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunIngestion.swift; sourceTree = "<group>"; };
+		B33115C6E3F5AAA08D3DC3F4 /* HealthAccessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthAccessTests.swift; sourceTree = "<group>"; };
+		BB24C6A87C65C5E7122DFD50 /* FoundationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationUITests.swift; sourceTree = "<group>"; };
+		C8ACBCE215D73460F2A2CF56 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		E3CD9C7F4E1CA1CE28751344 /* SyntheticLibraryFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticLibraryFixtures.swift; sourceTree = "<group>"; };
+		EC66443B486D3F9F8F2A32C6 /* FavaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavaApp.swift; sourceTree = "<group>"; };
+		FD43E506A96F19CB87CC1F37 /* RunLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLibraryView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		16B5FD4B86FD33050FB39A1F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		74C76707A842D32AE865BAA3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C5EFF6B34D59F3936B2BF7D6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		05F73E1A8A911FD1FC8C7C63 /* Fava */ = {
+			isa = PBXGroup;
+			children = (
+				6440B13D2890FF6A258C7833 /* DistanceSettings.swift */,
+				EC66443B486D3F9F8F2A32C6 /* FavaApp.swift */,
+				4985F82AFDCEEFE73C17185C /* HealthAccess.swift */,
+				82F92ECDD79BE98E1B4870B7 /* HealthKitAccess.swift */,
+				5B4962F2F741F990F0572FED /* HealthKitWorkoutReader.swift */,
+				C8ACBCE215D73460F2A2CF56 /* RootView.swift */,
+				9DC07F67DF799B428AFDD052 /* RunIngestion.swift */,
+				3708F55BA54F53B8B199998E /* RunLibraryPresentation.swift */,
+				FD43E506A96F19CB87CC1F37 /* RunLibraryView.swift */,
+				4CBE13BAB7FC539696A911C8 /* RunRecord.swift */,
+				644A4327CE0729E95AA0878E /* RunSnapshotStore.swift */,
+				E3CD9C7F4E1CA1CE28751344 /* SyntheticLibraryFixtures.swift */,
+			);
+			path = Fava;
+			sourceTree = "<group>";
+		};
+		B28B7AF69320201D1CF206EB = {
+			isa = PBXGroup;
+			children = (
+				05F73E1A8A911FD1FC8C7C63 /* Fava */,
+				D2C6A460528D15F219C5FD84 /* FavaTests */,
+				F2C01846A666F9A40161F1A4 /* FavaUITests */,
+				FBDC4F23F93125BBEEAE800C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D2C6A460528D15F219C5FD84 /* FavaTests */ = {
+			isa = PBXGroup;
+			children = (
+				B33115C6E3F5AAA08D3DC3F4 /* HealthAccessTests.swift */,
+				7C0ED056621FF50B226969F1 /* RunIngestionTests.swift */,
+				1125A87834C3E71B03C157C4 /* RunLibraryTests.swift */,
+			);
+			path = FavaTests;
+			sourceTree = "<group>";
+		};
+		F2C01846A666F9A40161F1A4 /* FavaUITests */ = {
+			isa = PBXGroup;
+			children = (
+				BB24C6A87C65C5E7122DFD50 /* FoundationUITests.swift */,
+				299BCCC99A9340BAA23229E9 /* RunLibraryUITests.swift */,
+			);
+			path = FavaUITests;
+			sourceTree = "<group>";
+		};
+		FBDC4F23F93125BBEEAE800C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3B37C60B447A3D3E771CAB2F /* Fava.app */,
+				142020A2EFF4CFEACEC12A33 /* FavaTests.xctest */,
+				7DCE35F55251E20F44941A90 /* FavaUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		189611D16E47913AC7B3620D /* FavaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 629715FBE40F0087697BDC44 /* Build configuration list for PBXNativeTarget "FavaTests" */;
+			buildPhases = (
+				DFB6147C9536CBC5AF599E5C /* Sources */,
+				74C76707A842D32AE865BAA3 /* Frameworks */,
+				B178533EBC2A6E7B1A4BE36B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D66743EFB47B4A1879B468C0 /* PBXTargetDependency */,
+			);
+			name = FavaTests;
+			productName = FavaTests;
+			productReference = 142020A2EFF4CFEACEC12A33 /* FavaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		2AAEAD04F48581C68A52BAC7 /* FavaUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0C199BEE53F451507A2E3308 /* Build configuration list for PBXNativeTarget "FavaUITests" */;
+			buildPhases = (
+				AFBDFAACB7E14414C0F39342 /* Sources */,
+				16B5FD4B86FD33050FB39A1F /* Frameworks */,
+				FFCCF285F9FE103AD8987D8E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FF2EAF6B4BCDD2CABA6BE493 /* PBXTargetDependency */,
+			);
+			name = FavaUITests;
+			productName = FavaUITests;
+			productReference = 7DCE35F55251E20F44941A90 /* FavaUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		3EE9D4FC6F156DF88EDF8FAD /* Fava */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D9C778C4D350F1DC84B73BB9 /* Build configuration list for PBXNativeTarget "Fava" */;
+			buildPhases = (
+				70B2420F8CAE07AD124D4FFB /* Sources */,
+				C5EFF6B34D59F3936B2BF7D6 /* Frameworks */,
+				C9C613A79A6ABAF248E5F226 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Fava;
+			productName = Fava;
+			productReference = 3B37C60B447A3D3E771CAB2F /* Fava.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		98F54143AB4E86B28C3AFEE0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					3EE9D4FC6F156DF88EDF8FAD = {
+						SystemCapabilities = {
+							com.apple.HealthKit = {
+								enabled = 1;
+							};
+						};
+					};
+				};
+			};
+			buildConfigurationList = 58BC0B3212E180EF4DCCBAEC /* Build configuration list for PBXProject "Fava" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = B28B7AF69320201D1CF206EB;
+			productRefGroup = FBDC4F23F93125BBEEAE800C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3EE9D4FC6F156DF88EDF8FAD /* Fava */,
+				189611D16E47913AC7B3620D /* FavaTests */,
+				2AAEAD04F48581C68A52BAC7 /* FavaUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B178533EBC2A6E7B1A4BE36B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C9C613A79A6ABAF248E5F226 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FFCCF285F9FE103AD8987D8E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		70B2420F8CAE07AD124D4FFB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				56A3C786248A5E3383B4E248 /* DistanceSettings.swift in Sources */,
+				9C18432A6217F02A9283F615 /* FavaApp.swift in Sources */,
+				7BD84ED28EC292D620B25724 /* HealthAccess.swift in Sources */,
+				7F1BCDC40DB71AF5BC23FE41 /* HealthKitAccess.swift in Sources */,
+				5C07F268F8EF5F0D91D70AB8 /* HealthKitWorkoutReader.swift in Sources */,
+				A254FD5DC88F0D42EFAAEDEA /* RootView.swift in Sources */,
+				0C3A3529BD3F649AF20E46E9 /* RunIngestion.swift in Sources */,
+				88D0AC15052EF9DF8DF9E90B /* RunLibraryPresentation.swift in Sources */,
+				7426FEFCFC6534587D7DB6BE /* RunLibraryView.swift in Sources */,
+				BB85B1365C394964A2299CC1 /* RunRecord.swift in Sources */,
+				EC530B904D7391A712B7A116 /* RunSnapshotStore.swift in Sources */,
+				4E32A553A97525F14ED8EBDE /* SyntheticLibraryFixtures.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFBDFAACB7E14414C0F39342 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EA128C7008E691FDC75B3000 /* FoundationUITests.swift in Sources */,
+				05391A75DC361A9AD3BC7619 /* RunLibraryUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DFB6147C9536CBC5AF599E5C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				49F9EC8C859A538666A15D05 /* HealthAccessTests.swift in Sources */,
+				73FF789BB9F8E84D6A5F6E92 /* RunIngestionTests.swift in Sources */,
+				A8C0CD88FEF77C2F999FBC7B /* RunLibraryTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D66743EFB47B4A1879B468C0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3EE9D4FC6F156DF88EDF8FAD /* Fava */;
+			targetProxy = 11152AFB1AA20283FC814C44 /* PBXContainerItemProxy */;
+		};
+		FF2EAF6B4BCDD2CABA6BE493 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3EE9D4FC6F156DF88EDF8FAD /* Fava */;
+			targetProxy = AAE89112C24FF3371E0BC33B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0827A6BBE3592E6C6BDF0B32 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.fava.favatests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Fava.app/Fava";
+			};
+			name = Debug;
+		};
+		67A40CC7417B11DC32791406 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.fava.favauitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Fava;
+			};
+			name = Debug;
+		};
+		728C8EADA5EC455281EFA177 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_ENTITLEMENTS = Fava/Fava.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Fava/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.fava.fava;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A3998634497CFFAD8754EE96 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_ENTITLEMENTS = Fava/Fava.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_TESTABILITY = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Fava/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.fava.fava;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A9497CE23FDDC0787512981E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A9DD297AC466B8C891118663 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		B60200610480528D02FE8A18 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_TESTABILITY = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.fava.favatests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Fava.app/Fava";
+			};
+			name = Release;
+		};
+		D40E57DF6F91DA54317D0D6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_TESTABILITY = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.fava.favauitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Fava;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0C199BEE53F451507A2E3308 /* Build configuration list for PBXNativeTarget "FavaUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				67A40CC7417B11DC32791406 /* Debug */,
+				D40E57DF6F91DA54317D0D6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		58BC0B3212E180EF4DCCBAEC /* Build configuration list for PBXProject "Fava" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A9497CE23FDDC0787512981E /* Debug */,
+				A9DD297AC466B8C891118663 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		629715FBE40F0087697BDC44 /* Build configuration list for PBXNativeTarget "FavaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0827A6BBE3592E6C6BDF0B32 /* Debug */,
+				B60200610480528D02FE8A18 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D9C778C4D350F1DC84B73BB9 /* Build configuration list for PBXNativeTarget "Fava" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				728C8EADA5EC455281EFA177 /* Debug */,
+				A3998634497CFFAD8754EE96 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 98F54143AB4E86B28C3AFEE0 /* Project object */;
+}

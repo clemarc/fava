@@ -9,6 +9,32 @@ FR = r'FR-[0-9]{3}'
 TASK = r'T[0-9]{3}'
 STORY = r'US[1-9][0-9]*'
 EXCEPTIONS = {'bootstrap', 'process', 'roadmap', 'specification', 'planning', 'tooling', 'reconciliation'}
+PILOT_APPROVAL = 'd6a2f4be72f51f5f734b4c22de362fae07341572'
+# Fixed, already published delivery boundary; never use a moving branch/ref here.
+PILOT_DELIVERY_HEAD = '7ad912fc97c94aa87cd45de30e51b6588b2b49d8'
+PILOT_FEATURES = {
+    'specs/healthkit-run-library-01-app-foundation-and-authorization',
+    'specs/healthkit-run-library-02-run-ingestion',
+    'specs/healthkit-run-library-03-run-library',
+}
+
+
+def pilot_planning_ref(root, base, sha, feature, message):
+    """Apply the one-time exception only to the recorded delivery's history."""
+    if (base != PILOT_APPROVAL or sha == PILOT_APPROVAL
+            or feature not in PILOT_FEATURES
+            or trailers(message).get('Delivery-Pilot') != ['healthkit-r1-r3']):
+        return base
+    try:
+        git(root, 'merge-base', '--is-ancestor', PILOT_APPROVAL, sha)
+        git(root, 'merge-base', '--is-ancestor', sha, PILOT_DELIVERY_HEAD)
+        git(root, 'cat-file', '-e', f'{base}:{feature}/spec.md')
+        parent = git(root, 'rev-parse', sha + '^').strip()
+        for artifact in ['plan.md', 'tasks.md']:
+            git(root, 'cat-file', '-e', f'{parent}:{feature}/{artifact}')
+        return parent
+    except subprocess.CalledProcessError:
+        return base
 
 
 def git(root, *args):
@@ -274,8 +300,9 @@ def validate_repo(root, base=None, head='HEAD', message=None):
             if implementation_paths(paths):
                 cited = trailers(git(root, 'show', '-s', '--format=%B', sha)).get('Spec', [])
                 for feature in cited:
+                    planning_ref = pilot_planning_ref(root, base, sha, feature, git(root, 'show', '-s', '--format=%B', sha))
                     for artifact in ['plan.md', 'tasks.md']:
-                        try: git(root, 'cat-file', '-e', f'{base}:{feature}/{artifact}')
+                        try: git(root, 'cat-file', '-e', f'{planning_ref}:{feature}/{artifact}')
                         except subprocess.CalledProcessError: errors.append(f'{feature}/{artifact}: merge planning PR before implementation')
             read = lambda p: git(root, 'show', f'{sha}:{p}')
             errors += [f'commit {sha[:12]}: {e}' for e in validate_commit(git(root, 'show', '-s', '--format=%B', sha), paths, read)]
