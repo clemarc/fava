@@ -27,7 +27,7 @@ Roadmap approval: #8, 0f6b64a2041e015f63369b5ad7c4f871cc053063.
 - Actions remain deterministic/credential-free, using existing discovery of the
   new Python fixtures. No headless AI key gate or orchestration service.
 
-Validation: 54 SDD/tooling/resolver/integration/projection fixtures and seven
+Validation: 59 SDD/tooling/resolver/integration/projection fixtures and seven
 commit-builder fixtures pass locally. Fixtures include real ephemeral signed
 owner merge history, final main merge promotion, missing/wrong/late approval,
 unreviewed task mapping changes, decimal/unknown/ambiguous IDs, existing and dirty/
@@ -89,3 +89,16 @@ on each simulator family. Attempt 1 failed an unchanged app UI navigation
 assertion on iPhone; its unchanged retry passed. These are baseline results;
 the new publication requires fresh CI/native validation and Codex review.
 No R3.5/application work or main merge is authorized by these changes.
+
+## Latest review: owner-authorized fifth correction round
+
+- P1 [intermediate correction reset](https://github.com/clemarc/fava/pull/10#discussion_r4268553948): justified. Target/head comparison alone missed a 0 → 3 → 0 sequence. The prepared validator checks every ledger parent transition; canonical PR-keyed checkpoints retain immutable task/branch identity, monotonically increasing counters and append-only prior heads. The live assessor rejects missing registration, counter rollback and rewritten ancestry.
+- P1 [cross-task checkpoint evidence](https://github.com/clemarc/fava/pull/10#discussion_r4268553959): justified. Metadata checkpoints have no Task trailers. Prepared checks inspect integrated records directly, require the exact task in source and merge trailers, and bind actual PR head/target and fetched task evidence. Another task's merge or a forged union trailer cannot complete this task.
+
+59 workflow fixtures and seven publication fixtures pass locally, including
+signed synthetic histories for intermediate reset rejection and exact task merge
+identity. The owner authorized this fifth round on 2026-10-14. These changes need fresh
+CI/native and Codex review after signed publication. [The escalation report](sdd-v2-escalation.md) records impacts,
+attempts, proposed fixes, validation, risks and the specific additional-cycle
+request and the subsequent explicit authorization. No main/preparation approval
+is manufactured; governance remains proposed until the owner merges it.

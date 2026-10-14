@@ -206,6 +206,29 @@ class IntegrationTests(unittest.TestCase):
         new['tasks']['T003']['correction_cycles'] = 4
         self.assertEqual(ledger.history_errors(old, new), [])
 
+    def test_pr_history_cannot_disappear_reset_or_change_task_identity(self):
+        entry = dict(branch='task/r3.5/t003', tasks=['T003'], correction_cycles=3, heads=['a'*40])
+        old = {'task_prs': {'10': entry}}
+        new = copy.deepcopy(old)
+        new['task_prs']['10'].update(correction_cycles=4, heads=['a'*40, 'b'*40])
+        self.assertEqual(ledger.history_errors(old, new), [])
+        for changed in [{}, {'10': dict(entry, correction_cycles=0)},
+                        {'10': dict(entry, heads=['b'*40])}, {'10': dict(entry, tasks=['T002'])}]:
+            self.assertTrue(ledger.history_errors(old, {'task_prs': changed}))
+
+    def test_registered_pr_budget_rejects_rewritten_heads_and_head_only_reset(self):
+        target = {'task_prs': {'10': dict(branch='task/r3.5/t003', tasks=['T003'], correction_cycles=3, heads=['prior'])}}
+        head = {'tasks': {'T003': {'correction_cycles': 3}}}
+        args = (Path('/fixture'), target, head, 10, 'task/r3.5/t003', {'T003'}, 'head')
+        with patch.object(integration, 'ancestor', return_value=True):
+            self.assertEqual(integration.registered_pr_errors(*args), [])
+            head['tasks']['T003']['correction_cycles'] = 0
+            self.assertTrue(integration.registered_pr_errors(*args))
+            self.assertTrue(integration.registered_pr_errors(Path('/fixture'), target, head, 11, 'task/r3.5/t003', {'T003'}, 'head'))
+        head['tasks']['T003']['correction_cycles'] = 3
+        with patch.object(integration, 'ancestor', return_value=False):
+            self.assertTrue(any('discarded' in e for e in integration.registered_pr_errors(*args)))
+
     def test_bot_reaction_cannot_survive_an_edited_request_or_precede_it(self):
         head = 'a' * 40
         request = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10', body='@codex review ' + head,
@@ -305,6 +328,56 @@ class SignedLifecycleTests(unittest.TestCase):
     def proof(self):
         with patch.multiple(signatures, KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
             return lifecycle.planning_ref(self.root, self.baseline, self.source, self.feature, sdd.git)
+
+    def test_intermediate_head_counter_reset_fails_full_repository_validation(self):
+        self.data['tasks']['T003']['correction_cycles'] = 3
+        self.put(self.feature + '/execution.json', json.dumps(self.data))
+        third = self.commit('planning')
+        self.data['tasks']['T003']['correction_cycles'] = 0
+        self.put(self.feature + '/execution.json', json.dumps(self.data))
+        reset = self.commit('planning')
+        self.assertTrue(any('cannot decrease' in e for e in ledger.transition_errors(self.root, reset, self.feature + '/execution.json', sdd.git)))
+        self.assertEqual(ledger.transition_errors(self.root, third, self.feature + '/execution.json', sdd.git), [])
+        with patch.multiple(signatures, KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
+            self.assertTrue(any('cannot decrease' in e for e in sdd.validate_repo(self.root, self.baseline)))
+
+    def task_merge(self):
+        self.git('branch', 'task/r3.5/t003', self.source)
+        self.git('switch', '-c', 'fixture-integration', self.source + '^')
+        self.git('merge', '--no-ff', '-S', '-m', f'integrate\n\nSpec: {self.feature}\nTask: T003\nImplements: FR-001 FR-002', 'task/r3.5/t003')
+        return self.git('rev-parse', 'HEAD')
+
+    def test_checkpoint_cannot_reuse_another_tasks_actual_merge(self):
+        merge = self.task_merge()
+        record = dict(merge_sha=merge)
+        self.assertEqual(ledger.task_merge_errors(self.root, self.feature, 'T003', record, merge, sdd.git), [])
+        self.assertTrue(ledger.task_merge_errors(self.root, self.feature, 'T002', record, merge, sdd.git))
+        # Even a forged union trailer cannot turn T003 source into T002 work.
+        self.git('commit', '--amend', '-S', '-m', f'integrate\n\nSpec: {self.feature}\nTask: T002 T003\nImplements: FR-001 FR-002')
+        forged = self.git('rev-parse', 'HEAD')
+        self.assertTrue(ledger.task_merge_errors(self.root, self.feature, 'T002', dict(merge_sha=forged), forged, sdd.git))
+
+    def test_integrated_record_requires_exact_pr_head_target_and_task_evidence(self):
+        merge = self.task_merge()
+        parent = self.git('rev-parse', merge + '^1')
+        record = dict(merge_sha=merge, pr='https://github.com/clemarc/fava/pull/10', integration_comment=123,
+                      evidence=['https://github.com/clemarc/fava/pull/10#issuecomment-123'])
+        report = dict(validated_head=self.source, validated_target=parent, tasks=['T003'])
+        comment = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10', user={'login': 'clemarc'},
+                       html_url=record['evidence'][0], body=json.dumps(report))
+        def api(*args):
+            if '/pulls/' in args[-1]: return {'head': {'sha': self.source}}
+            if '/commits/' in args[-1]: return {'commit': {'verification': {'verified': True, 'reason': 'valid'}}}
+            return comment
+        args = (self.root, self.feature, 'milestone/r3.5', 'T003', record, merge)
+        with patch.object(milestone, 'merged_pr', return_value=record['pr']), patch.object(milestone, 'github', side_effect=api):
+            self.assertEqual(milestone.integrated_task_errors(*args), [])
+            for bad in [dict(report, tasks=['T002']), dict(report, validated_head='old'), dict(report, validated_target='old')]:
+                comment['body'] = json.dumps(bad)
+                self.assertTrue(milestone.integrated_task_errors(*args))
+            comment['body'] = json.dumps(report)
+            comment['issue_url'] += '1'
+            self.assertTrue(milestone.integrated_task_errors(*args))
 
     def test_real_signed_owner_merge_permits_promotion_with_plan_absent_in_base(self):
         self.assertEqual(self.proof(), self.planning)

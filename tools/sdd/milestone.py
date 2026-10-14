@@ -90,6 +90,40 @@ def merged_pr(repository, sha, target):
     return pr['html_url']
 
 
+def integrated_task_errors(root, feature, branch, ident, record, target):
+    """Bind a completed record to this task's source PR, merge and report."""
+    from ledger import task_merge_errors
+    errors = task_merge_errors(root, feature, ident, record, target, git)
+    if errors:
+        return errors
+    sha = record['merge_sha']
+    actual_url = merged_pr('clemarc/fava', sha, branch)
+    if record.get('pr') != actual_url:
+        return [ident + ': ledger PR does not match actual merged integration']
+    number = actual_url.rsplit('/', 1)[-1]
+    pr = github('api', f'repos/clemarc/fava/pulls/{number}')
+    parents = git(root, 'show', '-s', '--format=%P', sha).split()
+    verified = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
+    if (pr['head']['sha'] != parents[1] or not verified.get('verified')
+            or verified.get('reason') != 'valid'):
+        return [ident + ': task PR head/verified merge mismatch']
+    comment_id = record.get('integration_comment')
+    if not isinstance(comment_id, int) or isinstance(comment_id, bool):
+        return [ident + ': exact task PR evidence comment required']
+    comment = github('api', f'repos/clemarc/fava/issues/comments/{comment_id}')
+    try:
+        evidence = json.loads(comment['body'])
+        valid = (comment.get('issue_url') == f'https://api.github.com/repos/clemarc/fava/issues/{number}'
+                 and comment.get('user', {}).get('login') == 'clemarc'
+                 and comment.get('html_url') in record.get('evidence', [])
+                 and evidence.get('validated_head') == parents[1]
+                 and evidence.get('validated_target') == parents[0]
+                 and ident in evidence.get('tasks', []))
+    except (ValueError, TypeError, AttributeError):
+        valid = False
+    return [] if valid else [ident + ': evidence is not bound to this task and merged PR head/target']
+
+
 def latest_preparation(result):
     merged = [p for p in result['prs'] if p['head'] == result['preparation_branch'] and p['merged']]
     if not merged:
@@ -193,11 +227,9 @@ def inspect(root, identifier, phase):
             raise ValueError('inconsistent execution state: ' + '; '.join(problems))
         for ident, record in result['execution']['tasks'].items():
             if record['state'] == 'integrated':
-                if not ancestor(root, record['merge_sha'], target):
-                    raise ValueError(f'{ident}: recorded integration is not in current target')
-                actual_pr = merged_pr(repository, record['merge_sha'], result['milestone_branch'])
-                if record['pr'] != actual_pr:
-                    raise ValueError(f'{ident}: ledger PR does not match actual merged integration')
+                problems = integrated_task_errors(root, feature, result['milestone_branch'], ident, record, target)
+                if problems:
+                    raise ValueError('; '.join(problems))
     return result
 
 

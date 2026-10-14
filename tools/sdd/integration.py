@@ -9,9 +9,27 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / '.github/checks'))
 import sdd
-from milestone import github, inspect, read, ancestor
+from milestone import github, inspect, read, ancestor, integrated_task_errors
 from lifecycle import planning_ref
 from ledger import AUTOMATIC_CORRECTION_LIMIT
+
+
+def registered_pr_errors(root, target, head_ledger, number, branch, task_ids, head):
+    """Canonical PR-keyed checkpoints survive branch rewrites and ID changes."""
+    record = target.get('task_prs', {}).get(str(number))
+    if not record or record.get('branch') != branch or set(record.get('tasks', [])) != task_ids:
+        return ['task PR identity/budget must be registered on the milestone target']
+    errors = []
+    count = record.get('correction_cycles')
+    if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+        return ['invalid registered task PR correction count']
+    if not record.get('heads') or any(not ancestor(root, prior, head) for prior in record['heads']):
+        errors.append('task PR rewrote or discarded registered prior heads')
+    for ident in task_ids:
+        cycles = head_ledger.get('tasks', {}).get(ident, {}).get('correction_cycles', -1)
+        if not isinstance(cycles, int) or isinstance(cycles, bool) or cycles < count:
+            errors.append(ident + ': head counter is below registered PR budget')
+    return errors
 
 
 def check_results(checks):
@@ -167,6 +185,13 @@ def assess(root, identifier, number, evidence_comment=None):
     canonical = context.get('execution') or {}
     owner_limits = verified_owner_limits(canonical, ids, number, context['id'])
     evidence['task_limit_blockers'] = durable_task_limits(canonical, ledger, ids, owner_limits)
+    if not checkpoint:
+        evidence['task_limit_blockers'] += registered_pr_errors(root, canonical, ledger, number, pr['headRefName'], ids, head)
+    # Checkpoints have no Task trailers. Verify integrated records themselves,
+    # rather than letting an empty represented-ID set bypass completion proof.
+    for ident, record in ledger.get('tasks', {}).items():
+        if record.get('state') == 'integrated':
+            evidence['task_limit_blockers'] += integrated_task_errors(root, feature, context['milestone_branch'], ident, record, target)
     evidence['task_correction_records'] = {ident: ledger['tasks'].get(ident) for ident in sorted(ids)}
     evidence['target_task_correction_records'] = {ident: canonical.get('tasks', {}).get(ident) for ident in sorted(ids)}
     reviewed_revision = ledger.get('planning_revision') or context['preparation_approval']['sha']
@@ -181,11 +206,15 @@ def assess(root, identifier, number, evidence_comment=None):
                                    for t in ids if t in rows for dep in re.findall(sdd.TASK, rows[t][2]))
     errors = []
     for sha in commits:
+        from ledger import transition_errors
+        errors += transition_errors(root, sha, context['ledger'], sdd.git)
         changed = sdd.git(root, 'diff-tree', '--no-commit-id', '-r', '--name-only', sha + '^1', sha).splitlines()
         errors += sdd.validate_commit(sdd.git(root, 'show', '-s', '--format=%B', sha), changed, lambda p: read(root, sha, p))
         if sdd.implementation_paths(changed):
             planning_ref(root, context['main_sha'], sha, feature, sdd.git)
     evidence['trailers'] = not errors
+    if not checkpoint and set(evidence.get('tasks', [])) != ids:
+        evidence['scope'] = False
     evidence['checks'] = check_results(pr['statusCheckRollup'])
     from native import classify
     evidence['native_required'] = classify(paths, sdd.git(root, 'ls-tree', '-r', '--name-only', head).splitlines(),

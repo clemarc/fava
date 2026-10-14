@@ -9,6 +9,7 @@
   "state": "preparing",
   "retired_task_ids": [],
   "tasks": {},
+  "task_prs": {},
   "parallel_groups": [],
   "shared_file_owners": {},
   "checkpoints": [],

@@ -1,5 +1,7 @@
 """Execution schema and retained-history checks, independent of GitHub credentials."""
 import re
+import json
+import subprocess
 
 AUTOMATIC_CORRECTION_LIMIT = 3
 
@@ -34,6 +36,14 @@ def validate(ledger, feature, tasks):
                 errors.append(ident + ': integration needs task checkbox, merge SHA, PR and evidence')
         elif rows.get(ident, ('', False))[1]:
             errors.append(ident + ': checked task lacks verified integration state')
+    for number, record in ledger.get('task_prs', {}).items():
+        if (not re.fullmatch(r'[1-9][0-9]*', number) or not isinstance(record, dict)
+                or not isinstance(record.get('correction_cycles'), int)
+                or isinstance(record.get('correction_cycles'), bool) or record['correction_cycles'] < 0
+                or not record.get('tasks') or not set(record['tasks']) <= set(records)
+                or not record.get('branch', '').startswith('task/' + ledger['milestone'].lower() + '/')
+                or not record.get('heads') or any(not re.fullmatch(r'[0-9a-f]{40}', h) for h in record['heads'])):
+            errors.append(str(number) + ': invalid task PR history')
     if ledger.get('state') == 'completed' and not all(ledger.get('physical_acceptance', {}).get(family) for family in ['iPhone', 'iPad']):
         errors.append('completion requires separate iPhone and iPad acceptance evidence')
     if ledger.get('state') in {'ready-for-owner', 'completed'} and (not records or any(record.get('state') != 'integrated' for record in records.values())):
@@ -58,4 +68,52 @@ def history_errors(old, new):
             if (not isinstance(old_cycles, int) or not isinstance(new_cycles, int)
                     or isinstance(new_cycles, bool) or new_cycles < old_cycles):
                 errors.append(ident + ': correction count cannot decrease or become invalid')
+    for number, record in old.get('task_prs', {}).items():
+        current = new.get('task_prs', {}).get(number)
+        if (not current or any(current.get(k) != record.get(k) for k in ['tasks', 'branch'])
+                or not isinstance(current.get('correction_cycles'), int)
+                or isinstance(current.get('correction_cycles'), bool)
+                or current['correction_cycles'] < record['correction_cycles']
+                or current.get('heads', [])[:len(record['heads'])] != record['heads']):
+            errors.append(str(number) + ': task PR history is immutable/append-only; counters cannot decrease')
     return errors
+
+
+def transition_errors(root, sha, path, git):
+    """Check every parent edge, including intermediate heads and merge parents."""
+    def snapshot(ref):
+        try:
+            return json.loads(git(root, 'show', f'{ref}:{path}'))
+        except subprocess.CalledProcessError:
+            return None
+    try:
+        current = snapshot(sha)
+        errors = []
+        for parent in git(root, 'show', '-s', '--format=%P', sha).split():
+            previous = snapshot(parent)
+            if previous is not None:
+                errors += history_errors(previous, current) if current is not None else ['execution history cannot be deleted']
+        return errors
+    except (ValueError, TypeError, KeyError):
+        return ['invalid execution history transition']
+
+
+def task_merge_errors(root, feature, ident, record, target, git):
+    """Credential-free task identity proof; live PR/report checks supplement it."""
+    import sdd
+    sha = record.get('merge_sha', '')
+    try:
+        git(root, 'merge-base', '--is-ancestor', sha, target)
+        parents = git(root, 'show', '-s', '--format=%P', sha).split()
+        mapped = sdd.trailers(git(root, 'show', '-s', '--format=%B', sha))
+        if len(parents) != 2 or feature not in mapped.get('Spec', []) or ident not in re.findall(sdd.TASK, ' '.join(mapped.get('Task', []))):
+            return [ident + ': cited merge lacks exact Spec/Task identity']
+        for introduced in git(root, 'rev-list', f'{parents[0]}..{parents[1]}').splitlines():
+            paths = git(root, 'diff-tree', '--no-commit-id', '-r', '--name-only', introduced + '^1', introduced).splitlines()
+            mapped = sdd.trailers(git(root, 'show', '-s', '--format=%B', introduced))
+            if (sdd.implementation_paths(paths) and feature in mapped.get('Spec', [])
+                    and ident in re.findall(sdd.TASK, ' '.join(mapped.get('Task', [])))):
+                return []
+        return [ident + ': cited PR history contains no source implementation mapped to this task']
+    except (ValueError, subprocess.CalledProcessError):
+        return [ident + ': cited task merge is absent from target or invalid']

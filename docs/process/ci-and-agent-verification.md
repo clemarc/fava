@@ -374,6 +374,10 @@ no-source planning/checkpoint merges. Head/target changes invalidate evidence.
 Keep three automatic correction cycles per task PR, persisted across restarts.
 Record cycles before publication; new findings do not reset the budget. Prepare
 a reviewable proposed fix at escalation and continue unrelated ready tasks.
+PR-keyed target checkpoints retain branch/task identity, counters and prior
+heads; every intermediate ledger transition is checked. Newly integrated task
+records must resolve to that exact task's source/merge trailers and PR evidence,
+including on metadata-only checkpoints without Task trailers.
 
 Current settings inspection supersedes the dated snapshot above; see
 [sdd-v2-settings.md](sdd-v2-settings.md). No settings are changed by this PR.

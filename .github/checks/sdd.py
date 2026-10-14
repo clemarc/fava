@@ -324,6 +324,17 @@ def validate_repo(root, base=None, head='HEAD', message=None):
             parents = git(root, 'show', '-s', '--format=%P', sha).split()
             paths = (git(root, 'diff-tree', '--no-commit-id', '-r', '--name-only', parents[0], sha)
                      if parents else git(root, 'diff-tree', '--root', '--no-commit-id', '-r', '--name-only', sha)).splitlines()
+            from ledger import transition_errors, task_merge_errors
+            for path in paths:
+                if path.startswith('specs/') and path.endswith('/execution.json'):
+                    errors += [f'commit {sha[:12]}: {e}' for e in transition_errors(root, sha, path, git)]
+                    try:
+                        execution = json.loads(git(root, 'show', f'{sha}:{path}'))
+                        for ident, record in execution.get('tasks', {}).items():
+                            if record.get('state') == 'integrated':
+                                errors += task_merge_errors(root, path.rsplit('/', 1)[0], ident, record, sha, git)
+                    except (ValueError, TypeError, KeyError, subprocess.CalledProcessError):
+                        errors.append(f'commit {sha[:12]}: invalid execution history')
             if implementation_paths(paths):
                 cited = trailers(git(root, 'show', '-s', '--format=%B', sha)).get('Spec', [])
                 for feature in cited:

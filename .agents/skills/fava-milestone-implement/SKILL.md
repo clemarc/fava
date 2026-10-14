@@ -39,6 +39,8 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    retry. Existing open task PRs take precedence over new branches. Merged task
    evidence is reconciled, not implemented again; a closed unmerged task needs a
    recorded reason/owner decision before reopening. Preserve correction counts.
+   Reconciliation verifies each integrated ID's actual source/merge trailers,
+   PR head and SHA-bound task evidence; another task's merge is not completion.
 5. Select a small task or coherent batch whose dependencies are integrated.
    Task branch is `task/r3.5/tNNN`, using the lowest stable task ID in a batch.
    Branch from the **inspected current milestone head**. Inspect local/remote
@@ -59,6 +61,13 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    review and configured Codex bot review for the full current head SHA using a
    new unedited SHA-scoped request comment; never reuse old reactions. Review
    requests/comments to GitHub are authorized by this owner-started skill.
+   Before integration, register its numeric PR key, immutable branch/task IDs,
+   counter and published head in task_prs via a gated metadata checkpoint on
+   the milestone. Before each fix round, checkpoint the incremented PR counter
+   and prior head there; synchronize the worker's signed history/counters with
+   that target. Preserve all registered heads as ancestors; never force rewrite
+   them. Initial registration is not a fix round. Checkpoint gating cannot
+   manufacture task completion: exact merge/PR/task report proof is mandatory.
 8. Monitor current-head CI, macOS build and **nonzero simulator tests** when
    native applies. Read real failed logs and Codex comments; assess each finding,
    fix justified issues and refresh tests/review after changes. Retain three

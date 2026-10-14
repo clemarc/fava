@@ -167,12 +167,18 @@ macOS result, review discussion and semantic finding before merging. Human/
 agent identity cannot be inferred from a boolean or a shared GitHub login.
 
 Publish the final task SHA first, then write a coordinator JSON PR comment with
-validated_head/validated_target, report URLs, worker/reviewer IDs, review head/
+tasks (exact represented task IDs), validated_head/validated_target, report URLs, worker/reviewer IDs, review head/
 target, semantic and finding dispositions, native build/test counts and bot
 request evidence. Supply its numeric ID with `--evidence-comment ID` (or preserve
 integration_comment in the task record from an earlier checkpoint). A commit
 cannot contain its own SHA: SHA-bound evidence belongs in the PR after publication,
 then its URL is recorded in the serialized ledger checkpoint after integration.
+Every integrated task retains integration_comment, its actual PR comment ID,
+and that comment's URL in evidence. The resolver and checkpoint assessor fetch
+the actual merged PR and comment, verify the merge signature/head/target, and
+match the exact task to both source and merge Spec/Task trailers. Deterministic
+CI also checks that the cited merge is an ancestor and its own source history
+implements that task; a union trailer alone cannot rename another task's work.
 Independent review is either a real GitHub review (independent_review_id plus
 its URL and target SHA) or a separate reviewer JSON PR comment
 (independent_review_comment plus URL), containing head, target, reviewer and
@@ -191,6 +197,18 @@ require escalation. New findings, retries or resumed Cloud tasks do not reset
 the count. An unchanged CI rerun is not another fix round; retain its failure and
 retry evidence. The coordinator serializes the PR-level count across batch task
 records; splitting or retiring task IDs cannot reset the same PR's budget.
+Before task integration, register task_prs on the canonical milestone target
+through a gated metadata checkpoint. Keys are actual PR numbers; each entry
+contains immutable branch/tasks, correction_cycles and append-only heads of
+published task revisions. Before each fix round, checkpoint the incremented
+counter and prior head there, then synchronize the worker's signed history and
+task counts. Initial registration uses count zero. Keep every registered head
+as an ancestor of the current task head; no rewritten branch can discard the
+checkpointed budget. New task PRs fail integration until registered. CI and the
+assessor check each ledger parent transition, including intermediate commits
+and merge parents, so a later commit cannot hide a reset. Never delete registry
+entries or rebind their PR/task identity. Registration is execution evidence,
+not approval, and all checkpoint gates still apply.
 After exhaustion, record the blocker and continue unrelated ready tasks where
 possible. More cycles require owner authorization. Never weaken scope, tests,
 approval/signing/review or drift gates to continue. No-source checkpoints do not
