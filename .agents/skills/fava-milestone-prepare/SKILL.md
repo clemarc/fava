@@ -15,8 +15,10 @@ nested instructions before writing. This skill prepares planning only.
    checkout capabilities. Report Linux/macOS distinction and Goal/subagent
    availability. No skill invocation enables a runtime capability. Do not
    execute this workflow before the owner has merged SDD v2 governance to main.
-2. Run `python3 tools/sdd/milestone.py R3.5 --phase prepare` using the supplied
-   normalized ID. Inspect its complete result: canonical roadmap row, deferred
+2. Set FAVA_MILESTONE to the user-supplied ID, then run
+   `python3 tools/sdd/milestone.py "$FAVA_MILESTONE" --phase prepare`. Use the
+   returned normalized id and branch fields for all subsequent commands.
+   Inspect its complete result: canonical roadmap row, deferred
    scope, dependencies, signed owner roadmap/spec/governance merges and GitHub
    evidence, local/remote refs, all existing PR states, ledger and current SHAs.
    A Draft label is not approval and does not cancel a real owner merge. A
@@ -31,8 +33,8 @@ nested instructions before writing. This skill prepares planning only.
 4. Set `SPECIFY_FEATURE_DIRECTORY` explicitly to the resolver's absolute path
    for every Spec Kit command, in every worker. Ignore stale feature.json and
    historical Feature Branch metadata. Follow the shared branch/resume procedure
-   in `docs/process/sdd-v2.md`: create missing `milestone/r3.5` at the inspected
-   main SHA and `prepare/r3.5` at its inspected head; resume matching refs/PRs.
+   in `docs/process/sdd-v2.md`: create the returned milestone_branch at the inspected
+   main SHA and preparation_branch at its inspected head; resume matching refs/PRs.
    Use `--checkout milestone` / `--checkout preparation` only on a clean checkout.
    Inspect local unpublished work, worktree occupancy and remote movement first.
    Never reset, stash/discard someone else's files, recreate retired work, force
@@ -60,6 +62,14 @@ nested instructions before writing. This skill prepares planning only.
    exists; never predict a merge SHA. Ledger is execution evidence, not scope.
 8. Publish the validated artifacts first as a signed draft prep PR (step 9's
    signing/validation rules apply), so projection source links are reviewable.
+   Before review/fixes, register its actual numeric PR key in preparation_prs,
+   with branch, correction_cycles zero and initial published head. Check signed/
+   no-force-push/no-deletion protections on the preparation branch before any
+   publication. Increment the durable counter and append the prior head before
+   each fix publication. Fresh invocations use returned preparation_progress;
+   missing history is not zero. Never reset counters or rewrite/delete history.
+   More rounds require actual owner PR-comment evidence; follow the shared
+   format. A blocked record or exhausted budget requires concrete escalation.
    Project tasks with the pinned Linear CLI workflow in
    `docs/process/linear-integration.md`. Inspect help/auth/project, generate a
    dry-run by stable repository key, then upsert only Git-derived definitions.
@@ -68,7 +78,7 @@ nested instructions before writing. This skill prepares planning only.
    project this governance task as R3.5 preparation.
 9. Validate SDD, fixtures, semantic analysis, scope and staged diff using
    `$fava-ci-verify`; publish verified GraphQL commits with `SDD-Type: planning`.
-   Open/update the same preparation PR **against milestone/r3.5**. Monitor the
+   Open/update the same preparation PR **against the returned milestone_branch**. Monitor the
    current SHA, read actual failure logs, fix at most three cycles per PR across
    resumptions. If blocked, use `.specify/templates/escalation-template.md` with
    linked findings, attempted fixes and a concrete proposed patch/validation

@@ -5,6 +5,7 @@
   "specification_base": "REPLACE_INSPECTED_MAIN_SHA",
   "milestone_branch": "REPLACE_RESOLVED_BRANCH",
   "preparation_pr": null,
+  "preparation_prs": {},
   "planning_revision": null,
   "state": "preparing",
   "retired_task_ids": [],

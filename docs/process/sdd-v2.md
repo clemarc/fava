@@ -115,6 +115,22 @@ same signing, current CI, independent review and findings gates; scope consists
 only of execution metadata/task evidence/append-only decisions, never contracts.
 Their native applicability follows the actual diff, not a name-based exemption.
 
+Preparation PRs persist their budget in preparation_prs, keyed by actual PR
+number with immutable branch, correction_cycles and append-only heads. Register
+count zero after initial publication and before review; before each fix append
+the prior head and increment the counter in the signed preparation ledger.
+Protect prepare/* against force pushes/deletion and require signatures before
+publication; the separate settings proposal describes these additional rules.
+The resolver returns preparation_progress for fresh invocations, verifies all
+history transitions and registered ancestry, and reports the next-round budget.
+Missing records must be reconciled with actual history/owner, never assumed zero.
+An extra round requires owner_extra_cycles.comment_id referring to an actual
+owner-authored comment on that prep PR with type fava-correction-authorization,
+phase prepare, the canonical milestone and a finite max_cycles greater than
+three. A truthy marker, wrong actor/PR/phase or malformed comment is not approval.
+Counts do not reset across invocation or regeneration. An exhausted/blocked
+preparation uses the same concrete escalation template; no owner merge is made.
+
 ## Implementation and integration gates
 
 Before any agent integration, verify the effective milestone rules require signed
@@ -178,7 +194,14 @@ and that comment's URL in evidence. The resolver and checkpoint assessor fetch
 the actual merged PR and comment, verify the merge signature/head/target, and
 match the exact task to both source and merge Spec/Task trailers. Deterministic
 CI also checks that the cited merge is an ancestor and its own source history
-implements that task; a union trailer alone cannot rename another task's work.
+changes that task's approved paths; a union trailer alone cannot rename another
+task's work. Documentation, tooling and other non-application tasks use the same
+exact Spec/Task/FR identity and approved file mappings, without a source-path
+requirement. No-source commits still need their applicable SDD-Type exception.
+Pure target-import merges retain history mappings but are excluded from the
+worker's represented task IDs only after their tree matches Git's automatic
+merge. Conflict resolutions/extra edits require separate scoped task commits
+before import; they cannot be hidden behind an already integrated task ID.
 Independent review is either a real GitHub review (independent_review_id plus
 its URL and target SHA) or a separate reviewer JSON PR comment
 (independent_review_comment plus URL), containing head, target, reviewer and

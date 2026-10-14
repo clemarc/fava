@@ -39,3 +39,36 @@ R3.5 work. New findings beyond that round require a fresh concrete escalation.
 This authorization is limited to publication/validation/review; it does not
 approve governance adoption or assert verified completion. Keep
 unresolved discussions open until their published dispositions are verified.
+
+## Further findings: owner-authorized rounds six/seven
+
+Current published head: 26eb4db135f6dd177f3fa8b06c185016d862993d; main remains
+a68b6db26ac54de0e83fb451868f54d32b078c34. The authorized fifth publication is
+complete. On 2026-10-14 the owner answered “Authorize two rounds (max seven)”
+to the bounded additional-round request. These fixes form round six; round
+seven remains available for justified workflow follow-up findings.
+
+1. P1 [preparation counter resume](https://github.com/clemarc/fava/pull/10#discussion_r4268988652). Implementation task counters did not cover preparation. Proposed: preparation_prs records, append-only history validation, preparation_progress returned by the resolver, and actual owner phase/PR/milestone authorization. New prepare/* signature/no-force-push/no-deletion protections are an explicit owner prerequisite; no settings are changed here. Synthetic tests cover resume at three, unauthorized fourth, wrong phase/milestone/PR, missing registration and missing protections.
+2. P2 [hard-coded milestone examples](https://github.com/clemarc/fava/pull/10#discussion_r4268988659). Command/branch examples could steer a generic invocation to R3.5. Proposed: use the supplied FAVA_MILESTONE and returned branch fields throughout both skills; fixture resolves R4 independently. Preserve R3.5-specific approved directory notes.
+3. P1 independent / P2 [non-application completion](https://github.com/clemarc/fava/pull/10#discussion_r4268988666). The fifth-round source-path predicate blocked valid documentation/tooling tasks. Proposed: exact reviewed task path and FR mappings, still tied to real signed merge/PR/report evidence. Require full Spec/Task/Implements validation for non-source Task commits and reviewed planning chronology. Signed fixtures accept docs/tools tasks and reject another task's evidence.
+4. P1 independent review: target synchronization included historical integrated IDs in worker scope. Proposed: exclude a target import's trailers from represented worker IDs only when its tree exactly matches Git's automatic merge. Check signatures/trailers/history for all commits; reject injected edits/conflicts. A signed fixture preserves the worker's scope after another task integrates and rejects an altered import tree. Resolve conflicts in separately scoped commits before import.
+
+The independent reviewer /root/fifth_round_review reproduced both integration
+regressions and rechecked the prepared fixes, finding no further concrete
+regression in this focused scope. 64 workflow and seven publication fixtures
+pass, along with tooling/SDD/whitespace checks. Fresh native CI and Codex review
+would be required after any new signed publication. Published-head native CI
+failed unchanged iPad background-return (FoundationUITests.swift:78) and
+iPhone accessibility-size navigation assertions (RunLibraryUITests.swift:16,
+141–143). Both actual logs were inspected; ci-required failed closed. Attempt
+2 reruns failed jobs unchanged on the published SHA and is pending. No
+application/test or workflow gate is changed. [Independent review and prepared
+re-review](https://github.com/clemarc/fava/pull/10#issuecomment-6165447406) are recorded.
+
+Authorized scope: two additional governance correction rounds (maximum seven
+total) to publish these four fixes and address justified workflow findings from
+their refreshed review, with fresh signing/CI/review each round. Additional rounds
+beyond the selected maximum
+require another concrete escalation. Default three rounds for future milestone
+PRs, all approval/testing gates, and no main/prep merges remain unchanged.
+No R3.5 work, settings changes or credentials are authorized by this proposal.

@@ -14,6 +14,23 @@ from lifecycle import planning_ref
 from ledger import AUTOMATIC_CORRECTION_LIMIT
 
 
+def represented_task_ids(root, commits, target):
+    """Pure target imports carry history trailers, not new worker task scope."""
+    ids, errors = set(), []
+    for sha in commits:
+        parents = sdd.git(root, 'show', '-s', '--format=%P', sha).split()
+        if len(parents) == 2 and ancestor(root, parents[1], target):
+            try:
+                automatic = sdd.git(root, 'merge-tree', '--write-tree', *parents).splitlines()[0]
+                if automatic != sdd.git(root, 'rev-parse', sha + '^{tree}').strip():
+                    errors.append('target import contains unscoped merge-resolution changes')
+            except subprocess.CalledProcessError:
+                errors.append('target import is conflicted; resolve through scoped task commits before import')
+            continue
+        ids.update(re.findall(sdd.TASK, ' '.join(sdd.trailers(sdd.git(root, 'show', '-s', '--format=%B', sha)).get('Task', []))))
+    return ids, errors
+
+
 def registered_pr_errors(root, target, head_ledger, number, branch, task_ids, head):
     """Canonical PR-keyed checkpoints survive branch rewrites and ID changes."""
     record = target.get('task_prs', {}).get(str(number))
@@ -177,9 +194,7 @@ def assess(root, identifier, number, evidence_comment=None):
     commits = sdd.git(root, 'rev-list', f'{target}..{head}').splitlines()
     evidence['signatures'] = bool(commits) and all(github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']['verified'] for sha in commits)
     paths = sdd.git(root, 'diff', '--name-only', target, head).splitlines()
-    ids = set()
-    for sha in commits:
-        ids.update(re.findall(sdd.TASK, ' '.join(sdd.trailers(sdd.git(root, 'show', '-s', '--format=%B', sha)).get('Task', []))))
+    ids, import_errors = represented_task_ids(root, commits, target)
     # The coordinator comment is descriptive; execution.json owns cycle counts
     # and owner authorization. Assess every represented task, including batches.
     canonical = context.get('execution') or {}
@@ -204,7 +219,7 @@ def assess(root, identifier, number, evidence_comment=None):
     evidence['dependencies'] = all(ledger['tasks'].get(dep, {}).get('state') == 'integrated'
                                    and ancestor(root, ledger['tasks'][dep]['merge_sha'], target)
                                    for t in ids if t in rows for dep in re.findall(sdd.TASK, rows[t][2]))
-    errors = []
+    errors = list(import_errors)
     for sha in commits:
         from ledger import transition_errors
         errors += transition_errors(root, sha, context['ledger'], sdd.git)

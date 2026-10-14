@@ -136,6 +136,51 @@ def latest_preparation(result):
     return latest
 
 
+def preparation_progress(root, result):
+    """Resume budget from protected signed prep history, never prior chat."""
+    from ledger import AUTOMATIC_CORRECTION_LIMIT, transition_errors
+    from urllib.parse import quote
+    pending = [p for p in result['prs'] if p['head'] == result['preparation_branch'] and p['state'] == 'open']
+    if not pending:
+        return None
+    if len(pending) != 1:
+        raise ValueError('ambiguous open preparation PRs')
+    pr = pending[0]
+    record = (result.get('execution') or {}).get('preparation_prs', {}).get(str(pr['number']))
+    if not record or record.get('branch') != result['preparation_branch']:
+        raise ValueError('preparation PR correction history is missing; reconcile actual history with owner before assigning a count')
+    count = record.get('correction_cycles')
+    if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+        raise ValueError('invalid preparation correction count')
+    rules = github('api', 'repos/clemarc/fava/rules/branches/' + quote(result['preparation_branch'], safe=''))
+    if not {'required_signatures', 'non_fast_forward', 'deletion'} <= {r['type'] for r in rules}:
+        raise ValueError('preparation history needs signed/no-force-push/no-deletion protections before resume')
+    if not record.get('heads') or any(not ancestor(root, h, pr['sha']) for h in record['heads']):
+        raise ValueError('preparation PR discarded registered history')
+    for sha in git(root, 'rev-list', f'{result["main_sha"]}..{pr["sha"]}').splitlines():
+        if transition_errors(root, sha, result['ledger'], git):
+            raise ValueError('invalid intermediate preparation ledger transition')
+    cap = AUTOMATIC_CORRECTION_LIMIT
+    authorization = record.get('owner_extra_cycles')
+    if isinstance(authorization, dict) and isinstance(authorization.get('comment_id'), int):
+        comment = github('api', f'repos/clemarc/fava/issues/comments/{authorization["comment_id"]}')
+        try:
+            approval = json.loads(comment['body'])
+            limit = approval.get('max_cycles')
+            if (comment.get('issue_url') == f'https://api.github.com/repos/clemarc/fava/issues/{pr["number"]}'
+                    and comment.get('user', {}).get('login') == 'clemarc'
+                    and approval.get('type') == 'fava-correction-authorization'
+                    and approval.get('phase') == 'prepare' and approval.get('milestone') == result['id']
+                    and isinstance(limit, int) and not isinstance(limit, bool) and limit > cap):
+                cap = limit
+        except (ValueError, TypeError, AttributeError):
+            pass
+    if count > cap:
+        raise ValueError('preparation correction limit exhausted without verified owner authorization')
+    return dict(pr=pr['number'], head=pr['sha'], correction_cycles=count, maximum_cycles=cap,
+                next_round_authorized=count < cap, blocked=record.get('state') == 'blocked')
+
+
 def inspect(root, identifier, phase):
     repository = 'clemarc/fava'
     main = github('api', f'repos/{repository}/git/ref/heads/main')['object']['sha']
@@ -230,6 +275,8 @@ def inspect(root, identifier, phase):
                 problems = integrated_task_errors(root, feature, result['milestone_branch'], ident, record, target)
                 if problems:
                     raise ValueError('; '.join(problems))
+    if phase == 'prepare':
+        result['preparation_progress'] = preparation_progress(root, result)
     return result
 
 

@@ -102,3 +102,20 @@ CI/native and Codex review after signed publication. [The escalation report](sdd
 attempts, proposed fixes, validation, risks and the specific additional-cycle
 request and the subsequent explicit authorization. No main/preparation approval
 is manufactured; governance remains proposed until the owner merges it.
+
+## Subsequent review: owner-authorized sixth correction round
+
+- P1 [preparation resume budget](https://github.com/clemarc/fava/pull/10#discussion_r4268988652): justified. Persist preparation_prs in signed preparation history, protect prepare branches from rewriting/deletion, validate append-only counters/heads, return verified preparation_progress and require actual owner phase-specific authorization for extra rounds. Missing history never means zero.
+- P2 [generic milestone instructions](https://github.com/clemarc/fava/pull/10#discussion_r4268988659): justified ambiguity. Both skills now use the user argument and resolver-returned normalized ID/branches; R3.5 remains a labeled example/contract-specific note. Synthetic R4 resolves its own directory and prefixes.
+- P1 independent review / P2 [non-application task completion](https://github.com/clemarc/fava/pull/10#discussion_r4268988666): justified. Exact reviewed path/FR mappings prove task-specific changes for documentation/tooling as well as application tasks. Non-source Task trailers now receive full mapping and planning-chronology validation while retaining SDD-Type requirements.
+- P1 independent review target import attribution: justified. A verified automatic target import retains historical trailers without adding completed task IDs to worker scope; altered/conflicted merge trees block assessment. Synthetic signed histories exercise valid target movement and injected merge edits.
+
+The separate reviewer /root/fifth_round_review confirmed the prepared fixes
+address its scenarios and found no further concrete regression in focused
+re-review. 64 workflow fixtures and seven publication fixtures pass locally.
+The fifth published head remains 26eb4db; native CI exposed an unchanged app UI
+assertion on iPad and accessibility-size navigation assertions on iPhone. Both
+actual failure logs were inspected; unchanged failed-job attempt 2 is running. Neither app/tests nor CI gates are modified.
+The owner authorized up to two additional scoped rounds (maximum seven total)
+on 2026-10-14; this is round six. See [the escalation report](sdd-v2-escalation.md)
+for the findings, patch rationale and exact authorization boundary.

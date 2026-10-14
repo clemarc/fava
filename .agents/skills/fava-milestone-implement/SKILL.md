@@ -17,7 +17,10 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    separate reviewer/session or owner; do not self-certify independent review.
    Do not invent Goal, worktree, agent or resume commands. Runtime limits mean
    checkpoint and resume, not weaken gates. See the shared resource for isolation.
-2. Run `python3 tools/sdd/milestone.py R3.5 --phase implement`. Resolve the actual
+2. Set FAVA_MILESTONE to the user-supplied ID and run
+   `python3 tools/sdd/milestone.py "$FAVA_MILESTONE" --phase implement`. Use the
+   returned normalized id and branch fields for every subsequent operation.
+   Resolve the actual
    canonical directory, dependencies, approved main baseline and all branch/PR
    state. Set `SPECIFY_FEATURE_DIRECTORY` to its returned absolute path. Read
    approved spec/clarifications, plan/tasks, append-only decisions, checklists,
@@ -42,7 +45,8 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    Reconciliation verifies each integrated ID's actual source/merge trailers,
    PR head and SHA-bound task evidence; another task's merge is not completion.
 5. Select a small task or coherent batch whose dependencies are integrated.
-   Task branch is `task/r3.5/tNNN`, using the lowest stable task ID in a batch.
+   Task branch is the returned task_branch_prefix plus the lowercase lowest
+   stable task ID in a batch (e.g. t003); never infer a prefix from an example.
    Branch from the **inspected current milestone head**. Inspect local/remote
    refs, worktree list, matching PRs and ledger before creation. Use isolated
    clean checkouts; subagents share files unless isolation is explicitly created.
@@ -79,7 +83,8 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    reviewable fixes within scope before escalating; do not publish another cycle
    without authorization. Never relax requirements/gates.
 9. Apply every gate in `docs/process/sdd-v2.md`, using
-   `python3 tools/sdd/integration.py R3.5 --pr NUMBER --evidence-comment COMMENT_ID`
+   `python3 tools/sdd/integration.py "$FAVA_MILESTONE" --pr NUMBER --evidence-comment COMMENT_ID`
+   after setting FAVA_MILESTONE to the resolver-returned normalized id
    with a coordinator JSON comment written after publication of the current
    SHA (see the shared resource) as a read-only structural
    assessment. Independently inspect its referenced semantic/review/native
@@ -92,7 +97,11 @@ feature path or branch argument. Never merge or enable auto-merge into main.
     valid merge-message trailers. Reinspect the target immediately before the
     request and use the current PR-head guard. Target movement invalidates gates;
     update the task branch with a signed, trailered target merge, then rerun
-    validation/review before integration. Disable no protections; use no
+    validation/review before integration. Target imports must match Git’s pure
+    automatic merge tree; any conflict resolution or additional edits belong in
+    separate scoped task commits before the import. Import trailers retain
+    historical mappings but do not add completed IDs to the worker’s scope.
+    Disable no protections; use no
     auto-merge. Verify the actual integration commit signature, parents, target,
     full tree and PR linkage. If post-merge signature verification fails, stop
     further integrations and record the blocker; never declare completion.
@@ -106,7 +115,8 @@ feature path or branch argument. Never merge or enable auto-merge into main.
 12. Run `$speckit-analyze` and `$speckit-converge` on complete artifacts. Check
     additions against approved scope; owner-review any planning amendment before
     implementation. Run whole-milestone regression on the exact current head.
-    Open/update **milestone/r3.5 → main** and follow the final handoff template.
+    Open/update **the returned milestone_branch → main** and follow the final
+    handoff template.
     Report exact tested SHA, CI/simulator, task/FR/acceptance coverage, migration,
     persistence and race evidence, physical iPhone/iPad instructions, accessibility
     and performance results/pending checks, outstanding findings and actual

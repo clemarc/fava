@@ -23,6 +23,14 @@ no bypass. Preserve task/planning history. Configure these rules before enabling
 agent task integration; do not change protections to unblock a failed task.
 No rulesets, credentials or repository settings are changed by the workflow PR.
 
+Before preparation publication, add a separate rule for `refs/heads/prepare/*`
+requiring signatures and prohibiting force pushes/deletion, with no bypass.
+This preserves preparation's signed correction history across fresh invocations.
+Direct signed publication to this work branch remains necessary; its owner
+merge destination is protected separately. These prepare protections are newly
+proposed, not present in the inspected settings. The resolver checks effective
+rules before resuming a preparation PR; missing rules are an owner prerequisite.
+
 The Cloud credential currently authenticates as **clemarc**, the owner. GitHub
 cannot distinguish an owner click from an agent API merge using that identity;
 signed commits attest credential/commit identity, not human intent. A signed
@@ -40,3 +48,8 @@ approval. Independent Cloud subagents often still share the same GitHub identity
 their reports supply process evidence, not an extra GitHub approving actor.
 Do not provision tokens/apps/keys, weaken gates or change settings silently.
 If separation is not adopted, document the residual process-only human boundary.
+The current inspection helpers expect clemarc for task merges/report comments.
+Adopting an App also requires a separately reviewed update to the configured
+task-coordinator identity checks, followed by end-to-end signing/gate validation;
+owner roadmap/specification/preparation/main approval checks remain owner-only.
+Provisioning the App alone does not make this alternate identity path operational.

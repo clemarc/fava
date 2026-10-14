@@ -43,6 +43,48 @@ class ResolverTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'ambiguous'):
             milestone.resolve('R3.5', {'one': ROADMAP_DECIMAL, 'two': ROADMAP_DECIMAL})
 
+    def test_other_milestone_uses_its_own_directory_and_branch_fields(self):
+        roadmap = ROADMAP_DECIMAL + ROADMAP_DECIMAL.splitlines()[-1].replace('R3.5', 'R4').replace('demo-01-read', 'demo-02-next') + '\n'
+        result = milestone.resolve(' r4 ', {'specs/demo/roadmap.md': roadmap})
+        self.assertEqual((result['id'], result['feature'], result['milestone_branch'], result['task_branch_prefix']),
+                         ('R4', 'specs/demo-02-next', 'milestone/r4', 'task/r4/'))
+
+    def test_preparation_resume_budget_needs_history_protection_and_actual_owner_evidence(self):
+        result = self.context()
+        result.update(main_sha='a'*40, prs=[dict(number=10, head='prepare/r3.5', state='open', sha='b'*40)],
+                      execution={'preparation_prs': {'10': dict(branch='prepare/r3.5', correction_cycles=3, heads=['c'*40])}})
+        rules = [dict(type=t) for t in ['required_signatures', 'non_fast_forward', 'deletion']]
+        approval = dict(type='fava-correction-authorization', phase='prepare', milestone='R3.5', max_cycles=4)
+        comment = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10', user={'login':'clemarc'}, body=json.dumps(approval))
+        def api(*args): return rules if '/rules/' in args[-1] else comment
+        with patch.object(milestone, 'github', side_effect=api), patch.object(milestone, 'ancestor', return_value=True), patch.object(milestone, 'git', return_value=''):
+            resumed = milestone.preparation_progress(Path('/fixture'), result)
+            self.assertEqual(resumed['correction_cycles'], 3)
+            self.assertFalse(resumed['next_round_authorized'])
+            record = result['execution']['preparation_prs']['10']
+            record.update(correction_cycles=4, owner_extra_cycles=True)
+            with self.assertRaisesRegex(ValueError, 'exhausted'): milestone.preparation_progress(Path('/fixture'), result)
+            record['owner_extra_cycles'] = {'comment_id':123}
+            self.assertEqual(milestone.preparation_progress(Path('/fixture'), result)['maximum_cycles'], 4)
+            for bad in [dict(approval, phase='implement'), dict(approval, milestone='R4'), dict(approval, max_cycles=3)]:
+                comment['body'] = json.dumps(bad)
+                with self.assertRaisesRegex(ValueError, 'exhausted'): milestone.preparation_progress(Path('/fixture'), result)
+            comment['body'] = json.dumps(approval)
+            comment['issue_url'] += '1'
+            with self.assertRaisesRegex(ValueError, 'exhausted'): milestone.preparation_progress(Path('/fixture'), result)
+            record['correction_cycles'] = 3
+            rules.clear()
+            with self.assertRaisesRegex(ValueError, 'protections'): milestone.preparation_progress(Path('/fixture'), result)
+            result['execution']['preparation_prs'].clear()
+            with self.assertRaisesRegex(ValueError, 'missing'): milestone.preparation_progress(Path('/fixture'), result)
+
+    def test_preparation_history_is_append_only_and_cannot_reset(self):
+        entry = dict(branch='prepare/r3.5', correction_cycles=3, heads=['a'*40])
+        old = {'preparation_prs': {'10': entry}}
+        for entries in [{}, {'10':dict(entry, correction_cycles=0)}, {'10':dict(entry, heads=['b'*40])}]:
+            self.assertTrue(ledger.history_errors(old, {'preparation_prs': entries}))
+        self.assertEqual(ledger.history_errors(old, {'preparation_prs': {'10':dict(entry, correction_cycles=4, heads=['a'*40,'b'*40])}}), [])
+
     def test_interrupted_work_resumes_but_closed_completed_and_wrong_targets_stop(self):
         context = self.context()
         context['execution'] = dict(milestone='R3.5', feature=context['feature'],
@@ -297,7 +339,8 @@ class SignedLifecycleTests(unittest.TestCase):
         self.git('switch', '-c', 'milestone/r3.5')
         self.git('switch', '-c', 'prepare/r3.5')
         self.put(self.feature + '/plan.md', 'Derived design FR-001 FR-002')
-        self.put(self.feature + '/tasks.md', TASKS)
+        self.source_path = getattr(self, 'source_path', 'Fava/Reader.swift')
+        self.put(self.feature + '/tasks.md', TASKS.replace('Fava/Reader.swift', self.source_path))
         self.put(self.feature + '/preparation-review.md', 'reviewed synthetic design')
         self.data = dict(schema=1, milestone='R3.5', feature=self.feature, milestone_branch='milestone/r3.5',
                          specification_base=self.baseline, planning_revision=None, state='preparing',
@@ -310,9 +353,10 @@ class SignedLifecycleTests(unittest.TestCase):
         self.data.update(planning_revision=self.planning, state='implementing')
         self.put(self.feature + '/execution.json', json.dumps(self.data))
         self.commit('planning')
-        self.put('Fava/Reader.swift', '// synthetic source')
+        self.put(self.source_path, '// synthetic source')
         self.git('add', '.')
-        self.git('commit', '-qm', f'feat: fixture\n\nSpec: {self.feature}\nTask: T003\nImplements: FR-001 FR-002')
+        kind = '\nSDD-Type: tooling' if self.source_path.startswith(('docs/', 'tools/')) else ''
+        self.git('commit', '-qm', f'feat: fixture\n\nSpec: {self.feature}\nTask: T003\nImplements: FR-001 FR-002' + kind)
         self.source = self.git('rev-parse', 'HEAD')
 
     def git(self, *args):
@@ -344,7 +388,8 @@ class SignedLifecycleTests(unittest.TestCase):
     def task_merge(self):
         self.git('branch', 'task/r3.5/t003', self.source)
         self.git('switch', '-c', 'fixture-integration', self.source + '^')
-        self.git('merge', '--no-ff', '-S', '-m', f'integrate\n\nSpec: {self.feature}\nTask: T003\nImplements: FR-001 FR-002', 'task/r3.5/t003')
+        kind = '\nSDD-Type: tooling' if self.source_path.startswith(('docs/', 'tools/')) else ''
+        self.git('merge', '--no-ff', '-S', '-m', f'integrate\n\nSpec: {self.feature}\nTask: T003\nImplements: FR-001 FR-002' + kind, 'task/r3.5/t003')
         return self.git('rev-parse', 'HEAD')
 
     def test_checkpoint_cannot_reuse_another_tasks_actual_merge(self):
@@ -356,6 +401,34 @@ class SignedLifecycleTests(unittest.TestCase):
         self.git('commit', '--amend', '-S', '-m', f'integrate\n\nSpec: {self.feature}\nTask: T002 T003\nImplements: FR-001 FR-002')
         forged = self.git('rev-parse', 'HEAD')
         self.assertTrue(ledger.task_merge_errors(self.root, self.feature, 'T002', dict(merge_sha=forged), forged, sdd.git))
+
+    def test_reviewed_non_application_task_can_integrate_on_its_exact_paths(self):
+        for path in ['docs/note.md', 'tools/check.py']:
+            self.source_path = path
+            self.setUp()
+            merge = self.task_merge()
+            self.assertEqual(ledger.task_merge_errors(self.root, self.feature, 'T003', dict(merge_sha=merge), merge, sdd.git), [])
+            self.assertTrue(ledger.task_merge_errors(self.root, self.feature, 'T002', dict(merge_sha=merge), merge, sdd.git))
+            with patch.multiple(signatures, KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
+                self.assertEqual(sdd.validate_repo(self.root, self.baseline), [])
+
+    def test_pure_target_import_preserves_worker_scope_and_rejects_extra_edits(self):
+        self.git('branch', 'worker', self.source)
+        self.git('switch', '-c', 'target-moved', self.source + '^')
+        self.put('FavaTests/ReadTests.swift', '// target T002 work')
+        self.git('add', '.')
+        self.git('commit', '-qm', f'target work\n\nSpec: {self.feature}\nTask: T002\nImplements: FR-001 FR-002')
+        target = self.git('rev-parse', 'HEAD')
+        self.git('switch', 'worker')
+        self.git('merge', '--no-ff', '-S', '-m', f'import target\n\nSpec: {self.feature}\nTask: T002\nImplements: FR-001 FR-002', 'target-moved')
+        head = self.git('rev-parse', 'HEAD')
+        commits = self.git('rev-list', f'{target}..{head}').splitlines()
+        self.assertEqual(integration.represented_task_ids(self.root, commits, target), ({'T003'}, []))
+        self.put('Fava/Unscoped.swift', '// extra merge edit')
+        self.git('add', '.')
+        self.git('commit', '--amend', '-S', '--no-edit')
+        changed = self.git('rev-parse', 'HEAD')
+        self.assertTrue(integration.represented_task_ids(self.root, self.git('rev-list', f'{target}..{changed}').splitlines(), target)[1])
 
     def test_integrated_record_requires_exact_pr_head_target_and_task_evidence(self):
         merge = self.task_merge()

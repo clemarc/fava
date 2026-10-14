@@ -177,8 +177,9 @@ def validate_commit(message, paths, read):
             errors.append('spec artifacts require roadmap, specification, planning or reconciliation SDD-Type')
         elif kind[0] == 'reconciliation' and any(not (p.startswith('specs/_system/') or governance_path(p)) for p in paths):
             errors.append('reconciliation exception only permits current-state specs and governance paths')
-        return errors
-    if kind: errors.append('SDD-Type exception cannot cover application source/tests or unknown paths')
+        if not t.get('Task'):
+            return errors
+    if native and kind: errors.append('SDD-Type exception cannot cover application source/tests or unknown paths')
     specs = t.get('Spec', [])
     if len(specs) != 1 or not re.fullmatch('specs/' + FEATURE, specs[0]):
         return errors + ['implementation commit needs one Spec: specs/<feature-directory> trailer; split cross-feature commits']
@@ -335,7 +336,7 @@ def validate_repo(root, base=None, head='HEAD', message=None):
                                 errors += task_merge_errors(root, path.rsplit('/', 1)[0], ident, record, sha, git)
                     except (ValueError, TypeError, KeyError, subprocess.CalledProcessError):
                         errors.append(f'commit {sha[:12]}: invalid execution history')
-            if implementation_paths(paths):
+            if implementation_paths(paths) or trailers(git(root, 'show', '-s', '--format=%B', sha)).get('Task'):
                 cited = trailers(git(root, 'show', '-s', '--format=%B', sha)).get('Spec', [])
                 for feature in cited:
                     planning_ref = pilot_planning_ref(root, base, sha, feature, git(root, 'show', '-s', '--format=%B', sha))
