@@ -131,6 +131,16 @@ three. A truthy marker, wrong actor/PR/phase or malformed comment is not approva
 Counts do not reset across invocation or regeneration. An exhausted/blocked
 preparation uses the same concrete escalation template; no owner merge is made.
 
+Initial registration must be metadata-only at zero and bind the immediately
+preceding published head, committed before the actual PR opening. Late registration
+or ambiguous same-second chronology fails closed for owner reconciliation.
+Every artifact fix publication increments the counter and appends its immediate
+parent in that same commit. Verified pure target imports, projection-only updates
+and narrowly scoped append-only blocker checkpoints preserve the record without
+consuming a round. Credential-free Actions supplies the actual PR number/opening
+time and validates every first-parent publication, including unchanged ledgers.
+Preparation branch context selects stricter checks; it is not approval evidence.
+
 ## Implementation and integration gates
 
 Before any agent integration, verify the effective milestone rules require signed
@@ -202,6 +212,9 @@ Pure target-import merges retain history mappings but are excluded from the
 worker's represented task IDs only after their tree matches Git's automatic
 merge. Conflict resolutions/extra edits require separate scoped task commits
 before import; they cannot be hidden behind an already integrated task ID.
+Use that same import classification when proving task-owned changes before both
+integration and completion. An empty task claim followed by another task's
+shared-file import cannot establish completion, even with relabeled trailers.
 Independent review is either a real GitHub review (independent_review_id plus
 its URL and target SHA) or a separate reviewer JSON PR comment
 (independent_review_comment plus URL), containing head, target, reviewer and
@@ -303,6 +316,11 @@ Use state ready-for-owner after automated work, **not completed**. R3.5's physic
 acceptance is mandatory and pending until the owner supplies sanitized outcomes.
 After testing, authorized fixes use task PRs/new IDs and refreshed validation;
 record both-family acceptance before proposing Status: completed and freeze.
+Keep specification baseline metadata unchanged through the milestone PR so its
+reviewed planning chronology remains verifiable. After owner acceptance, authorized
+fixes and the owner's main promotion merge, propose a separate signed completion-only
+PR to record completion/freeze metadata and acceptance evidence, without application
+changes. The owner reviews and merges that PR too.
 No rewrite of approved R3.5 clarifications/acceptance or R1–R3 history. Changed
 requirements use the existing human-approved Supersedes process. Main merge is
 always human; keep auto-merge disabled.

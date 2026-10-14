@@ -61,7 +61,7 @@ would be required after any new signed publication. Published-head native CI
 failed unchanged iPad background-return (FoundationUITests.swift:78) and
 iPhone accessibility-size navigation assertions (RunLibraryUITests.swift:16,
 141–143). Both actual logs were inspected; ci-required failed closed. Attempt
-2 reruns failed jobs unchanged on the published SHA and is pending. No
+2 reran failed jobs unchanged on that SHA and was cancelled by round six. No
 application/test or workflow gate is changed. [Independent review and prepared
 re-review](https://github.com/clemarc/fava/pull/10#issuecomment-6165447406) are recorded.
 
@@ -72,3 +72,22 @@ beyond the selected maximum
 require another concrete escalation. Default three rounds for future milestone
 PRs, all approval/testing gates, and no main/prep merges remain unchanged.
 No R3.5 work, settings changes or credentials are authorized by this proposal.
+
+## Seventh round: preparation publications and borrowed completion evidence
+
+Round six published signed head 1f3a0b6b60f4b8daf0ec762ffa11bc8e840d26f0.
+All six checks passed in [run 38545381256](https://github.com/clemarc/fava/actions/runs/38545381256),
+including actual Xcode compilation and 41 tests with zero failures per simulator
+family; both native logs were inspected. That evidence applies only to round six.
+
+1. P1 [bind preparation rounds to publications](https://github.com/clemarc/fava/pull/10#discussion_r4269323141). Require initial metadata-only zero registration against the immediately preceding pre-opening head. Check every subsequent first-parent artifact publication for exactly one increment and that publication's parent, even when the ledger is unchanged. Use actual PR number/opening time from the Actions event and resolver API. Narrow exemptions preserve history for projection, blocker records and verified pure target imports; late or ambiguous registration fails closed.
+2. P1 [exclude target imports from completion evidence](https://github.com/clemarc/fava/pull/10#discussion_r4269323152). Share verified import classification across scope and completion proof. Require actual task-owned path changes outside imported target history before integration and again when recording completion. An empty task commit followed by another task's shared-file import cannot complete the task. Preserve signature/trailer checks and reject edited/conflicted imports.
+
+66 workflow fixtures and seven publication fixtures pass locally. The independent
+reviewer /root/fifth_round_review rechecked both prepared fixes and found no
+further concrete defect in that focused scope. Same-second initial registration
+chronology deliberately requires reconciliation rather than an inferred approval.
+Round seven consumes the second additional round authorized above: publication,
+fresh CI and exact-head Codex review only. Any further correction publication
+requires a new concrete escalation and owner authorization. No governance
+adoption, merge, settings change, tracker write or R3.5 work is authorized here.

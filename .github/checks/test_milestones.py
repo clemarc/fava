@@ -56,7 +56,10 @@ class ResolverTests(unittest.TestCase):
         rules = [dict(type=t) for t in ['required_signatures', 'non_fast_forward', 'deletion']]
         approval = dict(type='fava-correction-authorization', phase='prepare', milestone='R3.5', max_cycles=4)
         comment = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10', user={'login':'clemarc'}, body=json.dumps(approval))
-        def api(*args): return rules if '/rules/' in args[-1] else comment
+        def api(*args):
+            if '/rules/' in args[-1]: return rules
+            if '/pulls/' in args[-1]: return {'created_at':'2026-10-14T01:00:00Z'}
+            return comment
         with patch.object(milestone, 'github', side_effect=api), patch.object(milestone, 'ancestor', return_value=True), patch.object(milestone, 'git', return_value=''):
             resumed = milestone.preparation_progress(Path('/fixture'), result)
             self.assertEqual(resumed['correction_cycles'], 3)
@@ -340,7 +343,7 @@ class SignedLifecycleTests(unittest.TestCase):
         self.git('switch', '-c', 'prepare/r3.5')
         self.put(self.feature + '/plan.md', 'Derived design FR-001 FR-002')
         self.source_path = getattr(self, 'source_path', 'Fava/Reader.swift')
-        self.put(self.feature + '/tasks.md', TASKS.replace('Fava/Reader.swift', self.source_path))
+        self.put(self.feature + '/tasks.md', getattr(self, 'reviewed_tasks', TASKS).replace('Fava/Reader.swift', self.source_path))
         self.put(self.feature + '/preparation-review.md', 'reviewed synthetic design')
         self.data = dict(schema=1, milestone='R3.5', feature=self.feature, milestone_branch='milestone/r3.5',
                          specification_base=self.baseline, planning_revision=None, state='preparing',
@@ -411,6 +414,67 @@ class SignedLifecycleTests(unittest.TestCase):
             self.assertTrue(ledger.task_merge_errors(self.root, self.feature, 'T002', dict(merge_sha=merge), merge, sdd.git))
             with patch.multiple(signatures, KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
                 self.assertEqual(sdd.validate_repo(self.root, self.baseline), [])
+
+    def test_preparation_rounds_bind_initial_zero_and_each_publication_to_parent(self):
+        self.source_path = 'docs/note.md'
+        self.setUp()
+        path = self.feature + '/execution.json'
+        self.data['preparation_prs'] = {'10':dict(branch='prepare/r3.5', correction_cycles=0, heads=[self.source])}
+        self.put(path, json.dumps(self.data))
+        registered = self.commit('planning')
+        opened = '2030-01-01T00:00:00Z'
+        def errors(sha): return ledger.preparation_round_errors(self.root, sha, path, 10, opened, self.baseline, sdd.git)
+        self.assertEqual(errors(registered), [])
+        with patch.multiple(signatures, KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
+            self.assertEqual(sdd.validate_repo(self.root, self.baseline, preparation_pr=10, preparation_opened_at=opened), [])
+        self.assertTrue(ledger.preparation_round_errors(self.root, registered, path, 10, '2000-01-01T00:00:00Z', self.baseline, sdd.git))
+        self.put('docs/note.md', '// arbitrary correction without counter')
+        uncounted = self.commit('tooling')
+        self.assertTrue(any('increment once' in e for e in errors(uncounted)))
+        with patch.multiple(signatures, KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
+            self.assertTrue(any('increment once' in e for e in sdd.validate_repo(self.root, self.baseline,
+                            preparation_pr=10, preparation_opened_at=opened)))
+        self.git('switch', '--detach', registered)
+        self.data['preparation_prs']['10'].update(correction_cycles=1, heads=[self.source, registered])
+        self.put(path, json.dumps(self.data))
+        self.put('docs/note.md', '// counted correction')
+        fixed = self.commit('tooling')
+        self.assertEqual(errors(fixed), [])
+        self.data['preparation_prs']['10']['state'] = 'blocked'
+        self.data['findings'] = [{'url':'https://github.com/clemarc/fava/pull/10#discussion_r1', 'severity':'P1'}]
+        self.put(path, json.dumps(self.data))
+        blocked = self.commit('planning')
+        self.assertEqual(errors(blocked), [])
+        self.data['preparation_prs']['10'].update(correction_cycles=2, heads=[self.source, registered, self.source])
+        self.put(path, json.dumps(self.data))
+        wrong_parent = self.commit('planning')
+        self.assertTrue(errors(wrong_parent))
+        self.git('switch', '--detach', self.source)
+        self.data['preparation_prs']['10'].update(correction_cycles=2, heads=[self.source])
+        self.put(path, json.dumps(self.data))
+        self.assertTrue(errors(self.commit('planning')))
+
+    def test_target_import_and_empty_task_commit_cannot_prove_shared_path_work(self):
+        self.reviewed_tasks = TASKS.replace('FavaTests/ReadTests.swift', 'Fava/Reader.swift').replace('[P] ', '')
+        self.setUp()
+        base = self.source + '^'
+        self.git('switch', '-c', 'empty-worker', base)
+        self.git('commit', '--allow-empty', '-qm', f'empty task claim\n\nSpec: {self.feature}\nTask: T003\nImplements: FR-001 FR-002\nSDD-Type: planning')
+        self.git('switch', '-c', 'earlier-target', base)
+        self.put('Fava/Reader.swift', '// earlier T002 work on a shared path')
+        self.git('add', '.')
+        self.git('commit', '-qm', f'earlier work\n\nSpec: {self.feature}\nTask: T002\nImplements: FR-001 FR-002')
+        target = self.git('rev-parse', 'HEAD')
+        self.git('switch', 'empty-worker')
+        self.git('merge', '--no-ff', '-S', '-m', f'relabel target import\n\nSpec: {self.feature}\nTask: T003\nImplements: FR-001 FR-002', 'earlier-target')
+        worker = self.git('rev-parse', 'HEAD')
+        commits = self.git('rev-list', f'{target}..{worker}').splitlines()
+        rows = {r[0]:r for r in sdd.task_rows(self.reviewed_tasks)}
+        self.assertTrue(ledger.task_delta_errors(self.root, self.feature, {'T003'}, commits, target, rows, sdd.git))
+        self.git('switch', 'earlier-target')
+        self.git('merge', '--no-ff', '-S', '-m', f'integrate empty claim\n\nSpec: {self.feature}\nTask: T003\nImplements: FR-001 FR-002', 'empty-worker')
+        merge = self.git('rev-parse', 'HEAD')
+        self.assertTrue(ledger.task_merge_errors(self.root, self.feature, 'T003', dict(merge_sha=merge), merge, sdd.git))
 
     def test_pure_target_import_preserves_worker_scope_and_rejects_extra_edits(self):
         self.git('branch', 'worker', self.source)

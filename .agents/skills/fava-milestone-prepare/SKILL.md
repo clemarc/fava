@@ -70,6 +70,13 @@ nested instructions before writing. This skill prepares planning only.
    missing history is not zero. Never reset counters or rewrite/delete history.
    More rounds require actual owner PR-comment evidence; follow the shared
    format. A blocked record or exhausted budget requires concrete escalation.
+   Initial registration is a metadata-only commit at zero, binding the immediately
+   preceding published head whose commit predates the actual PR opening. Never
+   register late or publish artifact fixes at zero. Bundle each artifact fix with
+   its counter increment and prior head in the same commit. Verified pure target
+   imports, projection-only updates and narrowly scoped blocker records preserve
+   the record without consuming a round. Ambiguous timestamps/history require
+   owner reconciliation; do not guess or rewrite the branch.
    Project tasks with the pinned Linear CLI workflow in
    `docs/process/linear-integration.md`. Inspect help/auth/project, generate a
    dry-run by stable repository key, then upsert only Git-derived definitions.

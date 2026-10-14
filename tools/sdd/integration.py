@@ -11,21 +11,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / '.github/checks'))
 import sdd
 from milestone import github, inspect, read, ancestor, integrated_task_errors
 from lifecycle import planning_ref
-from ledger import AUTOMATIC_CORRECTION_LIMIT
+from ledger import AUTOMATIC_CORRECTION_LIMIT, target_import, task_delta_errors
 
 
 def represented_task_ids(root, commits, target):
     """Pure target imports carry history trailers, not new worker task scope."""
     ids, errors = set(), []
     for sha in commits:
-        parents = sdd.git(root, 'show', '-s', '--format=%P', sha).split()
-        if len(parents) == 2 and ancestor(root, parents[1], target):
-            try:
-                automatic = sdd.git(root, 'merge-tree', '--write-tree', *parents).splitlines()[0]
-                if automatic != sdd.git(root, 'rev-parse', sha + '^{tree}').strip():
-                    errors.append('target import contains unscoped merge-resolution changes')
-            except subprocess.CalledProcessError:
-                errors.append('target import is conflicted; resolve through scoped task commits before import')
+        imported, findings = target_import(root, sha, target, sdd.git)
+        if imported:
+            errors += findings
             continue
         ids.update(re.findall(sdd.TASK, ' '.join(sdd.trailers(sdd.git(root, 'show', '-s', '--format=%B', sha)).get('Task', []))))
     return ids, errors
@@ -211,6 +206,8 @@ def assess(root, identifier, number, evidence_comment=None):
     evidence['target_task_correction_records'] = {ident: canonical.get('tasks', {}).get(ident) for ident in sorted(ids)}
     reviewed_revision = ledger.get('planning_revision') or context['preparation_approval']['sha']
     rows = {r[0]: r for r in sdd.task_rows(read(root, reviewed_revision, feature + '/tasks.md'))}
+    if not checkpoint:
+        evidence['task_limit_blockers'] += task_delta_errors(root, feature, ids, commits, target, rows, sdd.git)
     allowed = set().union(*(sdd.task_paths(rows[t][2]) for t in ids if t in rows))
     shared = {feature + '/' + p for p in ['execution.json', 'tasks.md', 'decision-log.md']}
     evidence['scope'] = bool(ids) and ids <= set(rows) and set(paths) <= allowed | shared

@@ -203,7 +203,7 @@ def validate_commit(message, paths, read):
     return errors
 
 
-def validate_repo(root, base=None, head='HEAD', message=None):
+def validate_repo(root, base=None, head='HEAD', message=None, preparation_pr=None, preparation_opened_at=None):
     errors = []
     if not (root / 'specs').is_dir(): return ['missing specs/ directory']
     if not (root / '.specify/memory/constitution.md').is_file(): errors.append('missing .specify/memory/constitution.md')
@@ -301,6 +301,17 @@ def validate_repo(root, base=None, head='HEAD', message=None):
                 except subprocess.CalledProcessError: old_log = ''
                 if old_log and (not (directory / 'decision-log.md').exists() or not (directory / 'decision-log.md').read_text().startswith(old_log)): errors.append(f'{key}: decision-log.md must remain append-only')
     if base:
+        if preparation_pr:
+            from ledger import preparation_round_errors
+            ledgers = [p for p in git(root, 'ls-tree', '-r', '--name-only', head).splitlines()
+                       if p.startswith('specs/') and p.endswith('/execution.json')]
+            registered = [p for p in ledgers if str(preparation_pr) in json.loads(git(root, 'show', f'{head}:{p}')).get('preparation_prs', {})]
+            if len(registered) != 1 or not preparation_opened_at:
+                errors.append('preparation PR requires exactly one registered ledger and actual opening timestamp')
+            for sha in git(root, 'rev-list', '--first-parent', f'{base}..{head}').splitlines():
+                for path in registered:
+                    errors += [f'commit {sha[:12]}: {e}' for e in preparation_round_errors(
+                        root, sha, path, preparation_pr, preparation_opened_at, base, git)]
         # Deleted contracts/completed directories cannot evade the current-tree walk.
         for path in git(root, 'diff', '--name-only', '--diff-filter=D', base, head, '--', 'specs').splitlines():
             if path.endswith('/roadmap.md'): errors.append(f'{path}: historical roadmaps cannot be deleted')
@@ -325,6 +336,11 @@ def validate_repo(root, base=None, head='HEAD', message=None):
             parents = git(root, 'show', '-s', '--format=%P', sha).split()
             paths = (git(root, 'diff-tree', '--no-commit-id', '-r', '--name-only', parents[0], sha)
                      if parents else git(root, 'diff-tree', '--root', '--no-commit-id', '-r', '--name-only', sha)).splitlines()
+            if preparation_pr and implementation_paths(paths):
+                from ledger import target_import
+                imported, issues = target_import(root, sha, base, git)
+                if not imported or issues:
+                    errors.append(f'commit {sha[:12]}: preparation cannot introduce application implementation')
             from ledger import transition_errors, task_merge_errors
             for path in paths:
                 if path.startswith('specs/') and path.endswith('/execution.json'):
@@ -363,8 +379,10 @@ def main():
     parser.add_argument('--base', help='merge base for lifecycle and every new commit')
     parser.add_argument('--head', default='HEAD')
     parser.add_argument('--message-file', type=Path, help='validate pending message against staged paths')
+    parser.add_argument('--preparation-pr', type=int, help='actual PR number from trusted Actions context')
+    parser.add_argument('--preparation-opened-at', help='actual PR created_at from trusted Actions context')
     args = parser.parse_args()
-    errors = validate_repo(args.root, args.base, args.head, args.message_file)
+    errors = validate_repo(args.root, args.base, args.head, args.message_file, args.preparation_pr, args.preparation_opened_at)
     for error in errors: print('ERROR:', error)
     if not errors: print('SDD quality passed (roadmap slices may precede feature specifications).')
     raise SystemExit(bool(errors))

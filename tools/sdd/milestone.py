@@ -138,7 +138,7 @@ def latest_preparation(result):
 
 def preparation_progress(root, result):
     """Resume budget from protected signed prep history, never prior chat."""
-    from ledger import AUTOMATIC_CORRECTION_LIMIT, transition_errors
+    from ledger import AUTOMATIC_CORRECTION_LIMIT, transition_errors, preparation_round_errors
     from urllib.parse import quote
     pending = [p for p in result['prs'] if p['head'] == result['preparation_branch'] and p['state'] == 'open']
     if not pending:
@@ -157,9 +157,16 @@ def preparation_progress(root, result):
         raise ValueError('preparation history needs signed/no-force-push/no-deletion protections before resume')
     if not record.get('heads') or any(not ancestor(root, h, pr['sha']) for h in record['heads']):
         raise ValueError('preparation PR discarded registered history')
+    details = github('api', f'repos/clemarc/fava/pulls/{pr["number"]}')
+    opened_at = details['created_at']
     for sha in git(root, 'rev-list', f'{result["main_sha"]}..{pr["sha"]}').splitlines():
         if transition_errors(root, sha, result['ledger'], git):
             raise ValueError('invalid intermediate preparation ledger transition')
+    for sha in git(root, 'rev-list', '--first-parent', f'{result["main_sha"]}..{pr["sha"]}').splitlines():
+        errors = preparation_round_errors(root, sha, result['ledger'], pr['number'], opened_at,
+                                          result.get('target_sha', result['main_sha']), git)
+        if errors:
+            raise ValueError('; '.join(errors))
     cap = AUTOMATIC_CORRECTION_LIMIT
     authorization = record.get('owner_extra_cycles')
     if isinstance(authorization, dict) and isinstance(authorization.get('comment_id'), int):

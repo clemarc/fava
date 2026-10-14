@@ -23,12 +23,19 @@ jobs:
       - name: Validate SDD contracts and commit trailers
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          FAVA_PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          FAVA_PR_NUMBER: ${{ github.event.pull_request.number }}
+          FAVA_PR_CREATED_AT: ${{ github.event.pull_request.created_at }}
         run: |
+          SDD_EXTRA=()
+          if [[ "$FAVA_PR_HEAD_REF" == prepare/* ]]; then
+            SDD_EXTRA=(--preparation-pr "$FAVA_PR_NUMBER" --preparation-opened-at "$FAVA_PR_CREATED_AT")
+          fi
           if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != 0000000000000000000000000000000000000000 ]; then
             BASE_SHA=$(git merge-base "$BASE_SHA" HEAD)
-            python3 .github/checks/sdd.py --base "$BASE_SHA"
+            python3 .github/checks/sdd.py --base "$BASE_SHA" "${SDD_EXTRA[@]}"
           else
-            python3 .github/checks/sdd.py
+            python3 .github/checks/sdd.py "${SDD_EXTRA[@]}"
           fi
   tooling-validation:
     name: tooling-validation

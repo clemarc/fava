@@ -125,7 +125,10 @@ feature path or branch argument. Never merge or enable auto-merge into main.
 R3.5 remains active while approved physical iPhone/iPad acceptance is pending.
 After owner testing, incorporate only authorized fixes through the same gates,
 record sanitized acceptance evidence, then propose the verified completion/freeze
-transition. Main merge remains the owner's action. Goal completion, where
-available, is the ready-for-owner handoff (or an explicit blocker), not product
+transition. Main merge remains the owner's action. Preserve specification baseline
+metadata through the milestone PR; after acceptance, authorized fixes and the
+owner's main promotion, propose completion/freeze in a separate signed metadata-only
+PR for owner review and merge, with acceptance evidence and no application changes.
+Goal completion, where available, is the ready-for-owner handoff (or an explicit blocker), not product
 acceptance/main merge; otherwise run the supported long-running loop with durable
 checkpoints and use this same invocation to resume interrupted work.

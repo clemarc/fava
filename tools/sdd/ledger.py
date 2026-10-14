@@ -2,6 +2,7 @@
 import re
 import json
 import subprocess
+from datetime import datetime
 
 AUTOMATIC_CORRECTION_LIMIT = 3
 
@@ -113,6 +114,97 @@ def transition_errors(root, sha, path, git):
         return ['invalid execution history transition']
 
 
+def target_import(root, sha, target, git):
+    """Recognize target ancestry; only an exact automatic tree is a pure import."""
+    parents = git(root, 'show', '-s', '--format=%P', sha).split()
+    if len(parents) != 2:
+        return False, []
+    try:
+        git(root, 'merge-base', '--is-ancestor', parents[1], target)
+    except subprocess.CalledProcessError:
+        return False, []
+    try:
+        automatic = git(root, 'merge-tree', '--write-tree', *parents).splitlines()[0]
+        if automatic != git(root, 'rev-parse', sha + '^{tree}').strip():
+            return True, ['target import contains unscoped merge-resolution changes']
+    except subprocess.CalledProcessError:
+        return True, ['target import is conflicted; resolve through scoped task commits before import']
+    return True, []
+
+
+def preparation_round_errors(root, sha, path, number, opened_at, target, git):
+    """Every post-registration prep publication binds one round to its parent."""
+    try:
+        try:
+            current = json.loads(git(root, 'show', f'{sha}:{path}'))
+        except subprocess.CalledProcessError:
+            return []  # Before the initial artifacts exist.
+        parents = git(root, 'show', '-s', '--format=%P', sha).split()
+        if not parents:
+            return ['preparation publication lacks a parent']
+        parent = parents[0]
+        try:
+            previous = json.loads(git(root, 'show', f'{parent}:{path}'))
+        except subprocess.CalledProcessError:
+            previous = {}
+        key = str(number)
+        old = previous.get('preparation_prs', {}).get(key)
+        new = current.get('preparation_prs', {}).get(key)
+        if new is None:
+            return [] if old is None else ['preparation registration cannot be removed']
+        if not isinstance(new.get('correction_cycles'), int) or isinstance(new.get('correction_cycles'), bool):
+            return ['preparation correction count must be an integer']
+        imported, errors = target_import(root, sha, target, git)
+        if imported:
+            return errors if new == old else errors + ['target import changed preparation round records']
+        changed = set(git(root, 'diff-tree', '--no-commit-id', '-r', '--name-only', parent, sha).splitlines())
+        if old is not None and changed == {path}:
+            differences = {k for k in set(previous) | set(current) if previous.get(k) != current.get(k)}
+            # Projection-only records and blocked-finding checkpoints make no
+            # artifact progress and cannot reset counters, heads or approvals.
+            projection = differences <= {'linear'} and new == old
+            blocked = (differences <= {'preparation_prs', 'findings'}
+                       and new == dict(old, state='blocked')
+                       and current.get('findings', [])[:len(previous.get('findings', []))] == previous.get('findings', [])
+                       and current.get('preparation_prs') == dict(previous.get('preparation_prs', {}), **{key: new}))
+            if projection or blocked:
+                return []
+        if old is None:
+            stamp = datetime.fromisoformat(git(root, 'show', '-s', '--format=%cI', parent).strip())
+            opened = datetime.fromisoformat(opened_at.replace('Z', '+00:00'))
+            allowed = {'preparation_pr', 'preparation_prs', 'linear'}
+            other = {k for k in set(previous) | set(current) if previous.get(k) != current.get(k)} - allowed
+            if (new.get('correction_cycles') != 0 or new.get('heads') != [parent]
+                    or stamp >= opened or changed != {path} or other):
+                return ['initial preparation registration must be zero, metadata-only and bound to the pre-opening head; late/ambiguous registration needs owner reconciliation']
+        elif (new.get('correction_cycles') != old.get('correction_cycles', 0) + 1
+              or new.get('heads') != old.get('heads', []) + [parent]):
+            return ['preparation publication must increment once and append its immediately preceding head']
+        return []
+    except (ValueError, TypeError, KeyError, subprocess.CalledProcessError):
+        return ['invalid preparation round/head evidence']
+
+
+def task_delta_errors(root, feature, task_ids, commits, target, rows, git):
+    """Imported work, empty commits and borrowed paths are not task evidence."""
+    import sdd
+    proven = set()
+    for introduced in commits:
+        imported, _ = target_import(root, introduced, target, git)
+        if imported:
+            continue
+        paths = set(git(root, 'diff-tree', '--no-commit-id', '-r', '--name-only', introduced + '^1', introduced).splitlines())
+        mapped = sdd.trailers(git(root, 'show', '-s', '--format=%B', introduced))
+        ids = set(re.findall(sdd.TASK, ' '.join(mapped.get('Task', []))))
+        allowed = set().union(*(sdd.task_paths(rows[t][2]) for t in ids if t in rows))
+        expected_fr = set().union(*(set(re.findall(sdd.FR, rows[t][2])) for t in ids if t in rows))
+        shared = {feature + '/' + p for p in ['execution.json', 'tasks.md', 'decision-log.md']}
+        if (feature in mapped.get('Spec', []) and ids <= set(rows) and paths <= allowed | shared
+                and set(re.findall(sdd.FR, ' '.join(mapped.get('Implements', [])))) == expected_fr):
+            proven |= {t for t in ids & set(task_ids) if paths & sdd.task_paths(rows[t][2])}
+    return [t + ': no task-owned approved changes outside target imports' for t in sorted(set(task_ids) - proven)]
+
+
 def task_merge_errors(root, feature, ident, record, target, git):
     """Credential-free task identity proof; live PR/report checks supplement it."""
     import sdd
@@ -130,18 +222,7 @@ def task_merge_errors(root, feature, ident, record, target, git):
         merge_fr = set().union(*(set(re.findall(sdd.FR, rows[t][2])) for t in merge_ids if t in rows))
         if not merge_ids <= set(rows) or set(re.findall(sdd.FR, ' '.join(mapped.get('Implements', [])))) != merge_fr:
             return [ident + ': merge requirement mappings do not match reviewed tasks']
-        own_paths = sdd.task_paths(rows[ident][2])
-        for introduced in git(root, 'rev-list', f'{parents[0]}..{parents[1]}').splitlines():
-            paths = set(git(root, 'diff-tree', '--no-commit-id', '-r', '--name-only', introduced + '^1', introduced).splitlines())
-            mapped = sdd.trailers(git(root, 'show', '-s', '--format=%B', introduced))
-            ids = set(re.findall(sdd.TASK, ' '.join(mapped.get('Task', []))))
-            allowed = set().union(*(sdd.task_paths(rows[t][2]) for t in ids if t in rows))
-            expected_fr = set().union(*(set(re.findall(sdd.FR, rows[t][2])) for t in ids if t in rows))
-            shared = {feature + '/' + p for p in ['execution.json', 'tasks.md', 'decision-log.md']}
-            if (feature in mapped.get('Spec', []) and ident in ids and ids <= set(rows)
-                    and paths & own_paths and paths <= allowed | shared
-                    and set(re.findall(sdd.FR, ' '.join(mapped.get('Implements', [])))) == expected_fr):
-                return []
-        return [ident + ': cited PR history contains no approved path changes mapped to this task']
+        commits = git(root, 'rev-list', f'{parents[0]}..{parents[1]}').splitlines()
+        return task_delta_errors(root, feature, {ident}, commits, parents[0], rows, git)
     except (ValueError, subprocess.CalledProcessError):
         return [ident + ': cited task merge is absent from target or invalid']
