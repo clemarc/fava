@@ -53,3 +53,13 @@ Adopting an App also requires a separately reviewed update to the configured
 task-coordinator identity checks, followed by end-to-end signing/gate validation;
 owner roadmap/specification/preparation/main approval checks remain owner-only.
 Provisioning the App alone does not make this alternate identity path operational.
+
+Before any task publication, separately protect `refs/heads/task/*` with required
+signatures, no force pushes, no deletion and no bypass. Direct signed publication
+remains necessary; PR-only rules belong on its milestone destination. The task
+resume/integration helpers check these effective rules and verify retained
+registration/reservation signatures. This is a new adoption prerequisite; the
+2026-10-14 reinspection still found only main ruleset 24928891, with no required
+status checks or conversation resolution. No settings were changed. Current
+protections cannot reconstruct work deleted before protection was installed;
+ambiguous old history needs explicit owner reconciliation, never a guessed count.

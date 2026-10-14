@@ -66,11 +66,16 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    new unedited SHA-scoped request comment; never reuse old reactions. Review
    requests/comments to GitHub are authorized by this owner-started skill.
    Before integration, register its numeric PR key, immutable branch/task IDs,
-   counter and published head in task_prs via a gated metadata checkpoint on
+   zero counter and one initial published head in task_prs via a gated metadata checkpoint on
    the milestone. Before each fix round, checkpoint the incremented PR counter
    and prior head there; synchronize the worker's signed history/counters with
    that target. Preserve all registered heads as ancestors; never force rewrite
-   them. Initial registration is not a fix round. Checkpoint gating cannot
+   them. Require task branch signatures/no-force-push/no-deletion protections.
+   Read resolver task_progress: resume-reserved-fix finishes the existing round
+   without another increment; registration-required reuses the existing PR.
+   Every correction is one non-import publication following its canonical signed
+   reservation; pure automatic imports may intervene. Initial registration must
+   bind the real pre-opening head at zero. Checkpoint gating cannot
    manufacture task completion: exact merge/PR/task report proof is mandatory.
 8. Monitor current-head CI, macOS build and **nonzero simulator tests** when
    native applies. Read real failed logs and Codex comments; assess each finding,
@@ -84,7 +89,8 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    without authorization. Never relax requirements/gates.
 9. Apply every gate in `docs/process/sdd-v2.md`, using
    `python3 tools/sdd/integration.py "$FAVA_MILESTONE" --pr NUMBER --evidence-comment COMMENT_ID`
-   after setting FAVA_MILESTONE to the resolver-returned normalized id
+   with retained check_run_ids and the immutable independent JSON report described
+   in the shared resource, after setting FAVA_MILESTONE to the resolver-returned normalized id
    with a coordinator JSON comment written after publication of the current
    SHA (see the shared resource) as a read-only structural
    assessment. Independently inspect its referenced semantic/review/native

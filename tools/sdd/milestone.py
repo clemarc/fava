@@ -90,9 +90,13 @@ def merged_pr(repository, sha, target):
     return pr['html_url']
 
 
-def integrated_task_errors(root, feature, branch, ident, record, target):
+def integrated_task_errors(root, feature, branch, ident, record, target, verified=None):
     """Bind a completed record to this task's source PR, merge and report."""
     from ledger import task_merge_errors
+    verified = verified if verified is not None else set()
+    key = (feature, branch, ident, json.dumps(record, sort_keys=True), target)
+    if key in verified:
+        return []
     errors = task_merge_errors(root, feature, ident, record, target, git)
     if errors:
         return errors
@@ -103,25 +107,41 @@ def integrated_task_errors(root, feature, branch, ident, record, target):
     number = actual_url.rsplit('/', 1)[-1]
     pr = github('api', f'repos/clemarc/fava/pulls/{number}')
     parents = git(root, 'show', '-s', '--format=%P', sha).split()
-    verified = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
-    if (pr['head']['sha'] != parents[1] or not verified.get('verified')
-            or verified.get('reason') != 'valid'):
+    signature = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
+    if (pr['head']['sha'] != parents[1] or not signature.get('verified')
+            or signature.get('reason') != 'valid'):
         return [ident + ': task PR head/verified merge mismatch']
     comment_id = record.get('integration_comment')
     if not isinstance(comment_id, int) or isinstance(comment_id, bool):
         return [ident + ': exact task PR evidence comment required']
-    comment = github('api', f'repos/clemarc/fava/issues/comments/{comment_id}')
     try:
+        from integration import assess_revision, immutable_comment, timestamp
+        comment = github('api', f'repos/clemarc/fava/issues/comments/{comment_id}')
         evidence = json.loads(comment['body'])
-        valid = (comment.get('issue_url') == f'https://api.github.com/repos/clemarc/fava/issues/{number}'
-                 and comment.get('user', {}).get('login') == 'clemarc'
+        cutoff = timestamp(pr['merged_at'])
+        valid = (immutable_comment(comment, int(number), cutoff,
+                                   timestamp(git(root, 'show', '-s', '--format=%cI', parents[1]).strip()))
                  and comment.get('html_url') in record.get('evidence', [])
                  and evidence.get('validated_head') == parents[1]
                  and evidence.get('validated_target') == parents[0]
-                 and ident in evidence.get('tasks', []))
-    except (ValueError, TypeError, AttributeError):
-        valid = False
-    return [] if valid else [ident + ': evidence is not bound to this task and merged PR head/target']
+                 and ident in evidence.get('tasks', [])
+                 and pr['merge_commit_sha'] == sha and pr['base']['ref'] == branch)
+        if not valid:
+            return [ident + ': evidence is not bound to this task and merged PR head/target before integration']
+        canonical = json.loads(read(root, parents[0], feature + '/execution.json'))
+        context = dict(id=canonical['milestone'], feature=feature, ledger=feature + '/execution.json',
+                       milestone_branch=branch, task_branch_prefix='task/' + canonical['milestone'].lower() + '/',
+                       checkpoint_branch_prefix='checkpoint/' + canonical['milestone'].lower() + '/',
+                       target_sha=parents[0], main_sha=canonical['specification_base'], execution=canonical,
+                       preparation_approval={'sha': canonical['planning_revision']})
+        retained = dict(number=int(number), state='MERGED', isDraft=False, headRefName=pr['head']['ref'],
+                        headRefOid=parents[1], baseRefName=branch, baseRefOid=parents[0])
+        _, errors = assess_revision(root, context, retained, comment_id, pr['merged_at'], verified)
+        if not errors:
+            verified.add(key)
+        return [ident + ': ' + error for error in errors]
+    except (ValueError, TypeError, KeyError, AttributeError, subprocess.CalledProcessError) as error:
+        return [ident + ': incomplete retained integration proof (' + str(error) + ')']
 
 
 def latest_preparation(result):
@@ -186,6 +206,49 @@ def preparation_progress(root, result):
         raise ValueError('preparation correction limit exhausted without verified owner authorization')
     return dict(pr=pr['number'], head=pr['sha'], correction_cycles=count, maximum_cycles=cap,
                 next_round_authorized=count < cap, blocked=record.get('state') == 'blocked')
+
+
+def task_progress(root, result):
+    """Fresh-context resume state from real PRs and retained canonical history."""
+    from ledger import task_publication_progress
+    from urllib.parse import quote
+    progress = {}
+    for pr in result['prs']:
+        if pr['state'] != 'open' or not pr['head'].startswith(result['task_branch_prefix']):
+            continue
+        key = str(pr['number'])
+        record = (result.get('execution') or {}).get('task_prs', {}).get(key)
+        details = github('api', f'repos/clemarc/fava/pulls/{key}')
+        if details['head']['sha'] != pr['sha'] or details['head']['ref'] != pr['head'] or details['base']['ref'] != result['milestone_branch']:
+            raise ValueError('task PR moved during resume inspection')
+        if not record:
+            progress[key] = dict(state='registration-required', head=pr['sha'], opened_at=details['created_at'])
+            continue  # Not permission to publish again or infer a zero budget.
+        if record['branch'] != pr['head']:
+            raise ValueError('registered task branch identity differs from actual PR')
+        rules = github('api', 'repos/clemarc/fava/rules/branches/' + quote(pr['head'], safe=''))
+        if not {'required_signatures', 'non_fast_forward', 'deletion'} <= {r['type'] for r in rules}:
+            raise ValueError('task resume requires signed/no-force-push/no-deletion protections')
+        current = task_publication_progress(root, result['target_sha'], pr['sha'], result['ledger'],
+                                            pr['number'], details['created_at'], git)
+        for sha in set(current['reservations'].values()) | set(git(root, 'rev-list', f'{result["target_sha"]}..{pr["sha"]}').splitlines()):
+            signature = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
+            if signature.get('verified') is not True or signature.get('reason') != 'valid':
+                raise ValueError('task resume history contains an unverified signature')
+        from integration import verified_owner_limits, timestamp
+        from ledger import AUTOMATIC_CORRECTION_LIMIT
+        deadline = min((timestamp(git(root, 'show', '-s', '--format=%cI', sha).strip())
+                        for cycle, sha in current['reservations'].items() if cycle > AUTOMATIC_CORRECTION_LIMIT), default=None)
+        limits = verified_owner_limits(result['execution'], set(record['tasks']), pr['number'], result['id'], deadline)
+        cap = min(limits.get(t, AUTOMATIC_CORRECTION_LIMIT) for t in record['tasks'])
+        count = current['correction_cycles']
+        if count > cap:
+            raise ValueError('task correction budget exhausted without timely verified owner authorization')
+        blocked = record.get('state') == 'blocked' or any(result['execution']['tasks'][t].get('state') == 'blocked' for t in record['tasks'])
+        progress[key] = dict(current, head=pr['sha'], maximum_cycles=cap,
+                             next_round_authorized=count < cap and not blocked and not current['pending_reservation'],
+                             state='blocked' if blocked else 'resume-reserved-fix' if current['pending_reservation'] else 'published')
+    return progress
 
 
 def inspect(root, identifier, phase):
@@ -282,6 +345,8 @@ def inspect(root, identifier, phase):
                 problems = integrated_task_errors(root, feature, result['milestone_branch'], ident, record, target)
                 if problems:
                     raise ValueError('; '.join(problems))
+    if phase == 'implement':
+        result['task_progress'] = task_progress(root, result)
     if phase == 'prepare':
         result['preparation_progress'] = preparation_progress(root, result)
     return result

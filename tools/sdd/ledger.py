@@ -76,14 +76,21 @@ def history_errors(old, new):
             if (not isinstance(old_cycles, int) or not isinstance(new_cycles, int)
                     or isinstance(new_cycles, bool) or new_cycles < old_cycles):
                 errors.append(ident + ': correction count cannot decrease or become invalid')
-    for number, record in old.get('task_prs', {}).items():
-        current = new.get('task_prs', {}).get(number)
-        if (not current or any(current.get(k) != record.get(k) for k in ['tasks', 'branch'])
-                or not isinstance(current.get('correction_cycles'), int)
-                or isinstance(current.get('correction_cycles'), bool)
-                or current['correction_cycles'] < record['correction_cycles']
-                or current.get('heads', [])[:len(record['heads'])] != record['heads']):
-            errors.append(str(number) + ': task PR history is immutable/append-only; counters cannot decrease')
+    for number, current in new.get('task_prs', {}).items():
+        record = old.get('task_prs', {}).get(number)
+        count, heads = current.get('correction_cycles'), current.get('heads')
+        if record is None:
+            if count != 0 or isinstance(count, bool) or not isinstance(heads, list) or len(heads) != 1:
+                errors.append(number + ': initial task registration requires zero and one published head')
+        elif (any(current.get(k) != record.get(k) for k in ['tasks', 'branch'])
+              or not isinstance(count, int) or isinstance(count, bool)
+              or not ((count == record['correction_cycles'] and heads == record['heads'])
+                      or (count == record['correction_cycles'] + 1 and isinstance(heads, list)
+                          and len(heads) == len(record['heads']) + 1
+                          and heads[:-1] == record['heads']))):
+            errors.append(number + ': task reservation must increment once and retain one prior-head boundary')
+    if not set(old.get('task_prs', {})) <= set(new.get('task_prs', {})):
+        errors.append('task PR history cannot be deleted')
     for number, record in old.get('preparation_prs', {}).items():
         current = new.get('preparation_prs', {}).get(number)
         if (not current or current.get('branch') != record.get('branch')
@@ -185,10 +192,16 @@ def preparation_round_errors(root, sha, path, number, opened_at, target, git):
         return ['invalid preparation round/head evidence']
 
 
-def task_delta_errors(root, feature, task_ids, commits, target, rows, git):
+def task_delta_errors(root, feature, task_ids, commits, target, rows, git, head=None):
     """Imported work, empty commits and borrowed paths are not task evidence."""
     import sdd
     proven = set()
+    touched = {}
+    if head is None:
+        # rev-list returns the source tip first; callers also pass it explicitly.
+        head = commits[0] if commits else target
+    surviving = set(git(root, 'diff', '--name-only', target, head).splitlines())
+    candidates = {}
     for introduced in commits:
         imported, _ = target_import(root, introduced, target, git)
         if imported:
@@ -196,12 +209,20 @@ def task_delta_errors(root, feature, task_ids, commits, target, rows, git):
         paths = set(git(root, 'diff-tree', '--no-commit-id', '-r', '--name-only', introduced + '^1', introduced).splitlines())
         mapped = sdd.trailers(git(root, 'show', '-s', '--format=%B', introduced))
         ids = set(re.findall(sdd.TASK, ' '.join(mapped.get('Task', []))))
+        for path in paths:
+            touched.setdefault(path, []).append(ids)
         allowed = set().union(*(sdd.task_paths(rows[t][2]) for t in ids if t in rows))
         expected_fr = set().union(*(set(re.findall(sdd.FR, rows[t][2])) for t in ids if t in rows))
         shared = {feature + '/' + p for p in ['execution.json', 'tasks.md', 'decision-log.md']}
         if (feature in mapped.get('Spec', []) and ids <= set(rows) and paths <= allowed | shared
                 and set(re.findall(sdd.FR, ' '.join(mapped.get('Implements', [])))) == expected_fr):
-            proven |= {t for t in ids & set(task_ids) if paths & sdd.task_paths(rows[t][2])}
+            for t in ids & set(task_ids):
+                candidates.setdefault(t, set()).update(paths & sdd.task_paths(rows[t][2]))
+    for t, paths in candidates.items():
+        # Conservatively reject mixed ownership on a shared path. A prior touch
+        # plus another task's surviving edit is not evidence for this task.
+        if any(all(t in owners for owners in touched[path]) for path in paths & surviving):
+            proven.add(t)
     return [t + ': no task-owned approved changes outside target imports' for t in sorted(set(task_ids) - proven)]
 
 
@@ -215,6 +236,8 @@ def task_merge_errors(root, feature, ident, record, target, git):
         mapped = sdd.trailers(git(root, 'show', '-s', '--format=%B', sha))
         if len(parents) != 2 or feature not in mapped.get('Spec', []) or ident not in re.findall(sdd.TASK, ' '.join(mapped.get('Task', []))):
             return [ident + ': cited merge lacks exact Spec/Task identity']
+        if git(root, 'rev-parse', sha + '^{tree}').strip() != git(root, 'rev-parse', parents[1] + '^{tree}').strip():
+            return [ident + ': integration tree differs from reviewed task source']
         rows = {r[0]: r for r in sdd.task_rows(git(root, 'show', f'{parents[0]}:{feature}/tasks.md'))}
         if ident not in rows:
             return [ident + ': task is absent from reviewed target mappings']
@@ -223,6 +246,88 @@ def task_merge_errors(root, feature, ident, record, target, git):
         if not merge_ids <= set(rows) or set(re.findall(sdd.FR, ' '.join(mapped.get('Implements', [])))) != merge_fr:
             return [ident + ': merge requirement mappings do not match reviewed tasks']
         commits = git(root, 'rev-list', f'{parents[0]}..{parents[1]}').splitlines()
-        return task_delta_errors(root, feature, {ident}, commits, parents[0], rows, git)
+        return task_delta_errors(root, feature, {ident}, commits, parents[0], rows, git, parents[1])
     except (ValueError, subprocess.CalledProcessError):
         return [ident + ': cited task merge is absent from target or invalid']
+
+
+def task_publication_progress(root, target, head, path, number, opened_at, git):
+    """Reconcile signed first-parent publications with canonical reservations.
+
+    The initial publication may contain multiple commits before PR creation.
+    Thereafter every non-import commit is one publication/correction. A reserved
+    but unpublished correction returns pending, so resume never reserves twice.
+    """
+    record = json.loads(git(root, 'show', f'{target}:{path}'))['task_prs'][str(number)]
+    count, heads = record['correction_cycles'], record['heads']
+    if (not isinstance(count, int) or isinstance(count, bool) or count < 0
+            or len(heads) != count + 1):
+        raise ValueError('task count must match retained publication boundaries')
+    chain = git(root, 'rev-list', '--first-parent', '--reverse', head).splitlines()
+    if heads[0] not in chain:
+        raise ValueError('task initial publication was rewritten')
+    initial = heads[0]
+    opened = datetime.fromisoformat(opened_at.replace('Z', '+00:00'))
+    stamp = datetime.fromisoformat(git(root, 'show', '-s', '--format=%cI', initial).strip())
+    if stamp >= opened or stamp.tzinfo is None or opened.tzinfo is None:
+        raise ValueError('initial task publication must strictly predate real PR opening')
+    completed = 0
+    segment = [initial]
+    for sha in chain[chain.index(initial) + 1:]:
+        imported, errors = target_import(root, sha, target, git)
+        if errors:
+            raise ValueError('; '.join(errors))
+        if imported:
+            segment.append(sha)
+            continue
+        if completed >= count or heads[completed + 1] not in segment:
+            raise ValueError('unreserved/skipped task publication or invalid prior-head boundary')
+        parent = git(root, 'rev-parse', sha + '^1').strip()
+        before = json.loads(git(root, 'show', f'{parent}:{path}'))
+        reserved = before.get('task_prs', {}).get(str(number), {})
+        expected_heads = heads[:completed + 2]
+        if (reserved.get('correction_cycles') != completed + 1 or reserved.get('heads') != expected_heads
+                or reserved.get('branch') != record['branch'] or reserved.get('tasks') != record['tasks']):
+            raise ValueError('task correction must import its canonical reservation before publication')
+        completed += 1
+        segment = [sha]
+    if count - completed not in (0, 1) or (count > completed and heads[-1] not in segment):
+        raise ValueError('skipped task publication or duplicate interrupted reservation')
+    # Bind the initial registration and each reservation to the target history,
+    # including metadata checkpoints that claim future or arbitrary heads.
+    previous = None
+    reservations = {}
+    for sha in git(root, 'rev-list', '--first-parent', '--reverse', target).splitlines():
+        try:
+            snapshot = json.loads(git(root, 'show', f'{sha}:{path}'))
+        except subprocess.CalledProcessError:
+            continue
+        current = snapshot.get('task_prs', {}).get(str(number))
+        if current is None:
+            if previous is not None: raise ValueError('task registration deleted')
+            continue
+        if previous is None:
+            if current.get('correction_cycles') != 0 or current.get('heads') != [initial]:
+                raise ValueError('initial task registration must be zero with the initial head')
+        elif history_errors({'task_prs': {str(number): previous}}, {'task_prs': {str(number): current}}):
+            raise ValueError('invalid canonical task reservation transition')
+        if previous is None or current['correction_cycles'] != previous['correction_cycles'] or current['heads'] != previous['heads']:
+            reservations[current['correction_cycles']] = sha
+            boundary = current['heads'][-1]
+            boundary_time = datetime.fromisoformat(git(root, 'show', '-s', '--format=%cI', boundary).strip())
+            registered_time = datetime.fromisoformat(git(root, 'show', '-s', '--format=%cI', sha).strip())
+            if boundary_time >= registered_time or opened >= registered_time:
+                raise ValueError('ambiguous task registration/reservation chronology')
+            # Canonical checkpoint must precede the correction, proven by ancestry
+            # through its pure import, not just a worker-authored copied record.
+            round_number = current['correction_cycles']
+            if round_number and round_number <= completed:
+                fixes = [h for h in chain[chain.index(initial) + 1:] if not target_import(root, h, target, git)[0]]
+                try:
+                    git(root, 'merge-base', '--is-ancestor', sha, fixes[round_number - 1] + '^1')
+                except subprocess.CalledProcessError:
+                    raise ValueError('canonical reservation did not precede its task correction')
+        previous = current
+    if previous != record:
+        raise ValueError('missing retained canonical task registration')
+    return dict(correction_cycles=count, completed_corrections=completed, pending_reservation=count > completed, reservations=reservations)

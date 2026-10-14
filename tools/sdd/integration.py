@@ -1,6 +1,6 @@
 """Read-only integration gate assessment; never merges or enables auto-merge."""
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import re
@@ -39,8 +39,8 @@ def registered_pr_errors(root, target, head_ledger, number, branch, task_ids, he
         errors.append('task PR rewrote or discarded registered prior heads')
     for ident in task_ids:
         cycles = head_ledger.get('tasks', {}).get(ident, {}).get('correction_cycles', -1)
-        if not isinstance(cycles, int) or isinstance(cycles, bool) or cycles < count:
-            errors.append(ident + ': head counter is below registered PR budget')
+        if not isinstance(cycles, int) or isinstance(cycles, bool) or cycles != count:
+            errors.append(ident + ': head counter must equal registered PR budget')
     return errors
 
 
@@ -54,7 +54,7 @@ def check_results(checks):
     return results
 
 
-def verified_owner_limits(ledger, task_ids, number, milestone):
+def verified_owner_limits(ledger, task_ids, number, milestone, before=None):
     """A ledger marker alone never grants additional correction cycles."""
     limits = {}
     for ident in sorted(task_ids):
@@ -63,8 +63,11 @@ def verified_owner_limits(ledger, task_ids, number, milestone):
             continue
         comment = github('api', f'repos/clemarc/fava/issues/comments/{authorization["comment_id"]}')
         try:
+            if (comment.get('created_at') != comment.get('updated_at')
+                    or (before is not None and not timestamp(comment['created_at']) < before)):
+                continue
             approval = json.loads(comment['body'])
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, KeyError, AttributeError):
             continue
         if not isinstance(approval, dict) or not isinstance(approval.get('tasks'), list):
             continue
@@ -155,10 +158,75 @@ def assess(root, identifier, number, evidence_comment=None):
     context = inspect(root, identifier, 'implement')
     pr = github('pr', 'view', str(number), '--repo', 'clemarc/fava', '--json',
                 'number,state,isDraft,headRefName,headRefOid,baseRefName,baseRefOid,commits,statusCheckRollup,reviews,url')
+    return assess_revision(root, context, pr, evidence_comment)
+
+
+def timestamp(value):
+    stamp = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    if stamp.tzinfo is None:
+        raise ValueError('ambiguous timestamp without timezone')
+    return stamp
+
+
+def immutable_comment(comment, number, cutoff, head_time, actor='clemarc'):
+    return (comment.get('issue_url') == f'https://api.github.com/repos/clemarc/fava/issues/{number}'
+            and comment.get('user', {}).get('login') == actor
+            and comment.get('created_at') == comment.get('updated_at')
+            and head_time < timestamp(comment['created_at']) < cutoff)
+
+
+def retained_checks(head, report, cutoff):
+    """Use all retained attempts as of the cutoff, never today's latest rollup.
+
+    A later rerun cannot authorize an earlier merge or erase valid historical
+    proof. Pin IDs, exact SHA and Actions identity; pending/failed attempts that
+    started before the cutoff invalidate an older success of the same name.
+    """
+    pages = github('api', '--paginate', '--slurp',
+                   f'repos/clemarc/fava/commits/{head}/check-runs?filter=all&per_page=100')
+    runs = [r for page in pages for r in page['check_runs']]
+    latest = {}
+    for run in runs:
+        if run.get('app', {}).get('slug') != 'github-actions' or run.get('head_sha') != head:
+            continue
+        started = timestamp(run['started_at'])
+        if started >= cutoff:
+            continue
+        name = run['name']
+        if name in latest and timestamp(latest[name]['started_at']) == started:
+            raise ValueError('ambiguous check-run chronology')
+        if name not in latest or timestamp(latest[name]['started_at']) < started:
+            latest[name] = run
+    ids = report.get('check_run_ids')
+    if not isinstance(ids, list) or not ids or any(type(i) is not int for i in ids) or len(ids) != len(set(ids)):
+        raise ValueError('retained check_run_ids required')
+    selected = [r for r in latest.values() if r['id'] in ids]
+    if {r['id'] for r in selected} != set(ids):
+        raise ValueError('checks are missing, stale or not bound to retained attempts')
+    results = []
+    report_time = timestamp(report['_created_at'])
+    for run in selected:
+        success = (run.get('status') == 'completed' and run.get('conclusion') == 'success'
+                   and timestamp(run['started_at']) < timestamp(run['completed_at']) < report_time)
+        results.append(dict(name=run['name'], conclusion='SUCCESS' if success else 'INCOMPLETE'))
+    return check_results(results), {r['name']: r['details_url'] for r in selected}
+
+
+def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=None):
+    """Full gates at explicit retained parents; never calls the resolver.
+
+    Historical dependency verification descends strictly through target ancestry.
+    A per-assessment cache prevents repeated verification of shared dependencies.
+    """
+    number = pr['number']
+    historical = cutoff is not None
+    cutoff = timestamp(cutoff) if historical else datetime.now(timezone.utc)
+    verified = verified if verified is not None else set()
     checkpoint = pr['headRefName'].startswith(context['checkpoint_branch_prefix'])
     if pr['baseRefName'] != context['milestone_branch'] or not pr['headRefName'].startswith((context['task_branch_prefix'], context['checkpoint_branch_prefix'])):
         raise ValueError('PR head/base does not match resolved task/integration branch')
-    subprocess.run(['git', '-C', str(root), 'fetch', 'origin', pr['headRefOid']], check=True, capture_output=True)
+    if not historical:
+        subprocess.run(['git', '-C', str(root), 'fetch', 'origin', pr['headRefOid']], check=True, capture_output=True)
     head, target = pr['headRefOid'], context['target_sha']
     from urllib.parse import quote
     rules = github('api', 'repos/clemarc/fava/rules/branches/' + quote(context['milestone_branch'], safe=''))
@@ -181,33 +249,58 @@ def assess(root, identifier, number, evidence_comment=None):
     report = github('api', f'repos/clemarc/fava/issues/comments/{evidence_comment}')
     if report['issue_url'] != f'https://api.github.com/repos/clemarc/fava/issues/{number}' or report['user']['login'] != 'clemarc':
         raise ValueError('integration report must be an owner-identity coordinator comment on this PR')
+    head_time = timestamp(sdd.git(root, 'show', '-s', '--format=%cI', head).strip())
+    if not immutable_comment(report, number, cutoff, head_time):
+        raise ValueError('integration report edited, unauthorized, missing or late/ambiguous')
     evidence = json.loads(report['body'])
+    if not isinstance(evidence, dict):
+        raise ValueError('integration report must be complete JSON object')
+    evidence['_created_at'] = report['created_at']
     evidence.update(head=head, target=target, base=pr['baseRefName'],
-                    milestone_branch=context['milestone_branch'], state=pr['state'], draft=pr['isDraft'], protected_target=protected)
+                    milestone_branch=context['milestone_branch'], state='OPEN' if historical else pr['state'], draft=pr['isDraft'], protected_target=protected)
     if pr['baseRefOid'] != target:
         raise ValueError('GitHub target moved during assessment')
     commits = sdd.git(root, 'rev-list', f'{target}..{head}').splitlines()
-    evidence['signatures'] = bool(commits) and all(github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']['verified'] for sha in commits)
+    evidence['signatures'] = bool(commits) and all((lambda v: v.get('verified') is True and v.get('reason') == 'valid')(github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']) for sha in commits)
     paths = sdd.git(root, 'diff', '--name-only', target, head).splitlines()
     ids, import_errors = represented_task_ids(root, commits, target)
     # The coordinator comment is descriptive; execution.json owns cycle counts
     # and owner authorization. Assess every represented task, including batches.
     canonical = context.get('execution') or {}
-    owner_limits = verified_owner_limits(canonical, ids, number, context['id'])
-    evidence['task_limit_blockers'] = durable_task_limits(canonical, ledger, ids, owner_limits)
+    authorization_deadline = timestamp(report['created_at'])
+    evidence['task_limit_blockers'] = []
     if not checkpoint:
         evidence['task_limit_blockers'] += registered_pr_errors(root, canonical, ledger, number, pr['headRefName'], ids, head)
+        from ledger import task_publication_progress
+        metadata = github('api', f'repos/clemarc/fava/pulls/{number}')
+        if (metadata['head']['sha'] != head or metadata['head']['ref'] != pr['headRefName']
+                or metadata['base']['ref'] != context['milestone_branch']):
+            raise ValueError('actual task PR metadata differs from retained assessment')
+        progress = task_publication_progress(root, target, head, context['ledger'], number, metadata['created_at'], sdd.git)
+        for cycle, sha in progress['reservations'].items():
+            signature = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
+            if signature.get('verified') is not True or signature.get('reason') != 'valid':
+                evidence['task_limit_blockers'].append('canonical registration/reservation is not verified signed')
+            if cycle > AUTOMATIC_CORRECTION_LIMIT:
+                authorization_deadline = min(authorization_deadline, timestamp(sdd.git(root, 'show', '-s', '--format=%cI', sha).strip()))
+        if progress['pending_reservation']:
+            evidence['task_limit_blockers'].append('reserved correction is still unpublished; resume it without a new round')
+        task_rules = github('api', 'repos/clemarc/fava/rules/branches/' + quote(pr['headRefName'], safe=''))
+        if not {'required_signatures', 'non_fast_forward', 'deletion'} <= {r['type'] for r in task_rules}:
+            evidence['task_limit_blockers'].append('task history requires signatures/no-force-push/no-deletion protections')
+    owner_limits = verified_owner_limits(canonical, ids, number, context['id'], authorization_deadline)
+    evidence['task_limit_blockers'] += durable_task_limits(canonical, ledger, ids, owner_limits)
     # Checkpoints have no Task trailers. Verify integrated records themselves,
     # rather than letting an empty represented-ID set bypass completion proof.
     for ident, record in ledger.get('tasks', {}).items():
         if record.get('state') == 'integrated':
-            evidence['task_limit_blockers'] += integrated_task_errors(root, feature, context['milestone_branch'], ident, record, target)
+            evidence['task_limit_blockers'] += integrated_task_errors(root, feature, context['milestone_branch'], ident, record, target, verified)
     evidence['task_correction_records'] = {ident: ledger['tasks'].get(ident) for ident in sorted(ids)}
     evidence['target_task_correction_records'] = {ident: canonical.get('tasks', {}).get(ident) for ident in sorted(ids)}
     reviewed_revision = ledger.get('planning_revision') or context['preparation_approval']['sha']
     rows = {r[0]: r for r in sdd.task_rows(read(root, reviewed_revision, feature + '/tasks.md'))}
     if not checkpoint:
-        evidence['task_limit_blockers'] += task_delta_errors(root, feature, ids, commits, target, rows, sdd.git)
+        evidence['task_limit_blockers'] += task_delta_errors(root, feature, ids, commits, target, rows, sdd.git, head)
     allowed = set().union(*(sdd.task_paths(rows[t][2]) for t in ids if t in rows))
     shared = {feature + '/' + p for p in ['execution.json', 'tasks.md', 'decision-log.md']}
     evidence['scope'] = bool(ids) and ids <= set(rows) and set(paths) <= allowed | shared
@@ -222,12 +315,12 @@ def assess(root, identifier, number, evidence_comment=None):
         errors += transition_errors(root, sha, context['ledger'], sdd.git)
         changed = sdd.git(root, 'diff-tree', '--no-commit-id', '-r', '--name-only', sha + '^1', sha).splitlines()
         errors += sdd.validate_commit(sdd.git(root, 'show', '-s', '--format=%B', sha), changed, lambda p: read(root, sha, p))
-        if sdd.implementation_paths(changed):
+        if sdd.implementation_paths(changed) or (not checkpoint and not target_import(root, sha, target, sdd.git)[0]):
             planning_ref(root, context['main_sha'], sha, feature, sdd.git)
     evidence['trailers'] = not errors
     if not checkpoint and set(evidence.get('tasks', [])) != ids:
         evidence['scope'] = False
-    evidence['checks'] = check_results(pr['statusCheckRollup'])
+    evidence['checks'], check_urls = retained_checks(head, evidence, cutoff)
     from native import classify
     evidence['native_required'] = classify(paths, sdd.git(root, 'ls-tree', '-r', '--name-only', head).splitlines(),
                                           sdd.git(root, 'ls-tree', '-r', '--name-only', target).splitlines()) == 'required'
@@ -239,7 +332,11 @@ def assess(root, identifier, number, evidence_comment=None):
     reviews = github('api', '--paginate', '--slurp', f'repos/clemarc/fava/pulls/{number}/reviews?per_page=100')
     reviews = [r for page in reviews for r in page]
     evidence['codex_configured'] = True  # Current repository configuration; do not silently bypass.
-    bot = [r for r in reviews if r['user']['login'] == 'chatgpt-codex-connector[bot]' and r['commit_id'] == head]
+    report_time = timestamp(report['created_at'])
+    bot = [r for r in reviews if r['user']['login'] == 'chatgpt-codex-connector[bot]' and r['commit_id'] == head
+           and r.get('state') not in {'PENDING', 'DISMISSED'}
+           and head_time < timestamp(r['submitted_at']) < report_time]
+    evidence['codex_available'] = True  # Silence or a report boolean cannot bypass actual review.
     evidence['codex_review_head'] = head if bot else None
     evidence['codex_review_complete'] = bool(bot)
     # Bot thumbs-up reports may be on the explicit SHA-scoped review request;
@@ -248,23 +345,54 @@ def assess(root, identifier, number, evidence_comment=None):
     if request_id and not bot:
         request = github('api', f'repos/clemarc/fava/issues/comments/{request_id}')
         reactions = github('api', f'repos/clemarc/fava/issues/comments/{request_id}/reactions')
-        if fresh_bot_reaction(request, reactions, head, number):
+        reactions = [r for r in reactions if head_time < timestamp(r['created_at']) < report_time]
+        if immutable_comment(request, number, report_time, head_time) and fresh_bot_reaction(request, reactions, head, number):
             evidence['codex_review_head'], evidence['codex_review_complete'] = head, True
+    # Include actual review findings known before integration; disposition cannot
+    # be supplied by a favorable aggregate boolean. Later reviews are not a
+    # retroactive authorization or invalidation of a historical checkpoint.
+    comments = [c for c in comments if timestamp(c['created_at']) < cutoff]
     evidence['review_comments'] = [{'url': c['html_url'], 'body': c['body']} for c in comments]
+    reviewed = {}
     evidence['independent_review'] = False
     if evidence.get('independent_review_comment'):
         independent = github('api', f'repos/clemarc/fava/issues/comments/{evidence["independent_review_comment"]}')
-        if independent['issue_url'] == report['issue_url'] and independent['html_url'] == review:
+        if immutable_comment(independent, number, report_time, head_time) and independent['html_url'] == review:
             reviewed = json.loads(independent['body'])
-            evidence['independent_review'] = bool(reviewed.get('reviewer') and reviewed.get('worker')
-                                                 and reviewed['reviewer'] != reviewed['worker']
-                                                 and reviewed.get('head') == head and reviewed.get('target') == target)
     elif evidence.get('independent_review_id'):
         independent = github('api', f'repos/clemarc/fava/pulls/{number}/reviews/{evidence["independent_review_id"]}')
-        evidence['independent_review'] = bool(independent['html_url'] == review and independent['commit_id'] == head
-                                             and independent['state'] != 'PENDING'
-                                             and evidence.get('review_target') == target
-                                             and independent['user']['login'] != evidence.get('worker_login'))
+        # GitHub review bodies are editable without an exposed edit timestamp.
+        # Retain an immutable coordinator copy in a separate comment instead.
+        raise ValueError('retain independent review as an unedited SHA-bound JSON comment with its original review URL')
+    if not isinstance(reviewed, dict):
+        raise ValueError('independent review report must be an object')
+    evidence['independent_review'] = bool(reviewed.get('reviewer') and reviewed.get('worker')
+                                         and reviewed['reviewer'] != reviewed['worker']
+                                         and reviewed.get('head') == head and reviewed.get('target') == target)
+    evidence['semantic_drift'] = evidence.get('semantic_drift') is True and reviewed.get('semantic_drift') is True
+    dispositions = reviewed.get('findings')
+    known = {c['html_url'] for c in comments}
+    known |= {r['html_url'] for r in reviews if r.get('body', '').strip()
+              and r.get('state') not in {'PENDING'} and timestamp(r['submitted_at']) < cutoff}
+    valid_dispositions = isinstance(dispositions, list)
+    covered = set()
+    for finding in dispositions if valid_dispositions else []:
+        if (not isinstance(finding, dict) or not finding.get('url') or not finding.get('rationale')
+                or not finding.get('evidence') or finding.get('head') != head or finding.get('target') != target
+                or finding.get('disposition') not in {'fixed', 'not-actionable'}):
+            valid_dispositions = False
+            continue
+        covered.add(finding['url'])
+    evidence['findings_disposed'] = (evidence.get('findings_disposed') is True
+                                     and reviewed.get('findings_disposed') is True
+                                     and valid_dispositions and known <= covered)
+    if evidence['native_required']:
+        native = reviewed.get('native', {})
+        families = ['ios-build-test / ios-build-test (iPhone)', 'ios-build-test / ios-build-test (iPad)']
+        evidence['macos_build'] = all(native.get(name, {}).get('build_succeeded') is True
+                                     and native[name].get('job_url') == check_urls.get(name) for name in families)
+        counts = [native.get(name, {}).get('tests') for name in families]
+        evidence['simulator_tests'] = min(counts) if all(type(n) is int and n > 0 for n in counts) else 0
     # Semantic review, findings dispositions and native artifact interpretation
     # require coordinator inspection. Their linked reports are not AI CI gates.
     evidence['structural_drift'] = not errors

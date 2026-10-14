@@ -508,7 +508,7 @@ class SignedLifecycleTests(unittest.TestCase):
             return comment
         args = (self.root, self.feature, 'milestone/r3.5', 'T003', record, merge)
         with patch.object(milestone, 'merged_pr', return_value=record['pr']), patch.object(milestone, 'github', side_effect=api):
-            self.assertEqual(milestone.integrated_task_errors(*args), [])
+            self.assertTrue(milestone.integrated_task_errors(*args))  # Identity-only evidence must fail.
             for bad in [dict(report, tasks=['T002']), dict(report, validated_head='old'), dict(report, validated_target='old')]:
                 comment['body'] = json.dumps(bad)
                 self.assertTrue(milestone.integrated_task_errors(*args))

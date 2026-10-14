@@ -171,8 +171,8 @@ target**:
   report revision and findings. Configured available Codex bot review must
   complete for that head. Reaction-based completion requires a new unedited
   single-SHA request on this PR and a bot reaction after its creation. A pending request, older review or silence is not
-  approval. Prove actual service/configuration unavailability if review cannot
-  run, record it and retain independent review; do not silently bypass a timeout.
+  approval. If configured review cannot run, record the actual failure and block
+  integration; do not silently bypass a timeout.
 - Evidence-backed disposition of **every** finding: link, severity, assessment,
   rationale, attempted fix/test, disposition revision and required owner decision
   if unaddressable. Resolve a discussion only after verifying its disposition.
@@ -215,9 +215,8 @@ before import; they cannot be hidden behind an already integrated task ID.
 Use that same import classification when proving task-owned changes before both
 integration and completion. An empty task claim followed by another task's
 shared-file import cannot establish completion, even with relabeled trailers.
-Independent review is either a real GitHub review (independent_review_id plus
-its URL and target SHA) or a separate reviewer JSON PR comment
-(independent_review_comment plus URL), containing head, target, reviewer and
+Independent review is retained in a separate reviewer JSON PR comment
+(independent_review_comment plus URL), optionally linking its original GitHub review, containing head, target, reviewer and
 worker runtime identities. The coordinator publishes a subagent's unedited
 report, preserving its identity and findings; shared GitHub login does not create
 another approving actor. The helper fetches both reports, checks their PR/author
@@ -372,3 +371,68 @@ record, another PR's comment, another actor or a comment for different tasks doe
 not grant authority. The owner supplies authorization; workers/coordinators must
 not manufacture it. The shared-owner-identity limitation and stronger identity
 separation in the settings proposal still apply. The default is three cycles.
+
+## Retained task evidence and publication boundaries
+
+Task registration is exactly zero with one initial published head. That initial
+head must be committed strictly before the actual PR opening time; registration
+follows opening. Each reservation appends exactly one
+prior publication boundary and increments exactly once. Every subsequent
+non-import first-parent commit consumes one reserved correction. Consolidate fixes
+into that one signed publication; do not publish intermediate work. Its first
+parent must contain the canonical signed reservation checkpoint. Pure automatic
+target imports can occur before the fix and between its boundary and publication.
+Head task counts must equal the canonical PR count. Skipped heads, arbitrary
+ancestor boundaries, jumps, rewritten history and ambiguous timestamps block.
+
+The resolver returns task_progress for open task PRs. `registration-required`
+means inspect/register the existing initial publication, not start a duplicate
+PR or assume a budget. `resume-reserved-fix` means finish the already reserved
+correction without another increment; repeated imports do not consume it. A
+pending reservation cannot integrate. Separate task branch protections are an
+owner adoption prerequisite, as described in the settings proposal. Extra-cycle
+authorization must be an unedited owner comment strictly before the applicable
+reservation; later authorization cannot retroactively legalize it.
+
+Live assessment and completed-task reconciliation use the same full verifier at
+explicit source and target SHAs. Reconciliation descends through retained merge
+parents, never calls the milestone resolver recursively, and requires the merge
+tree to preserve the reviewed source tree. Task-owned paths must differ from the
+exact target. Pure imports, replayed patches and reverted work cannot prove
+completion. If several task IDs modify a shared path in different commits, that
+path is conservatively excluded as ownership evidence unless every modifying
+commit includes the task. Use separate serial task PRs or a reviewed coherent
+batch with truthful joint Task/FR mappings; a historical touch is insufficient.
+
+Coordinator JSON must include `check_run_ids` for the actual successful Actions
+check runs, `validated_head`, `validated_target`, exact `tasks`, `semantic_drift`,
+`findings_disposed`, `independent_review_comment` and its
+`independent_review_url`. Publish a new comment after evidence is available; do
+not edit earlier evidence. Retained check IDs are fetched with all attempts and
+verified against the SHA, Actions identity, actual conclusion and timestamps.
+The newest attempt started before integration must succeed before the report;
+a pending/failed attempt cannot be hidden by citing an older success. Later
+reruns neither invalidate valid historical proof nor authorize an earlier merge.
+Missing, edited, unauthorized or same-second ambiguous evidence fails closed.
+
+The independent JSON comment is an unedited coordinator-published copy of the
+separate review, with `head`, `target`, distinct `worker`/`reviewer` runtime IDs,
+`semantic_drift: true`, `findings_disposed: true`, and `findings: []` when none
+exist. Each actual PR review/comment finding needs a `url`, `rationale`,
+`evidence`, exact `head`/`target`, and `disposition` of `fixed` or `not-actionable`.
+Preserve original report wording/identity and actual inspection; booleans do not
+replace review. For native work, `native` maps each configured full iPhone/iPad
+check name to `build_succeeded`, positive integer `tests`, and `job_url` matching
+the retained check's details URL. The reviewer must inspect those job logs and
+artifacts. This is interpreted native evidence backed by actual successful
+family checks, not an automated semantic/log-content oracle.
+
+GitHub review bodies have no exposed immutable edit timestamp. Preserve an
+independent GitHub review's original URL and unedited content in the SHA-bound
+JSON comment rather than using `independent_review_id` alone. Configured Codex
+review must be actual exact-head review or a timely reaction to a fresh request;
+a report's availability boolean cannot bypass it. All review/CI evidence must
+precede the coordinator report, which must precede integration. Complete finding
+dispositions are rechecked using actual GitHub reviews/comments. Current rules
+are checked at resume; GitHub does not supply a historical rules snapshot here.
+Shared owner login still cannot technically distinguish human and agent actions.

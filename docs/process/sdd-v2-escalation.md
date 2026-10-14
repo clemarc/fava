@@ -91,3 +91,20 @@ Round seven consumes the second additional round authorized above: publication,
 fresh CI and exact-head Codex review only. Any further correction publication
 requires a new concrete escalation and owner authorization. No governance
 adoption, merge, settings change, tracker write or R3.5 work is authorized here.
+
+## Bounded restart authorization: rounds eight and nine
+
+On 2026-10-14 the owner explicitly authorized up to two additional scoped
+correction publications for PR #10: rounds eight and nine, maximum nine total.
+Authorization covers workflow fixes, signed publication, CI and review only.
+It excludes merges, auto-merge, settings/credential changes, R3.5 preparation
+and application changes. Reuse chore/sdd-v2 and PR #10 without rewriting history.
+
+The consolidated eighth-round patch addresses the three findings linked in the
+[pause/restart report](https://github.com/clemarc/fava/pull/10#issuecomment-6167080631).
+The [review record](sdd-v2-review.md) describes implementation, adversarial/positive
+fixtures and limitations. Publish only after assessing independent review, then
+verify fresh exact-head signing, CI/native and Codex review. One ninth correction
+publication remains available if justified. If exhausted, retain a tested concrete
+follow-up patch and linked escalation with the exact owner decision; do not
+silently publish again or claim readiness with critical findings outstanding.

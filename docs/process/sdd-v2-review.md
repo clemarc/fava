@@ -119,3 +119,39 @@ actual failure logs were inspected; unchanged failed-job attempt 2 is running. N
 The owner authorized up to two additional scoped rounds (maximum seven total)
 on 2026-10-14; this is round six. See [the escalation report](sdd-v2-escalation.md)
 for the findings, patch rationale and exact authorization boundary.
+
+## Consolidated completion and budget proof (authorized round eight)
+
+The owner authorized rounds eight and nine only, maximum nine correction
+publications, on 2026-10-14. The prior pause report is retained at
+https://github.com/clemarc/fava/pull/10#issuecomment-6167080631.
+This patch reconstructs its proposals from published code; no prior /tmp patch
+was assumed. All three remaining P1s were independently reproduced:
+
+- [Full completion gates](https://github.com/clemarc/fava/pull/10#discussion_r4268988627): live and historical assessment share explicit-parent verification without resolver recursion. Complete immutable authorized reports, signed history, planning/scope/dependencies, retained actual CI attempts, native job interpretation, independent/Codex review and finding dispositions must precede integration. Later reruns cannot authorize past merges or erase valid earlier proof. Integration must retain the reviewed source tree.
+- [Task publication budget](https://github.com/clemarc/fava/pull/10#discussion_r4268988639): zero registration, one boundary/increment per reservation, real PR opening metadata and retained first-parent publications. Canonical signed reservations precede corrections; pure imports may intervene. Resume enforces the cap before publication and reuses pending reservations. Same-count metadata cannot replace a reservation timestamp. Extra-cycle authorization must be immutable and timely. Task-branch protections remain separate owner prerequisites.
+- [Replayed target patches](https://github.com/clemarc/fava/pull/10#discussion_r4269846235): completion requires surviving task-owned changes against the exact target as well as reviewed Task/FR/path history. Replayed/reverted work and ambiguous mixed ownership cannot establish completion; documentation/tooling tasks retain support.
+
+Independent read-only reviewer /root/independent_review identified additional
+merge-tree, authorization-timing and resume-budget cases during this patch's
+review; each received a targeted fix and regression fixture. Review completion
+alone is not approval. The final independent conclusion and fresh Codex/CI
+results are recorded on the PR after publication.
+
+Local validation: 93 discovered workflow fixtures and seven publication fixtures
+pass, including a signed registration/import/reservation/correction/integration/
+checkpoint/resume walkthrough, valid application/docs/tooling tasks, interrupted
+reservations, successive rounds, skipped work, false/late/edited reports, failed
+and late checks/reviews, legitimate reruns and replay/revert/shared-path cases.
+SDD/tooling/whitespace checks pass. Synthetic native evidence exercises gate
+logic, not actual Xcode execution. Fresh macOS CI and exact-head Codex review
+remain necessary after publication; no older run validates this patch.
+
+Current limitations: Linux Cloud with supported subagents and no advertised
+Goal capability; one coordinator controls writes. GitHub identity remains
+clemarc for both agent and owner, so human intent is a process boundary. Only
+main ruleset 24928891 exists; additional main/milestone/prepare/task protections
+are proposed, not applied. Git is authoritative; Linear mutation behavior is
+fixture-tested and no projection was performed in this task. Physical-device
+acceptance remains separate. No application/specification change, R3.5
+preparation, merge, auto-merge or settings/credential change was performed.
