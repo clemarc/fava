@@ -135,6 +135,29 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(integration.check_results([phone])['ios-build-test'], 'INCOMPLETE')
         for state in ['FAILURE', 'SKIPPED', '', None]:
             self.assertEqual(integration.check_results([phone, dict(tablet, conclusion=state)])['ios-build-test'], 'INCOMPLETE')
+        for checks in [[], [dict(name='ios-build-test', conclusion='SUCCESS')]]:
+            self.assertEqual(integration.check_results(checks)['ios-build-test'], 'INCOMPLETE')
+            evidence = self.evidence()
+            evidence['checks'].update(integration.check_results(checks))
+            self.assertTrue(integration.evaluate(evidence))
+
+    def test_durable_task_limits_override_omitted_or_favorable_report_fields(self):
+        data = {'tasks': {'T002': {'state': 'review', 'correction_cycles': 2},
+                          'T003': {'state': 'blocked', 'correction_cycles': 3}}}
+        self.assertEqual(integration.durable_task_limits(data, {'T002'}), [])
+        evidence = self.evidence()  # No report correction count; previously defaulted to zero.
+        evidence['task_limit_blockers'] = integration.durable_task_limits(data, {'T002', 'T003'})
+        self.assertTrue(any('exhausted' in e for e in integration.evaluate(evidence)))
+        evidence.update(correction_cycles=0, owner_extra_cycles=True)
+        self.assertTrue(any('blocked' in e for e in integration.evaluate(evidence)))
+        data['tasks']['T003']['owner_extra_cycles'] = 'owner authorization evidence'
+        self.assertTrue(integration.durable_task_limits(data, {'T003'}))  # Still blocked.
+        data['tasks']['T003']['state'] = 'review'
+        self.assertEqual(integration.durable_task_limits(data, {'T002', 'T003'}), [])
+        self.assertTrue(integration.durable_task_limits(data, {'T099'}))
+        for count in [-1, '3', True]:
+            data['tasks']['T003']['correction_cycles'] = count
+            self.assertTrue(integration.durable_task_limits(data, {'T003'}))
 
     def test_bot_reaction_cannot_survive_an_edited_request_or_precede_it(self):
         head = 'a' * 40

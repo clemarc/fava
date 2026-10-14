@@ -19,9 +19,27 @@ def check_results(checks):
     # Do not mistake an absent aggregate name for missing native execution, or
     # accept just one successful matrix leg as both-family validation.
     families = ['ios-build-test / ios-build-test (iPhone)', 'ios-build-test / ios-build-test (iPad)']
-    if any(name in results for name in families):
-        results['ios-build-test'] = 'SUCCESS' if all(results.get(name) == 'SUCCESS' for name in families) else 'INCOMPLETE'
+    results['ios-build-test'] = 'SUCCESS' if all(results.get(name) == 'SUCCESS' for name in families) else 'INCOMPLETE'
     return results
+
+
+def durable_task_limits(ledger, task_ids):
+    """Reports cannot override durable task blockers or correction budgets."""
+    blockers = []
+    records = ledger.get('tasks', {})
+    for ident in sorted(task_ids):
+        record = records.get(ident)
+        if record is None:
+            blockers.append(ident + ': missing durable task record')
+            continue
+        cycles = record.get('correction_cycles', 0)
+        if not isinstance(cycles, int) or isinstance(cycles, bool) or cycles < 0:
+            blockers.append(ident + ': invalid durable correction count')
+        elif cycles > 2 and not record.get('owner_extra_cycles'):
+            blockers.append(ident + ': two automatic correction cycles exhausted')
+        if record.get('state') == 'blocked':
+            blockers.append(ident + ': durable task remains blocked')
+    return blockers
 
 
 def fresh_bot_reaction(request, reactions, head, number):
@@ -54,6 +72,7 @@ def evaluate(evidence):
         errors.append('task PR must be open and ready for review')
     if evidence.get('blocked_findings'):
         errors.append('unresolved critical correctness/security/scope/consistency findings')
+    errors += evidence.get('task_limit_blockers', [])
     checks = evidence.get('checks', {})
     for name in ['sdd-quality', 'tooling-validation', 'ci-applicability', 'ci-required']:
         if checks.get(name) != 'SUCCESS':
@@ -112,6 +131,10 @@ def assess(root, identifier, number, evidence_comment=None):
     ids = set()
     for sha in commits:
         ids.update(re.findall(sdd.TASK, ' '.join(sdd.trailers(sdd.git(root, 'show', '-s', '--format=%B', sha)).get('Task', []))))
+    # The coordinator comment is descriptive; execution.json owns cycle counts
+    # and owner authorization. Assess every represented task, including batches.
+    evidence['task_limit_blockers'] = durable_task_limits(ledger, ids)
+    evidence['task_correction_records'] = {ident: ledger['tasks'].get(ident) for ident in sorted(ids)}
     reviewed_revision = ledger.get('planning_revision') or context['preparation_approval']['sha']
     rows = {r[0]: r for r in sdd.task_rows(read(root, reviewed_revision, feature + '/tasks.md'))}
     allowed = set().union(*(sdd.task_paths(rows[t][2]) for t in ids if t in rows))

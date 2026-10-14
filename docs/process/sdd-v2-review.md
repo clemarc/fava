@@ -27,7 +27,7 @@ Roadmap approval: #8, 0f6b64a2041e015f63369b5ad7c4f871cc053063.
 - Actions remain deterministic/credential-free, using existing discovery of the
   new Python fixtures. No headless AI key gate or orchestration service.
 
-Validation: 49 SDD/tooling/resolver/integration/projection fixtures and seven
+Validation: 50 SDD/tooling/resolver/integration/projection fixtures and seven
 commit-builder fixtures pass locally. Fixtures include real ephemeral signed
 owner merge history, final main merge promotion, missing/wrong/late approval,
 unreviewed task mapping changes, decimal/unknown/ambiguous IDs, existing and dirty/
@@ -54,3 +54,16 @@ runs must verify results. No settings/credentials are changed by this PR.
 These dispositions are backed by local regression fixtures. Resolve discussions
 only after verified publication and latest-head CI; refreshed Codex review is
 requested for the final revision. No requirement or gate is weakened.
+
+## Additional review fixes (owner-authorized third correction cycle)
+
+- P1 [aggregate-only native evidence](https://github.com/clemarc/fava/pull/10#discussion_r4263942064): justified. Always derive native aggregate success from both configured family jobs; reject empty and aggregate-only rollups, with fixtures.
+- P1 [durable correction limits](https://github.com/clemarc/fava/pull/10#discussion_r4263942076): justified. Assess every represented task's durable correction count, authorization and blocked state; favorable/omitted report fields cannot suppress durable blockers. Fixtures cover batches, exhausted/blocked records, authorized extra cycles, missing records and invalid counters.
+
+The published b6a91f4 revision passed all six CI checks in run 38466141867,
+including actual Xcode 26.6 compilation and 41 simulator tests on each of iPhone
+and iPad. These results are baseline evidence; changed code needs a fresh run.
+The owner explicitly authorized one additional publication/validation cycle in
+this task after the original two automatic cycles. This authorization applies
+only to this governance PR. No default budget, requirement or integration gate
+is changed by these fixes.
