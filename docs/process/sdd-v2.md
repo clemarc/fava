@@ -182,12 +182,29 @@ another approving actor. The helper fetches both reports, checks their PR/author
 and current live facts;
 its subjective report fields still require coordinator/independent inspection.
 
-Use two automatic correction cycles maximum per task PR, durable across restarts.
+Use three automatic correction cycles maximum per task PR, durable across restarts.
+One cycle is a consolidated set of justified fixes followed by fresh validation
+and review; the initial implementation/review is not a correction cycle. Record
+the round before publication so an interruption cannot hide an attempt. A third
+round that clears all gates may integrate; findings remaining after that round
+require escalation. New findings, retries or resumed Cloud tasks do not reset
+the count. An unchanged CI rerun is not another fix round; retain its failure and
+retry evidence. The coordinator serializes the PR-level count across batch task
+records; splitting or retiring task IDs cannot reset the same PR's budget.
 After exhaustion, record the blocker and continue unrelated ready tasks where
 possible. More cycles require owner authorization. Never weaken scope, tests,
 approval/signing/review or drift gates to continue. No-source checkpoints do not
 evade signature/review/CI requirements. Record actual post-merge signature/parents
 and destination; fail and stop further integration if verification disagrees.
+
+Use [the escalation template](../../.specify/templates/escalation-template.md).
+For every new/unresolved finding give its link, severity/impact, affected paths,
+assessment/evidence and attempted fixes/results. Prepare a concrete reviewable
+patch or exact proposed edits within authorized scope, with a validation plan,
+risks and alternatives. Ask for the specific owner decision and, where needed,
+an explicit number of extra rounds/absolute cap. Do not merely ask permission to
+try again. Preserve blocked status and open discussions until the disposition
+is verified; no extra publication or integration precedes the needed approval.
 
 ## Merge history and deterministic promotion proof
 
@@ -272,3 +289,27 @@ Adoption order: owner reviews/merges governance; applies separately documented
 starts implementation; tests physical devices and reviews final main PR. Linear
 projection must use the pinned CLI and verified stable keys. Missing tracker
 access is recorded pending and never blocks deterministic CI.
+
+### Durable correction authorization and task identity
+
+Integration compares each represented task against both the inspected milestone
+ledger and PR-head ledger. A PR cannot erase a target blocker, decrease its
+correction count or reuse an integrated task ID. Follow-up implementation uses
+new owner-reviewed task IDs. Counter decreases also fail deterministic history
+validation. Resolve a blocked task through a reviewed metadata checkpoint before
+retrying integration; a worker's head-only state change is not resolution.
+
+Extra cycles require owner evidence recorded on the milestone target. The task's
+owner_extra_cycles record is an object containing comment_id, pointing to an
+actual owner-authored JSON comment on that task PR. The assessor fetches the
+comment and verifies its PR, actor, milestone, task and finite maximum:
+
+```json
+{"type":"fava-correction-authorization","milestone":"R3.5","tasks":["T003"],"max_cycles":4}
+```
+
+This is a format example, not approval. A boolean/string marker, an unmerged PR
+record, another PR's comment, another actor or a comment for different tasks does
+not grant authority. The owner supplies authorization; workers/coordinators must
+not manufacture it. The shared-owner-identity limitation and stronger identity
+separation in the settings proposal still apply. The default is three cycles.

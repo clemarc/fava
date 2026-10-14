@@ -18,7 +18,7 @@ Roadmap approval: #8, 0f6b64a2041e015f63369b5ad7c4f871cc053063.
 - Mandatory tests, actual macOS/nonzero simulator validation, physical iPhone/iPad
   acceptance, reviewer-owned checklists and human main/prep review remain.
 - One coordinator serializes shared records and task integration, explicitly
-  requests supported subagents and isolates parallel writes. Two correction
+  requests supported subagents and isolates parallel writes. Three correction
   cycles persist; current head/target, review, finding and drift evidence gate
   task merges. The read-only assessor is not a merge-authorization token.
 - Projection uses existing pinned CLI and repository keys, checks duplicates,
@@ -27,7 +27,7 @@ Roadmap approval: #8, 0f6b64a2041e015f63369b5ad7c4f871cc053063.
 - Actions remain deterministic/credential-free, using existing discovery of the
   new Python fixtures. No headless AI key gate or orchestration service.
 
-Validation: 50 SDD/tooling/resolver/integration/projection fixtures and seven
+Validation: 54 SDD/tooling/resolver/integration/projection fixtures and seven
 commit-builder fixtures pass locally. Fixtures include real ephemeral signed
 owner merge history, final main merge promotion, missing/wrong/late approval,
 unreviewed task mapping changes, decimal/unknown/ambiguous IDs, existing and dirty/
@@ -67,3 +67,25 @@ The owner explicitly authorized one additional publication/validation cycle in
 this task after the original two automatic cycles. This authorization applies
 only to this governance PR. No default budget, requirement or integration gate
 is changed by these fixes.
+
+## Further review fixes and owner-requested escalation amendment
+
+- P1 [canonical target correction records](https://github.com/clemarc/fava/pull/10#discussion_r4267662250): justified. Compare target and head records, prevent decreases, and fetch actual owner task-PR authorization rather than accept a truthy marker. Deterministic history checks prevent checkpoint counter resets. Regression fixtures cover forged head-only recovery/authorization and wrong actor/PR/milestone/task comments.
+- P1 [integrated task ID reuse](https://github.com/clemarc/fava/pull/10#discussion_r4267662253): justified. Reject represented tasks integrated in either target or head; follow-up source work requires a new reviewed ID. Regression proves the previous frozen task cannot be reinterpreted as new implementation.
+
+The owner explicitly requested publication of these fixes and one extra default
+review/fix round on 2026-10-14. The proposed policy, all delivery skills and the
+shared validator now allow three rounds, durable across resumptions; a fourth
+requires verified owner authorization. Boundary fixtures accept a clean third
+round and reject an unauthorized fourth or a still-blocked authorized task.
+Escalation now requires linked findings, severity/impact, attempted fixes and
+evidence, a concrete proposed patch with validation/risks, and the exact decision
+needed, using the repository escalation template. The unadopted 2.0.0 amendment
+records this rationale and active-work impact without resetting counters.
+
+54 workflow fixtures and seven publication fixtures pass locally. The earlier
+6b3e4af revision passed all six checks in run 38524365083 attempt 2, with 41 tests
+on each simulator family. Attempt 1 failed an unchanged app UI navigation
+assertion on iPhone; its unchanged retry passed. These are baseline results;
+the new publication requires fresh CI/native validation and Codex review.
+No R3.5/application work or main merge is authorized by these changes.

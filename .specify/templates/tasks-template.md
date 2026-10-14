@@ -250,7 +250,10 @@ With multiple developers:
   integrated dependencies, not just [P]. Shared files have one named owner.
 - Coordinator alone ticks tasks after verified integration and writes shared
   records. Workers return evidence/DEC proposals; no quality checklist edits.
-- Reviewed planning precedes source. Two correction cycles maximum per task PR.
+- Reviewed planning precedes source. Three correction cycles maximum per task PR.
+  Escalate with linked findings/evidence, attempted fixes, a concrete proposed
+  patch/validation plan, risks and the precise owner decision; use the escalation
+  template. Keep blocked state/counters durable and continue unrelated ready work.
   Physical acceptance stays pending until actual owner device evidence.
 
 ## Notes

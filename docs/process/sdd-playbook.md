@@ -90,9 +90,13 @@ integrated dependencies, valid trailers and all introduced signatures, CI/native
 success, separate independent review, completed configured available Codex review,
 evidence-backed disposition of every finding and structural/semantic drift checks.
 Head edits or target movement refresh validation/review. Unresolved critical
-correctness/security/scope/consistency findings block integration. Two automatic
+correctness/security/scope/consistency findings block integration. Three automatic
 correction cycles per task PR; further cycles require owner authorization. Record
 blockers and continue unrelated ready tasks rather than weakening gates.
+Use [the escalation template](../../.specify/templates/escalation-template.md)
+with linked findings, severity/impact, attempted fixes and evidence, a concrete
+proposed patch with validation/risks, and the exact owner decision required.
+New findings and resumed invocations do not reset the three-round budget.
 
 Quality checklist markers belong to reviewers. Implementation workers cannot
 mark them or manufacture owner approval. GitHub bot review is not an owner's

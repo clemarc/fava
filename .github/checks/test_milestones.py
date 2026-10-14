@@ -110,7 +110,7 @@ class IntegrationTests(unittest.TestCase):
                      signatures=False, protected_target=False, dependencies=False, independent_review=False, semantic_drift=False,
                      structural_drift=False, findings_disposed=False, simulator_tests=0, macos_build=False,
                      codex_review_head='old', codex_review_complete=False, blocked_findings=['P1'],
-                     correction_cycles=3, draft=True, state='CLOSED')
+                     correction_cycles=4, draft=True, state='CLOSED')
         for key, value in cases.items():
             with self.subTest(gate=key):
                 bad = dict(good, **{key: value})
@@ -143,21 +143,68 @@ class IntegrationTests(unittest.TestCase):
 
     def test_durable_task_limits_override_omitted_or_favorable_report_fields(self):
         data = {'tasks': {'T002': {'state': 'review', 'correction_cycles': 2},
-                          'T003': {'state': 'blocked', 'correction_cycles': 3}}}
-        self.assertEqual(integration.durable_task_limits(data, {'T002'}), [])
-        evidence = self.evidence()  # No report correction count; previously defaulted to zero.
-        evidence['task_limit_blockers'] = integration.durable_task_limits(data, {'T002', 'T003'})
+                          'T003': {'state': 'blocked', 'correction_cycles': 4}}}
+        self.assertEqual(integration.durable_task_limits(data, data, {'T002'}), [])
+        evidence = self.evidence()
+        evidence['task_limit_blockers'] = integration.durable_task_limits(data, data, {'T002', 'T003'})
         self.assertTrue(any('exhausted' in e for e in integration.evaluate(evidence)))
         evidence.update(correction_cycles=0, owner_extra_cycles=True)
         self.assertTrue(any('blocked' in e for e in integration.evaluate(evidence)))
-        data['tasks']['T003']['owner_extra_cycles'] = 'owner authorization evidence'
-        self.assertTrue(integration.durable_task_limits(data, {'T003'}))  # Still blocked.
+        data['tasks']['T003']['owner_extra_cycles'] = True
         data['tasks']['T003']['state'] = 'review'
-        self.assertEqual(integration.durable_task_limits(data, {'T002', 'T003'}), [])
-        self.assertTrue(integration.durable_task_limits(data, {'T099'}))
+        self.assertTrue(integration.durable_task_limits(data, data, {'T003'}))
+        self.assertEqual(integration.durable_task_limits(data, data, {'T002', 'T003'}, {'T003': 4}), [])
+        self.assertTrue(integration.durable_task_limits(data, data, {'T099'}))
         for count in [-1, '3', True]:
             data['tasks']['T003']['correction_cycles'] = count
-            self.assertTrue(integration.durable_task_limits(data, {'T003'}))
+            self.assertTrue(integration.durable_task_limits(data, data, {'T003'}))
+
+    def test_third_fix_round_can_integrate_but_fourth_needs_verified_authorization(self):
+        data = {'tasks': {'T003': {'state': 'review', 'correction_cycles': 3}}}
+        self.assertEqual(integration.durable_task_limits(data, data, {'T003'}), [])
+        self.assertEqual(integration.evaluate(dict(self.evidence(), correction_cycles=3)), [])
+        data['tasks']['T003']['correction_cycles'] = 4
+        data['tasks']['T003']['owner_extra_cycles'] = True
+        self.assertTrue(integration.durable_task_limits(data, data, {'T003'}))
+        self.assertEqual(integration.durable_task_limits(data, data, {'T003'}, {'T003': 4}), [])
+        data['tasks']['T003']['state'] = 'blocked'
+        self.assertTrue(integration.durable_task_limits(data, data, {'T003'}, {'T003': 4}))
+
+    def test_pr_cannot_erase_target_blockers_or_reuse_integrated_task(self):
+        target = {'tasks': {'T003': {'state': 'blocked', 'correction_cycles': 4}}}
+        head = {'tasks': {'T003': {'state': 'review', 'correction_cycles': 0, 'owner_extra_cycles': True}}}
+        errors = integration.durable_task_limits(target, head, {'T003'})
+        self.assertTrue(any('target task is blocked' in e for e in errors))
+        self.assertTrue(any('cannot decrease' in e for e in errors))
+        self.assertTrue(any('exhausted' in e for e in errors))
+        for where in [target, head]:
+            where['tasks']['T003'].update(state='integrated', correction_cycles=2)
+        self.assertTrue(any('integrated' in e for e in integration.durable_task_limits(target, head, {'T003'})))
+
+    def test_extra_cycles_need_actual_owner_comment_from_target(self):
+        authorization = {'tasks': {'T003': {'owner_extra_cycles': {'comment_id': 123}}}}
+        approval = dict(type='fava-correction-authorization', milestone='R3.5', tasks=['T003'], max_cycles=4)
+        comment = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10',
+                       user={'login': 'clemarc'}, body=json.dumps(approval))
+        with patch.object(integration, 'github', return_value=comment):
+            self.assertEqual(integration.verified_owner_limits(authorization, {'T003'}, 10, 'R3.5'), {'T003': 4})
+            self.assertEqual(integration.verified_owner_limits(authorization, {'T003'}, 11, 'R3.5'), {})
+            self.assertEqual(integration.verified_owner_limits(authorization, {'T003'}, 10, 'R4'), {})
+        for wrong in [dict(comment, user={'login': 'worker'}), dict(comment, body='true'),
+                      dict(comment, body=json.dumps(dict(approval, max_cycles=3))),
+                      dict(comment, body=json.dumps(dict(approval, tasks=['T999'])))]:
+            with patch.object(integration, 'github', return_value=wrong):
+                self.assertEqual(integration.verified_owner_limits(authorization, {'T003'}, 10, 'R3.5'), {})
+        with patch.object(integration, 'github') as api:
+            self.assertEqual(integration.verified_owner_limits({'tasks': {'T003': {'owner_extra_cycles': True}}}, {'T003'}, 10, 'R3.5'), {})
+            api.assert_not_called()
+
+    def test_correction_history_cannot_be_reset_by_checkpoint(self):
+        old = {'tasks': {'T003': {'state': 'blocked', 'correction_cycles': 4}}}
+        new = {'tasks': {'T003': {'state': 'review', 'correction_cycles': 0}}}
+        self.assertTrue(any('cannot decrease' in e for e in ledger.history_errors(old, new)))
+        new['tasks']['T003']['correction_cycles'] = 4
+        self.assertEqual(ledger.history_errors(old, new), [])
 
     def test_bot_reaction_cannot_survive_an_edited_request_or_precede_it(self):
         head = 'a' * 40

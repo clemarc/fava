@@ -272,9 +272,12 @@ already-authorized GitHub integration's workflow job-log/artifact tools. In this
 setup the connector retrieved logs successfully while direct downloads were
 proxy-denied; do not bypass the proxy or add credentials to work around it.
 On failure diagnose actual evidence, fix within scope, rerun checks, make a new
-verified GraphQL commit on the same branch and monitor the new SHA. Two automatic
+verified GraphQL commit on the same branch and monitor the new SHA. Three automatic
 correction cycles maximum; thereafter report the blocker. A skipped, cancelled,
 missing or old successful check cannot prove the latest native change passed.
+Use [the escalation template](../../.specify/templates/escalation-template.md):
+linked findings and severity/impact, evidence/attempted fixes, a concrete proposed
+fix and validation plan, risks and the precise owner decision/extra rounds needed.
 
 ## Owner's main ruleset
 
@@ -368,7 +371,9 @@ still require independent inspection; ledger assertions cannot replace evidence.
 All introduced/integration commits must be GitHub Verified. Use valid union
 Spec/Task/Implements mappings on source-bearing merges, SDD-Type: planning on
 no-source planning/checkpoint merges. Head/target changes invalidate evidence.
-Keep two automatic correction cycles per task PR, persisted across restarts.
+Keep three automatic correction cycles per task PR, persisted across restarts.
+Record cycles before publication; new findings do not reset the budget. Prepare
+a reviewable proposed fix at escalation and continue unrelated ready tasks.
 
 Current settings inspection supersedes the dated snapshot above; see
 [sdd-v2-settings.md](sdd-v2-settings.md). No settings are changed by this PR.

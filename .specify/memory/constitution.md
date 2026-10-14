@@ -132,8 +132,11 @@ satisfied dependencies. Every integration MUST verify destination/scope/dependen
 trailers/signatures, current deterministic CI/ci-required, applicable actual macOS
 compilation/nonzero simulator tests, independent and configured available Codex
 review, finding dispositions and structural/semantic drift. Head/target movement
-MUST refresh evidence. Two automatic correction cycles per task PR remain the
+MUST refresh evidence. Three automatic correction cycles per task PR are the
 limit unless the owner authorizes more; blocked tasks MUST NOT weaken gates.
+Escalations MUST include linked findings with severity/impact, evidence and
+attempted fixes, a concrete proposed fix with validation and risks, and the
+precise owner decision required. New findings do not restart the cycle budget.
 
 Final handoff MUST include task/FR/acceptance coverage, tested revision, automated
 and device instructions, migration/persistence/race evidence, accessibility and
@@ -178,5 +181,10 @@ reviewed preparation before implementation; no existing draft gains approval fro
 this amendment. No R3.5 preparation occurs in the governance PR. Adoption requires
 owner governance merge, separately reviewed ruleset/capability prerequisites, and
 then owner-started preparation; policy changes are not retroactive authorization.
+At the owner's request on 2026-10-14, this unadopted amendment also increases
+the automatic correction budget from two to three rounds and requires reviewable
+fix proposals at escalation to reduce owner interruptions. Counts remain durable
+and monotonic; active work gets no reset, approval or weaker integration gate.
+The new policy takes effect only upon owner adoption of this governance PR.
 
-**Version**: 2.0.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-13
+**Version**: 2.0.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-14

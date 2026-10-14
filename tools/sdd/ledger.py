@@ -1,6 +1,8 @@
 """Execution schema and retained-history checks, independent of GitHub credentials."""
 import re
 
+AUTOMATIC_CORRECTION_LIMIT = 3
+
 
 def validate(ledger, feature, tasks):
     from milestone import normalize
@@ -25,7 +27,7 @@ def validate(ledger, feature, tasks):
     for ident, record in records.items():
         if record.get('state') not in {'pending', 'working', 'review', 'blocked', 'integrated'}:
             errors.append(ident + ': invalid task state')
-        if record.get('correction_cycles', 0) > 2 and not record.get('owner_extra_cycles'):
+        if record.get('correction_cycles', 0) > AUTOMATIC_CORRECTION_LIMIT and not record.get('owner_extra_cycles'):
             if record.get('state') != 'blocked': errors.append(ident + ': correction limit requires blocker')
         if record.get('state') == 'integrated':
             if not rows.get(ident, ('', False))[1] or not record.get('pr') or not re.fullmatch(r'[0-9a-f]{40}', record.get('merge_sha', '')) or not record.get('evidence'):
@@ -51,4 +53,9 @@ def history_errors(old, new):
             errors.append(ident + ': removed task must retire its ID')
         if record.get('state') == 'integrated' and current != record:
             errors.append(ident + ': integrated task history must remain frozen; new fixes need new IDs')
+        if current is not None:
+            old_cycles, new_cycles = record.get('correction_cycles', 0), current.get('correction_cycles', 0)
+            if (not isinstance(old_cycles, int) or not isinstance(new_cycles, int)
+                    or isinstance(new_cycles, bool) or new_cycles < old_cycles):
+                errors.append(ident + ': correction count cannot decrease or become invalid')
     return errors

@@ -25,7 +25,9 @@
   task/checkpoint PRs into a registered milestone branch. Until that governance
   merge, all agent merges remain prohibited. Never merge/auto-merge to main.
   Monitor Actions for its latest SHA, read actual failure logs and correct at
-  most two cycles unless further attempts are authorized. Report blocked checks.
+  most three cycles unless further attempts are authorized. Escalate with
+  `.specify/templates/escalation-template.md`: findings/evidence, attempted fixes,
+  a concrete proposed patch and validation plan, risks and exact owner decision.
   Human owner review remains mandatory for preparation/main/governance. Task
   review is independent of the worker; head/target changes invalidate evidence.
   Explicitly request subagents where supported; isolate their checkouts and writes.

@@ -61,9 +61,14 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    requests/comments to GitHub are authorized by this owner-started skill.
 8. Monitor current-head CI, macOS build and **nonzero simulator tests** when
    native applies. Read real failed logs and Codex comments; assess each finding,
-   fix justified issues and refresh tests/review after changes. Retain two
+   fix justified issues and refresh tests/review after changes. Retain three
    automatic correction cycles per PR across invocations; then record blocked
-   findings and continue unrelated ready tasks. Never relax requirements/gates.
+   findings and continue unrelated ready tasks. Use
+   `.specify/templates/escalation-template.md` to give the owner linked findings,
+   severity/impact, attempted fixes and a concrete proposed patch with tests,
+   risks and the precise decision/extra-cycle authorization needed. Prepare
+   reviewable fixes within scope before escalating; do not publish another cycle
+   without authorization. Never relax requirements/gates.
 9. Apply every gate in `docs/process/sdd-v2.md`, using
    `python3 tools/sdd/integration.py R3.5 --pr NUMBER --evidence-comment COMMENT_ID`
    with a coordinator JSON comment written after publication of the current

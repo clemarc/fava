@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / '.github/checks'))
 import sdd
 from milestone import github, inspect, read, ancestor
 from lifecycle import planning_ref
+from ledger import AUTOMATIC_CORRECTION_LIMIT
 
 
 def check_results(checks):
@@ -23,22 +24,52 @@ def check_results(checks):
     return results
 
 
-def durable_task_limits(ledger, task_ids):
+def verified_owner_limits(ledger, task_ids, number, milestone):
+    """A ledger marker alone never grants additional correction cycles."""
+    limits = {}
+    for ident in sorted(task_ids):
+        authorization = ledger.get('tasks', {}).get(ident, {}).get('owner_extra_cycles')
+        if not isinstance(authorization, dict) or not isinstance(authorization.get('comment_id'), int):
+            continue
+        comment = github('api', f'repos/clemarc/fava/issues/comments/{authorization["comment_id"]}')
+        try:
+            approval = json.loads(comment['body'])
+        except (ValueError, TypeError):
+            continue
+        if not isinstance(approval, dict) or not isinstance(approval.get('tasks'), list):
+            continue
+        cap = approval.get('max_cycles')
+        if (comment.get('issue_url') == f'https://api.github.com/repos/clemarc/fava/issues/{number}'
+                and comment.get('user', {}).get('login') == 'clemarc'
+                and approval.get('type') == 'fava-correction-authorization'
+                and approval.get('milestone') == milestone and ident in approval.get('tasks', [])
+                and isinstance(cap, int) and not isinstance(cap, bool) and cap > AUTOMATIC_CORRECTION_LIMIT):
+            limits[ident] = cap
+    return limits
+
+
+def durable_task_limits(target, head, task_ids, owner_limits=None):
     """Reports cannot override durable task blockers or correction budgets."""
     blockers = []
-    records = ledger.get('tasks', {})
+    owner_limits = owner_limits or {}
     for ident in sorted(task_ids):
-        record = records.get(ident)
-        if record is None:
-            blockers.append(ident + ': missing durable task record')
-            continue
-        cycles = record.get('correction_cycles', 0)
-        if not isinstance(cycles, int) or isinstance(cycles, bool) or cycles < 0:
-            blockers.append(ident + ': invalid durable correction count')
-        elif cycles > 2 and not record.get('owner_extra_cycles'):
-            blockers.append(ident + ': two automatic correction cycles exhausted')
-        if record.get('state') == 'blocked':
-            blockers.append(ident + ': durable task remains blocked')
+        counts = []
+        for label, ledger in [('target', target), ('head', head)]:
+            record = (ledger or {}).get('tasks', {}).get(ident)
+            if record is None:
+                blockers.append(ident + ': missing ' + label + ' task record')
+                continue
+            cycles = record.get('correction_cycles', 0)
+            if not isinstance(cycles, int) or isinstance(cycles, bool) or cycles < 0:
+                blockers.append(ident + ': invalid ' + label + ' correction count')
+            else:
+                counts.append(cycles)
+                if cycles > owner_limits.get(ident, AUTOMATIC_CORRECTION_LIMIT):
+                    blockers.append(ident + ': three automatic correction cycles exhausted in ' + label)
+            if record.get('state') in {'blocked', 'integrated'}:
+                blockers.append(ident + ': ' + label + ' task is ' + record['state'])
+        if len(counts) == 2 and counts[1] < counts[0]:
+            blockers.append(ident + ': correction history cannot decrease')
     return blockers
 
 
@@ -85,8 +116,8 @@ def evaluate(evidence):
             errors.append('Codex bot review pending/stale')
     elif evidence.get('codex_configured') and not evidence.get('codex_unavailability_evidence'):
         errors.append('record actual Codex unavailability; do not infer it from silence')
-    if evidence.get('correction_cycles', 0) > 2 and not evidence.get('owner_extra_cycles'):
-        errors.append('two automatic correction cycles exhausted')
+    if evidence.get('correction_cycles', 0) > AUTOMATIC_CORRECTION_LIMIT and not evidence.get('owner_extra_cycles'):
+        errors.append('three automatic correction cycles exhausted')
     return errors
 
 
@@ -133,8 +164,11 @@ def assess(root, identifier, number, evidence_comment=None):
         ids.update(re.findall(sdd.TASK, ' '.join(sdd.trailers(sdd.git(root, 'show', '-s', '--format=%B', sha)).get('Task', []))))
     # The coordinator comment is descriptive; execution.json owns cycle counts
     # and owner authorization. Assess every represented task, including batches.
-    evidence['task_limit_blockers'] = durable_task_limits(ledger, ids)
+    canonical = context.get('execution') or {}
+    owner_limits = verified_owner_limits(canonical, ids, number, context['id'])
+    evidence['task_limit_blockers'] = durable_task_limits(canonical, ledger, ids, owner_limits)
     evidence['task_correction_records'] = {ident: ledger['tasks'].get(ident) for ident in sorted(ids)}
+    evidence['target_task_correction_records'] = {ident: canonical.get('tasks', {}).get(ident) for ident in sorted(ids)}
     reviewed_revision = ledger.get('planning_revision') or context['preparation_approval']['sha']
     rows = {r[0]: r for r in sdd.task_rows(read(root, reviewed_revision, feature + '/tasks.md'))}
     allowed = set().union(*(sdd.task_paths(rows[t][2]) for t in ids if t in rows))

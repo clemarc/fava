@@ -69,7 +69,10 @@ nested instructions before writing. This skill prepares planning only.
 9. Validate SDD, fixtures, semantic analysis, scope and staged diff using
    `$fava-ci-verify`; publish verified GraphQL commits with `SDD-Type: planning`.
    Open/update the same preparation PR **against milestone/r3.5**. Monitor the
-   current SHA, read actual failure logs, fix at most two cycles. Record scope,
+   current SHA, read actual failure logs, fix at most three cycles per PR across
+   resumptions. If blocked, use `.specify/templates/escalation-template.md` with
+   linked findings, attempted fixes and a concrete proposed patch/validation
+   plan for owner review before requesting further publication. Record scope,
    migration, risks, coverage and unresolved owner decisions in the report.
 10. End with the prep PR, exact revision/evidence, actual Linear status and owner
     handoff: review design/tasks/parallel ownership and reviewer-owned checklists,

@@ -54,8 +54,12 @@ invent missing feature artifacts or validation evidence.
    older green SHA or a skipped job as native test evidence.
 8. On failure, diagnose actual logs, make a scoped fix, rerun applicable local
    checks, publish another verified GraphQL commit on the same branch, verify
-   the new SHA and monitor its CI. Allow at most **two automatic correction
-   cycles**; after that report the blocker unless more attempts are authorized.
+   the new SHA and monitor its CI. Allow at most **three automatic correction
+   cycles** per PR across resumptions; after that use
+   `.specify/templates/escalation-template.md` to report linked findings, impact,
+   attempted fixes and a concrete proposed patch/validation plan for owner
+   review. State the exact decision needed; further publication requires
+   authorization. Continue unrelated ready tasks where applicable.
 9. Declare ready for human review only when deterministic gates, applicable
    Xcode compilation/simulator tests and ci-required passed for the latest SHA,
    traceability remains intact, and outstanding device checks are explicit.
