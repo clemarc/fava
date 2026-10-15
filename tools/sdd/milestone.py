@@ -183,8 +183,6 @@ def preparation_limit(record, number, milestone, before):
 
 def preparation_progress(root, result):
     """Resume budget from protected signed prep history, never prior chat."""
-    from ledger import AUTOMATIC_CORRECTION_LIMIT, transition_errors, preparation_round_errors
-    from urllib.parse import quote
     pending = [p for p in result['prs'] if p['head'] == result['preparation_branch'] and p['state'] == 'open']
     if not pending:
         return None
@@ -192,12 +190,19 @@ def preparation_progress(root, result):
         raise ValueError('ambiguous open preparation PRs')
     pr = pending[0]
     record = (result.get('execution') or {}).get('preparation_prs', {}).get(str(pr['number']))
+    return preparation_revision_progress(root, result, pr, record)
+
+
+def preparation_revision_progress(root, result, pr, record, cutoff=None):
+    """Verify one explicit preparation revision, whether open or already merged."""
+    from ledger import AUTOMATIC_CORRECTION_LIMIT, transition_errors, preparation_round_errors
     if not record or record.get('branch') != result['preparation_branch']:
         raise ValueError('preparation PR correction history is missing; reconcile actual history with owner before assigning a count')
     count = record.get('correction_cycles')
     if not isinstance(count, int) or isinstance(count, bool) or count < 0:
         raise ValueError('invalid preparation correction count')
-    if not record.get('heads') or any(not ancestor(root, h, pr['sha']) for h in record['heads']):
+    if (not record.get('heads') or len(record['heads']) != count + 1
+            or any(not ancestor(root, h, pr['sha']) for h in record['heads'])):
         raise ValueError('preparation PR discarded registered history')
     from integration import timestamp
     task_history_protection(result['preparation_branch'], timestamp(git(root, 'show', '-s', '--format=%cI', record['heads'][0]).strip()), github)
@@ -223,11 +228,49 @@ def preparation_progress(root, result):
             before = timestamp(git(root, 'show', '-s', '--format=%cI', sha).strip())
             if retained['correction_cycles'] > preparation_limit(retained, pr['number'], result['id'], before):
                 raise ValueError('preparation correction limit exhausted at retained publication without timely authorization')
-    cap = preparation_limit(record, pr['number'], result['id'], datetime.now(timezone.utc))
+    cap = preparation_limit(record, pr['number'], result['id'], cutoff or datetime.now(timezone.utc))
     if count > cap:
         raise ValueError('preparation correction limit exhausted without verified owner authorization')
     return dict(pr=pr['number'], head=pr['sha'], correction_cycles=count, maximum_cycles=cap,
                 next_round_authorized=count < cap, blocked=record.get('state') == 'blocked')
+
+
+def retained_preparation_progress(root, result):
+    """Revalidate every merged preparation and freeze its budget record at source."""
+    from integration import timestamp
+    merged = [p for p in result['prs'] if p['head'] == result['preparation_branch'] and p.get('merged')]
+    records = result['execution'].get('preparation_prs', {})
+    if not merged or set(records) != {str(p['number']) for p in merged}:
+        raise ValueError('retained preparation records do not match merged preparation PRs')
+    verified = {}
+    for pr in merged:
+        sha = pr['merge_sha']
+        actual = github('api', f'repos/clemarc/fava/pulls/{pr["number"]}')
+        parents = git(root, 'show', '-s', '--format=%P', sha).split()
+        if (len(parents) != 2 or not ancestor(root, sha, result['target_sha'])
+                or not owner_merge(root, sha, git)
+                or actual.get('merge_commit_sha') != sha or actual.get('merged_at') != pr['merged']
+                or actual.get('merged_by', {}).get('login') != 'clemarc'
+                or actual['head']['sha'] != parents[1] or pr['sha'] != parents[1]
+                or actual['head']['ref'] != result['preparation_branch']
+                or actual['base']['ref'] != result['milestone_branch']):
+            raise ValueError('retained preparation PR/source/owner merge mismatch')
+        source = json.loads(read(root, parents[1], result['ledger']))
+        at_merge = json.loads(read(root, sha, result['ledger']))
+        record = source.get('preparation_prs', {}).get(str(pr['number']))
+        if (not record or record != records[str(pr['number'])]
+                or record != at_merge.get('preparation_prs', {}).get(str(pr['number']))):
+            raise ValueError('merged preparation history record was altered or omitted')
+        # The retained initial boundary must be on the actual publication chain.
+        # Neither today's main nor a mutable ledger baseline may exclude rounds.
+        initial = record['heads'][0]
+        if initial not in git(root, 'rev-list', '--first-parent', parents[1]).splitlines():
+            raise ValueError('initial preparation boundary is outside retained publication chain')
+        baseline = git(root, 'rev-parse', initial + '^1').strip()
+        context = dict(result, main_sha=baseline, target_sha=parents[0])
+        verified[str(pr['number'])] = preparation_revision_progress(
+            root, context, dict(pr, sha=parents[1]), record, timestamp(pr['merged']))
+    return verified
 
 
 def task_history_protection(branch, initial_time, api):
@@ -410,6 +453,7 @@ def inspect(root, identifier, phase):
                 if problems:
                     raise ValueError('; '.join(problems))
     if phase == 'implement':
+        result['retained_preparation_progress'] = retained_preparation_progress(root, result)
         result['task_progress'] = task_progress(root, result)
     if phase == 'prepare':
         result['preparation_progress'] = preparation_progress(root, result)

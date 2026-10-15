@@ -52,7 +52,7 @@ class ResolverTests(unittest.TestCase):
     def test_preparation_resume_budget_needs_history_protection_and_actual_owner_evidence(self):
         result = self.context()
         result.update(main_sha='a'*40, prs=[dict(number=10, head='prepare/r3.5', state='open', sha='b'*40)],
-                      execution={'preparation_prs': {'10': dict(branch='prepare/r3.5', correction_cycles=3, heads=['c'*40])}})
+                      execution={'preparation_prs': {'10': dict(branch='prepare/r3.5', correction_cycles=3, heads=['c'*40]*4)}})
         rules = [dict(type=t, ruleset_id=1, ruleset_source_type='Repository', ruleset_source='clemarc/fava') for t in ['required_signatures', 'non_fast_forward', 'deletion']]
         approval = dict(type='fava-correction-authorization', phase='prepare', milestone='R3.5', max_cycles=4)
         comment = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10', user={'login':'clemarc'}, body=json.dumps(approval), created_at='2020-01-01T00:00:00Z', updated_at='2020-01-01T00:00:00Z')
@@ -67,7 +67,7 @@ class ResolverTests(unittest.TestCase):
             self.assertEqual(resumed['correction_cycles'], 3)
             self.assertFalse(resumed['next_round_authorized'])
             record = result['execution']['preparation_prs']['10']
-            record.update(correction_cycles=4, owner_extra_cycles=True)
+            record.update(correction_cycles=4, heads=['c'*40]*5, owner_extra_cycles=True)
             with self.assertRaisesRegex(ValueError, 'exhausted'): milestone.preparation_progress(Path('/fixture'), result)
             record['owner_extra_cycles'] = {'comment_id':123}
             self.assertEqual(milestone.preparation_progress(Path('/fixture'), result)['maximum_cycles'], 4)
@@ -78,6 +78,7 @@ class ResolverTests(unittest.TestCase):
             comment['issue_url'] += '1'
             with self.assertRaisesRegex(ValueError, 'exhausted'): milestone.preparation_progress(Path('/fixture'), result)
             record['correction_cycles'] = 3
+            record['heads'] = ['c'*40]*4
             rules.clear()
             with self.assertRaisesRegex(ValueError, 'protection'): milestone.preparation_progress(Path('/fixture'), result)
             result['execution']['preparation_prs'].clear()

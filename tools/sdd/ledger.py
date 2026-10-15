@@ -51,7 +51,8 @@ def validate(ledger, feature, tasks):
                 or record.get('branch') != 'prepare/' + ledger['milestone'].lower()
                 or not isinstance(record.get('correction_cycles'), int)
                 or isinstance(record.get('correction_cycles'), bool) or record['correction_cycles'] < 0
-                or not record.get('heads') or any(not re.fullmatch(r'[0-9a-f]{40}', h) for h in record['heads'])):
+                or not record.get('heads') or len(record['heads']) != record['correction_cycles'] + 1
+                or any(not re.fullmatch(r'[0-9a-f]{40}', h) for h in record['heads'])):
             errors.append(str(number) + ': invalid preparation PR history')
     if ledger.get('state') == 'completed' and not all(ledger.get('physical_acceptance', {}).get(family) for family in ['iPhone', 'iPad']):
         errors.append('completion requires separate iPhone and iPad acceptance evidence')

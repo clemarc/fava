@@ -462,3 +462,10 @@ reservations for another PR. Every introduced original commit is still checked.
 A merged record synthesized from both parents retains strict origin checks;
 automatically combining invalid counter/head edits cannot manufacture a valid
 budget. No signature, scope, review or CI gate is waived for imports.
+
+Implementation startup also revalidates every retained merged preparation PR.
+Its budget record must match the actual source, owner merge and current ledger;
+each publication and grant is checked at its original boundary, with final
+authorization bounded by merge time. A later amendment cannot hide an invalid
+earlier preparation. Missing/corrupted records, mismatched count/head cardinality
+or unprovable history stop implementation for owner reconciliation.

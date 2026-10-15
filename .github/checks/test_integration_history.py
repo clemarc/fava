@@ -489,6 +489,94 @@ class RetainedGateTests(fixtures.SignedLifecycleTests):
         self.protection = dict(protection, updated_at=extra_time)
         with self.assertRaisesRegex(ValueError, 'owner reconciliation'): resume()
 
+    def test_merged_preparation_is_revalidated_before_implementation(self):
+        # Real signed prep -> owner merge -> checkpoint -> full implementation inspect.
+        self.git('branch', '-m', 'milestone/r3.5', 'previous-fixture')
+        self.git('branch', 'milestone/r3.5', self.baseline)
+        self.git('switch', 'prepare/r3.5')
+        path = self.feature + '/execution.json'
+        data = json.loads(self.git('show', self.prep_head + ':' + path))
+        opened = self.at(self.clock + 1)
+        record = dict(branch='prepare/r3.5', correction_cycles=0, heads=[self.prep_head],
+                      owner_extra_cycles={'comment_id':321})
+        data['preparation_prs'] = {'10':record}
+        self.put(path, json.dumps(data)); self.commit('planning')
+        grant_time = self.at(self.clock + 1)
+        for count in range(1, 5):
+            record['heads'].append(self.git('rev-parse', 'HEAD'))
+            record['correction_cycles'] = count
+            self.put(path, json.dumps(data)); self.put('docs/prep-note.md', 'revision ' + str(count))
+            head = self.commit('planning')
+        fourth_time = self.at(self.clock)
+        self.git('switch', 'milestone/r3.5')
+        self.git('merge', '--no-ff', '-S', '-m', 'owner prep review\n\nSDD-Type: planning', 'prepare/r3.5')
+        merge = self.git('rev-parse', 'HEAD')
+        merged_at = self.at(self.clock + 1)
+        data.update(planning_revision=merge, state='implementing')
+        self.put(path, json.dumps(data)); target = self.commit('planning')
+        self.git('remote', 'add', 'origin', str(self.root))
+        self.authorization = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10', user={'login':'clemarc'},
+                                  created_at=grant_time, updated_at=grant_time,
+                                  body=json.dumps(dict(type='fava-correction-authorization', phase='prepare', milestone='R3.5', max_cycles=4)))
+        pr = dict(number=10, html_url='https://github.com/clemarc/fava/pull/10', state='closed',
+                  created_at=opened, merged_at=merged_at, merge_commit_sha=merge, merged_by={'login':'clemarc'},
+                  head={'ref':'prepare/r3.5', 'sha':head}, base={'ref':'milestone/r3.5'})
+        prs = [pr]
+        def api(*args):
+            endpoint = args[-1]
+            if endpoint.endswith('/git/ref/heads/main'): return {'object':{'sha':self.baseline}}
+            if '/pulls?state=all' in endpoint: return [prs]
+            for retained_pr in prs:
+                if endpoint.endswith('/pulls/' + str(retained_pr['number'])): return retained_pr
+            return self.api(*args)
+        def inspect():
+            with patch.object(milestone, 'github', side_effect=api), \
+                 patch.object(milestone, 'approval_merge', return_value=self.baseline), \
+                 patch.object(milestone, 'merged_pr', return_value=pr['html_url']), \
+                 patch.multiple(signatures, KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
+                return milestone.inspect(self.root, 'R3.5', 'implement')
+        result = inspect()
+        self.assertEqual(result['retained_preparation_progress']['10']['maximum_cycles'], 4)
+        prior = copy.deepcopy(self.authorization)
+        for change in ({'body':'{}'}, {'updated_at':fourth_time},
+                       {'created_at':fourth_time,'updated_at':fourth_time},
+                       {'created_at':merged_at,'updated_at':merged_at}):
+            self.authorization = dict(prior, **change)
+            with self.assertRaisesRegex(ValueError, 'limit exhausted'): inspect()
+        self.authorization = prior
+        pr['head']['sha'] = self.prep_head
+        with self.assertRaisesRegex(ValueError, 'source/owner merge'): inspect()
+        pr['head']['sha'] = head
+        # A valid later owner amendment cannot launder an invalid earlier grant.
+        self.git('switch', 'prepare/r3.5')
+        self.git('merge', '--no-ff', '-S', '-m', 'import target\n\nSDD-Type: planning', 'milestone/r3.5')
+        self.put('docs/prep-note.md', 'amendment'); initial = self.commit('planning')
+        amendment_opened = self.at(self.clock + 1)
+        data['preparation_prs']['11'] = dict(branch='prepare/r3.5', correction_cycles=0, heads=[initial])
+        self.put(path, json.dumps(data)); amendment_head = self.commit('planning')
+        self.git('switch', 'milestone/r3.5')
+        self.git('merge', '--no-ff', '-S', '-m', 'owner amendment\n\nSDD-Type: planning', 'prepare/r3.5')
+        amendment_merge = self.git('rev-parse', 'HEAD')
+        amendment_time = self.at(self.clock + 1)
+        data['planning_revision'] = amendment_merge
+        self.put(path, json.dumps(data)); self.commit('planning')
+        prs.append(dict(pr, number=11, html_url='https://github.com/clemarc/fava/pull/11',
+                        created_at=amendment_opened, merged_at=amendment_time,
+                        merge_commit_sha=amendment_merge, head={'ref':'prepare/r3.5','sha':amendment_head}))
+        self.assertEqual(set(inspect()['retained_preparation_progress']), {'10','11'})
+        self.authorization['body'] = '{}'
+        with self.assertRaisesRegex(ValueError, 'limit exhausted'): inspect()
+        self.authorization = prior
+        for changed in (dict(record, heads=[self.prep_head]), dict(record, owner_extra_cycles={'comment_id':322})):
+            data['preparation_prs']['10'] = changed
+            self.put(path, json.dumps(data)); self.commit('planning')
+            with self.assertRaisesRegex(ValueError, 'preparation PR history|record was altered'): inspect()
+        data['preparation_prs']['10'] = record
+        self.put(path, json.dumps(data)); self.commit('planning')
+        del data['preparation_prs']['10']
+        self.put(path, json.dumps(data)); self.commit('planning')
+        with self.assertRaisesRegex(ValueError, 'do not match merged'): inspect()
+
     def test_counter_jumps_and_nonzero_initial_registration_fail(self):
         entry = dict(branch='task/r3.5/t003', tasks=['T003'], correction_cycles=0, heads=['a'*40])
         old = {'task_prs':{'10':entry}}

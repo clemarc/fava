@@ -108,3 +108,55 @@ verify fresh exact-head signing, CI/native and Codex review. One ninth correctio
 publication remains available if justified. If exhausted, retain a tested concrete
 follow-up patch and linked escalation with the exact owner decision; do not
 silently publish again or claim readiness with critical findings outstanding.
+
+## Ninth round finding: owner-authorized tenth correction
+
+Published head: e8970e159f7eb19b5ed6fdfec89b032cff5cab4a; main remains
+a68b6db26ac54de0e83fb451868f54d32b078c34. Rounds eight and nine were published
+with verified GraphQL/REST signatures and exact tree/parent/message checks.
+Nine correction publications are consumed. On 2026-10-15, after the concrete
+patch, validation and bounded request were presented, the owner answered
+“ok let's go”, authorizing round ten, absolute maximum ten, for this workflow
+fix, signed publication, CI and review only.
+
+Fresh exact-head Codex review found justified P1
+[revalidate merged preparation history](https://github.com/clemarc/fava/pull/10#discussion_r4279729251).
+The open-preparation resume fixes do not run when implementation starts after
+owner merge. Generic validation also accepts a preparation correction count
+without the corresponding number of retained heads. Consequently, an unauthorized
+extra preparation round or later corrupted record can reach implementation.
+Independent review reproduced the gap; an owner merge alone cannot waive it.
+
+Proposed fix: share the explicit preparation-revision verifier between open
+resume and implementation startup. Reconcile every retained merged preparation
+PR against actual metadata, signed owner merge parents, source and current
+records, protected signed history and each publication's immutable timely grant.
+Anchor traversal to the retained initial publication's first parent, not a
+later main/ledger baseline; bound the final grant by merge time. Require
+heads = correction_cycles + 1. A later valid amendment cannot hide an invalid
+older preparation. No new orchestration service or weaker gate is introduced.
+
+Local validation: 98 workflow tests and seven publication tests pass, including
+a real signed preparation/zero-registration/four-correction/owner-merge/checkpoint/
+implementation-inspect walkthrough. Timely authorization and a later valid
+amendment pass; missing, edited, late and post-merge grants, wrong source heads,
+corrupted count/head or authorization records, and omitted older preparation
+records stop implementation. Existing native-evidence, task budget, full
+completion, replay and application/docs/tooling fixtures remain passing.
+SDD/tooling/whitespace checks pass. These local results are not fresh published
+CI/native or Codex validation of this proposal. Published-head CI/review links
+and final independent assessment are recorded in the PR escalation comment.
+
+Risk: conservative reconciliation can block legacy or edited preparation history;
+there is no automatic migration or budget reset. GitHub owner/agent identity
+separation and separately installed protections remain adoption prerequisites.
+Git is authoritative; no Linear projection, R3.5 preparation, application/spec
+change, merge, auto-merge or settings/credential change is part of this proposal.
+
+Authorized scope: **one additional correction publication, round ten, absolute
+maximum ten**, on this same PR/branch for the reviewed patch, verified signing,
+fresh CI/native and independent/Codex review only. No merge, auto-merge, settings/
+credential changes, application/spec changes or R3.5 work. The final closure
+review covers lifecycle transitions before publication. Any new critical finding
+after round ten requires a concrete owner decision about remediation or reduced
+scope; no eleventh publication or weakening of gates is authorized.
