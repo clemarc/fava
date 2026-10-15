@@ -155,3 +155,33 @@ are proposed, not applied. Git is authoritative; Linear mutation behavior is
 fixture-tested and no projection was performed in this task. Physical-device
 acceptance remains separate. No application/specification change, R3.5
 preparation, merge, auto-merge or settings/credential change was performed.
+
+## Final authorized correction round nine
+
+Fresh round-eight Codex review reported two justified P1s:
+[unprovable initial task history](https://github.com/clemarc/fava/pull/10#discussion_r4273173230)
+and [retroactive preparation authorization](https://github.com/clemarc/fava/pull/10#discussion_r4273173242).
+The first now requires signed pre-opening initial work and effective protection
+provenance before registration/resume; active no-bypass repository rules must
+predate the retained initial head. The same protection/signature proof covers
+preparation. Unknown/changed provenance stops for owner reconciliation rather
+than guessing zero. The second now requires an immutable owner authorization
+strictly before each extra preparation publication, using the authorization
+retained at that boundary. Later metadata cannot move a deadline. Distinct later
+grants can authorize subsequent rounds without replacing earlier proof.
+
+Independent follow-up also reproduced a valid-import regression: strict
+single-reservation checks rejected a pure import containing another PR's valid
+multi-round history. Cumulative comparisons now check retention, while original
+publications and synthesized merge records retain strict zero/+1 checks.
+Signed fixtures cover valid multi-round imports, invalid original count/head
+edits, altered merge trees, initial protection/signature provenance and actual
+four-round preparation chronology. These are workflow-only corrections.
+
+Round-eight head 8a89e6abc3b4091f57d02769b4e6497d009a9f36 passed all six checks
+in run 38593371092. Both actual native logs showed BUILD SUCCEEDED, TEST
+SUCCEEDED and 41 tests/zero failures per simulator family. These results validate
+round eight only. The ninth publication requires fresh signature/tree/parent/
+message verification, independent/Codex review and CI/native evidence on the PR.
+It consumes the final authorized correction publication; no tenth publication
+is authorized. No merge, settings/credentials or R3.5 work is included.

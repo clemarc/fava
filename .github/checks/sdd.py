@@ -275,7 +275,7 @@ def validate_repo(root, base=None, head='HEAD', message=None, preparation_pr=Non
                     old_ledger = json.loads(git(root, 'show', f'{base}:{key}/execution.json'))
                     new_ledger = json.loads(ledger_path.read_text())
                     from ledger import history_errors
-                    errors += [f'{key}/execution.json: {e}' for e in history_errors(old_ledger, new_ledger)]
+                    errors += [f'{key}/execution.json: {e}' for e in history_errors(old_ledger, new_ledger, publication=False)]
                 except subprocess.CalledProcessError:
                     pass
                 except (ValueError, TypeError, KeyError):

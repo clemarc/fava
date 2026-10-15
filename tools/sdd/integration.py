@@ -81,6 +81,20 @@ def verified_owner_limits(ledger, task_ids, number, milestone, before=None):
     return limits
 
 
+def reservation_authorization_errors(root, path, reservations, task_ids, number, milestone):
+    """Each extra round retains its own prior authorization; later grants cannot repair it."""
+    errors = []
+    for cycle, sha in reservations.items():
+        if cycle <= AUTOMATIC_CORRECTION_LIMIT:
+            continue
+        snapshot = json.loads(read(root, sha, path))
+        before = timestamp(sdd.git(root, 'show', '-s', '--format=%cI', sha).strip())
+        limits = verified_owner_limits(snapshot, task_ids, number, milestone, before)
+        errors += [t + ': reservation lacks timely owner authorization for round ' + str(cycle)
+                   for t in sorted(task_ids) if limits.get(t, AUTOMATIC_CORRECTION_LIMIT) < cycle]
+    return errors
+
+
 def durable_task_limits(target, head, task_ids, owner_limits=None):
     """Reports cannot override durable task blockers or correction budgets."""
     blockers = []
@@ -281,13 +295,12 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
             signature = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
             if signature.get('verified') is not True or signature.get('reason') != 'valid':
                 evidence['task_limit_blockers'].append('canonical registration/reservation is not verified signed')
-            if cycle > AUTOMATIC_CORRECTION_LIMIT:
-                authorization_deadline = min(authorization_deadline, timestamp(sdd.git(root, 'show', '-s', '--format=%cI', sha).strip()))
+        evidence['task_limit_blockers'] += reservation_authorization_errors(root, context['ledger'], progress['reservations'], ids, number, context['id'])
         if progress['pending_reservation']:
             evidence['task_limit_blockers'].append('reserved correction is still unpublished; resume it without a new round')
-        task_rules = github('api', 'repos/clemarc/fava/rules/branches/' + quote(pr['headRefName'], safe=''))
-        if not {'required_signatures', 'non_fast_forward', 'deletion'} <= {r['type'] for r in task_rules}:
-            evidence['task_limit_blockers'].append('task history requires signatures/no-force-push/no-deletion protections')
+        from milestone import task_history_protection
+        initial = canonical['task_prs'][str(number)]['heads'][0]
+        task_history_protection(pr['headRefName'], timestamp(sdd.git(root, 'show', '-s', '--format=%cI', initial).strip()), github)
     owner_limits = verified_owner_limits(canonical, ids, number, context['id'], authorization_deadline)
     evidence['task_limit_blockers'] += durable_task_limits(canonical, ledger, ids, owner_limits)
     # Checkpoints have no Task trailers. Verify integrated records themselves,

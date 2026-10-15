@@ -43,7 +43,8 @@ def validate(ledger, feature, tasks):
                 or isinstance(record.get('correction_cycles'), bool) or record['correction_cycles'] < 0
                 or not record.get('tasks') or not set(record['tasks']) <= set(records)
                 or not record.get('branch', '').startswith('task/' + ledger['milestone'].lower() + '/')
-                or not record.get('heads') or any(not re.fullmatch(r'[0-9a-f]{40}', h) for h in record['heads'])):
+                or not record.get('heads') or len(record['heads']) != record['correction_cycles'] + 1
+                or any(not re.fullmatch(r'[0-9a-f]{40}', h) for h in record['heads'])):
             errors.append(str(number) + ': invalid task PR history')
     for number, record in ledger.get('preparation_prs', {}).items():
         if (not re.fullmatch(r'[1-9][0-9]*', number) or not isinstance(record, dict)
@@ -59,7 +60,7 @@ def validate(ledger, feature, tasks):
     return errors
 
 
-def history_errors(old, new):
+def history_errors(old, new, *, publication=True):
     errors = []
     for key in ['milestone', 'feature', 'milestone_branch', 'specification_base']:
         if old.get(key) != new.get(key): errors.append(key + ': immutable execution baseline')
@@ -79,16 +80,22 @@ def history_errors(old, new):
     for number, current in new.get('task_prs', {}).items():
         record = old.get('task_prs', {}).get(number)
         count, heads = current.get('correction_cycles'), current.get('heads')
+        if (type(count) is not int or count < 0 or not isinstance(heads, list) or len(heads) != count + 1):
+            errors.append(number + ': task count must match retained publication boundaries')
         if record is None:
-            if count != 0 or isinstance(count, bool) or not isinstance(heads, list) or len(heads) != 1:
+            if publication and (count != 0 or isinstance(count, bool) or not isinstance(heads, list) or len(heads) != 1):
                 errors.append(number + ': initial task registration requires zero and one published head')
-        elif (any(current.get(k) != record.get(k) for k in ['tasks', 'branch'])
-              or not isinstance(count, int) or isinstance(count, bool)
-              or not ((count == record['correction_cycles'] and heads == record['heads'])
-                      or (count == record['correction_cycles'] + 1 and isinstance(heads, list)
-                          and len(heads) == len(record['heads']) + 1
-                          and heads[:-1] == record['heads']))):
-            errors.append(number + ': task reservation must increment once and retain one prior-head boundary')
+        else:
+            retained = (isinstance(count, int) and not isinstance(count, bool)
+                        and isinstance(heads, list) and count >= record['correction_cycles']
+                        and heads[:len(record['heads'])] == record['heads'])
+            single_round = ((count == record['correction_cycles'] and heads == record['heads'])
+                            or (count == record['correction_cycles'] + 1
+                                and isinstance(heads, list) and len(heads) == len(record['heads']) + 1
+                                and heads[:-1] == record['heads']))
+            if (any(current.get(k) != record.get(k) for k in ['tasks', 'branch'])
+                    or not retained or (publication and not single_round)):
+                errors.append(number + ': task reservation must increment once and retain one prior-head boundary')
     if not set(old.get('task_prs', {})) <= set(new.get('task_prs', {})):
         errors.append('task PR history cannot be deleted')
     for number, record in old.get('preparation_prs', {}).items():
@@ -112,10 +119,28 @@ def transition_errors(root, sha, path, git):
     try:
         current = snapshot(sha)
         errors = []
-        for parent in git(root, 'show', '-s', '--format=%P', sha).split():
+        parents = git(root, 'show', '-s', '--format=%P', sha).split()
+        # A pure merge can import several already-retained reservations at once.
+        # Validate its retention here; callers validate every introduced commit,
+        # so the original registration/reservation publications remain strict.
+        imported = len(parents) == 2 and target_import(root, sha, parents[1], git) == (True, [])
+        for parent in parents:
             previous = snapshot(parent)
             if previous is not None:
-                errors += history_errors(previous, current) if current is not None else ['execution history cannot be deleted']
+                errors += history_errors(previous, current, publication=not imported) if current is not None else ['execution history cannot be deleted']
+            elif current is not None and not imported:
+                errors += history_errors(dict(current, task_prs={}), current)
+        if imported and current is not None:
+            snapshots = [snapshot(parent) or {} for parent in parents]
+            for number, record in current.get('task_prs', {}).items():
+                if not any(record == state.get('task_prs', {}).get(number) for state in snapshots):
+                    # Automatic text merges can synthesize a record from edits
+                    # on both sides. Such a record is a new publication, not an
+                    # inherited reservation, and still needs single-step proof.
+                    for state in snapshots:
+                        old = state.get('task_prs', {})
+                        errors += history_errors({'task_prs': {number: old[number]} if number in old else {}},
+                                                 {'task_prs': {number: record}})
         return errors
     except (ValueError, TypeError, KeyError):
         return ['invalid execution history transition']

@@ -53,14 +53,16 @@ class ResolverTests(unittest.TestCase):
         result = self.context()
         result.update(main_sha='a'*40, prs=[dict(number=10, head='prepare/r3.5', state='open', sha='b'*40)],
                       execution={'preparation_prs': {'10': dict(branch='prepare/r3.5', correction_cycles=3, heads=['c'*40])}})
-        rules = [dict(type=t) for t in ['required_signatures', 'non_fast_forward', 'deletion']]
+        rules = [dict(type=t, ruleset_id=1, ruleset_source_type='Repository', ruleset_source='clemarc/fava') for t in ['required_signatures', 'non_fast_forward', 'deletion']]
         approval = dict(type='fava-correction-authorization', phase='prepare', milestone='R3.5', max_cycles=4)
-        comment = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10', user={'login':'clemarc'}, body=json.dumps(approval))
+        comment = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10', user={'login':'clemarc'}, body=json.dumps(approval), created_at='2020-01-01T00:00:00Z', updated_at='2020-01-01T00:00:00Z')
         def api(*args):
             if '/rules/' in args[-1]: return rules
+            if '/rulesets/' in args[-1]: return dict(enforcement='active', bypass_actors=[], rules=rules, created_at='2019-01-01T00:00:00Z', updated_at='2019-01-01T00:00:00Z')
+            if '/commits/' in args[-1]: return {'commit': {'verification': {'verified':True, 'reason':'valid'}}}
             if '/pulls/' in args[-1]: return {'created_at':'2026-10-14T01:00:00Z'}
             return comment
-        with patch.object(milestone, 'github', side_effect=api), patch.object(milestone, 'ancestor', return_value=True), patch.object(milestone, 'git', return_value=''):
+        with patch.object(milestone, 'github', side_effect=api), patch.object(milestone, 'ancestor', return_value=True), patch.object(ledger, 'transition_errors', return_value=[]), patch.object(milestone, 'git', side_effect=lambda *args: '2020-01-01T00:00:00Z' if '--format=%cI' in args else ''):
             resumed = milestone.preparation_progress(Path('/fixture'), result)
             self.assertEqual(resumed['correction_cycles'], 3)
             self.assertFalse(resumed['next_round_authorized'])
@@ -77,7 +79,7 @@ class ResolverTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'exhausted'): milestone.preparation_progress(Path('/fixture'), result)
             record['correction_cycles'] = 3
             rules.clear()
-            with self.assertRaisesRegex(ValueError, 'protections'): milestone.preparation_progress(Path('/fixture'), result)
+            with self.assertRaisesRegex(ValueError, 'protection'): milestone.preparation_progress(Path('/fixture'), result)
             result['execution']['preparation_prs'].clear()
             with self.assertRaisesRegex(ValueError, 'missing'): milestone.preparation_progress(Path('/fixture'), result)
 
@@ -252,10 +254,10 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(ledger.history_errors(old, new), [])
 
     def test_pr_history_cannot_disappear_reset_or_change_task_identity(self):
-        entry = dict(branch='task/r3.5/t003', tasks=['T003'], correction_cycles=3, heads=['a'*40])
+        entry = dict(branch='task/r3.5/t003', tasks=['T003'], correction_cycles=3, heads=['a'*40]*4)
         old = {'task_prs': {'10': entry}}
         new = copy.deepcopy(old)
-        new['task_prs']['10'].update(correction_cycles=4, heads=['a'*40, 'b'*40])
+        new['task_prs']['10'].update(correction_cycles=4, heads=['a'*40]*4 + ['b'*40])
         self.assertEqual(ledger.history_errors(old, new), [])
         for changed in [{}, {'10': dict(entry, correction_cycles=0)},
                         {'10': dict(entry, heads=['b'*40])}, {'10': dict(entry, tasks=['T002'])}]:

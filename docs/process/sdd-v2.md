@@ -436,3 +436,29 @@ precede the coordinator report, which must precede integration. Complete finding
 dispositions are rechecked using actual GitHub reviews/comments. Current rules
 are checked at resume; GitHub does not supply a historical rules snapshot here.
 Shared owner login still cannot technically distinguish human and agent actions.
+
+### Protection provenance and aggregate history
+
+Before returning registration-required, task resume verifies signatures and
+proves that active no-bypass repository rules for signatures/no-force/no-deletion
+predate the candidate initial head. That head must strictly predate PR opening;
+a later head or unknown protection history stops for owner reconciliation.
+Registered task/preparation history uses its retained first head for this proof,
+never the current head. A later ruleset update conservatively invalidates this
+simple provenance proof, even if benign; see the settings proposal. Do not
+recreate a branch/PR or reset its count to evade reconciliation.
+
+Extra-cycle authorization is an unedited owner comment strictly before the
+publication or reservation it authorizes. Each retained boundary uses its own
+ledger snapshot: a later grant may extend the budget for subsequent rounds but
+cannot repair an unauthorized earlier round. Subsequent metadata or projection
+updates cannot move those deadlines. Preparation resume verifies actual commit
+signatures as well as retained ledger transitions and owner authorization.
+
+Exact zero/one-step reservation checks apply at original publications. Cumulative
+base-to-head comparisons and pure automatic imports instead preserve identities,
+counters and all boundaries: they may inherit several previously validated
+reservations for another PR. Every introduced original commit is still checked.
+A merged record synthesized from both parents retains strict origin checks;
+automatically combining invalid counter/head edits cannot manufacture a valid
+budget. No signature, scope, review or CI gate is waived for imports.

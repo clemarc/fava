@@ -106,10 +106,15 @@ class RetainedGateTests(fixtures.SignedLifecycleTests):
     def api(self, *args):
         endpoint = args[-1]
         if '/rules/branches/' in endpoint:
-            return [dict(type=t) for t in ['required_signatures', 'non_fast_forward', 'deletion']] + [
+            return [dict(type=t, ruleset_id=1, ruleset_source_type='Repository', ruleset_source='clemarc/fava')
+                    for t in ['required_signatures', 'non_fast_forward', 'deletion']] + [
                 dict(type='pull_request', parameters={'required_review_thread_resolution': True}),
                 dict(type='required_status_checks', parameters=dict(strict_required_status_checks_policy=True,
                      required_status_checks=[{'context':'ci-required'}]))]
+        if '/rulesets/' in endpoint:
+            return getattr(self, 'protection', dict(enforcement='active', bypass_actors=[],
+                           created_at='2019-01-01T00:00:00Z', updated_at='2019-01-01T00:00:00Z',
+                           rules=[{'type':t} for t in ['required_signatures', 'non_fast_forward', 'deletion']]))
         if '/check-runs?' in endpoint: return [{'check_runs':self.checks}]
         if '/commits/' in endpoint:
             valid = signatures.verify(self.root, endpoint.rsplit('/', 1)[-1])
@@ -119,6 +124,7 @@ class RetainedGateTests(fixtures.SignedLifecycleTests):
         if '/pulls/10/reviews?' in endpoint: return [self.bot]
         if endpoint.endswith('/comments/123'): return dict(self.report_comment, body=json.dumps(self.report))
         if endpoint.endswith('/comments/321'): return self.authorization
+        if endpoint.endswith('/comments/322'): return self.later_authorization
         if endpoint.endswith('/comments/124'): return dict(self.review_comment, body=json.dumps(self.review))
         raise AssertionError('unexpected API ' + str(args))
 
@@ -319,8 +325,169 @@ class RetainedGateTests(fixtures.SignedLifecycleTests):
         with self.assertRaisesRegex(ValueError, 'budget exhausted'): resume()
         self.authorization['created_at'] = self.authorization['updated_at'] = self.at(1)
         self.assertEqual(resume()['maximum_cycles'], 4)
+        # A distinct later grant extends round five without rewriting round four's proof.
+        self.import_target(); self.fix()
+        self.later_authorization = dict(self.authorization, created_at=self.at(self.clock + 1),
+                                       updated_at=self.at(self.clock + 1),
+                                       body=json.dumps(dict(type='fava-correction-authorization', milestone='R3.5', tasks=['T003'], max_cycles=5)))
+        self.data['tasks']['T003']['owner_extra_cycles'] = {'comment_id':322}
+        self.reserve()
+        self.pr['head']['sha'] = self.head
+        self.assertEqual(resume()['maximum_cycles'], 5)
+        prior = copy.deepcopy(self.authorization)
+        for change in ({'created_at':self.at(self.clock), 'updated_at':self.at(self.clock)},
+                       {'updated_at':self.at(self.clock)}, {'body':'{}'}):
+            self.authorization = dict(prior, **change)
+            with self.assertRaisesRegex(ValueError, 'budget exhausted'): resume()
+        self.authorization = prior
+        self.assertEqual(resume()['state'], 'resume-reserved-fix')
         del self.data['tasks']['T003']['owner_extra_cycles']
         with self.assertRaisesRegex(ValueError, 'budget exhausted'): resume()
+
+    def test_pure_import_can_retain_other_prs_multiple_valid_reservations(self):
+        self.start_task()
+        old = copy.deepcopy(self.data)
+        self.git('switch', 'target')
+        entry = dict(branch='task/r3.5/t002', tasks=['T002'], correction_cycles=0, heads=[self.source])
+        self.data['task_prs']['12'] = entry
+        path = self.feature + '/execution.json'
+        for count in range(3):
+            if count:
+                entry['correction_cycles'] = count
+                entry['heads'].append(self.git('rev-parse', 'HEAD'))
+            self.put(path, json.dumps(self.data))
+            self.target = self.commit('planning')
+            self.assertEqual(ledger.transition_errors(self.root, self.target, path, sdd.git), [])
+        self.import_target()
+        self.assertEqual(ledger.target_import(self.root, self.head, self.target, sdd.git), (True, []))
+        self.assertEqual(ledger.transition_errors(self.root, self.head, path, sdd.git), [])
+        self.assertEqual(ledger.history_errors(old, self.data, publication=False), [])
+        self.assertTrue(ledger.history_errors(old, self.data))  # A single publication still cannot jump.
+        with patch.multiple(signatures, KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
+            self.assertEqual(sdd.validate_repo(self.root, self.baseline), [])
+        # A first ledger cannot hide an initial count > zero either.
+        self.git('switch', '--detach', self.baseline)
+        self.put(path, json.dumps(self.data))
+        forged = self.commit('planning')
+        self.assertTrue(ledger.transition_errors(self.root, forged, path, sdd.git))
+
+    def test_merge_cannot_manufacture_reservations_from_invalid_origins(self):
+        self.start_task()
+        path = self.feature + '/execution.json'
+        self.git('switch', 'target')
+        entry = dict(branch='task/r3.5/t002', tasks=['T002'], correction_cycles=0,
+                     spacer=list(range(20)), heads=[self.source])
+        self.data['task_prs']['12'] = entry
+        self.put(path, json.dumps(self.data, indent=2))
+        base = self.commit('planning')
+        self.git('switch', '-c', 'count-side', base)
+        entry['correction_cycles'] = 1
+        self.put(path, json.dumps(self.data, indent=2))
+        count_side = self.commit('planning')
+        self.assertTrue(ledger.transition_errors(self.root, count_side, path, sdd.git))
+        self.git('switch', '-c', 'heads-side', base)
+        entry['correction_cycles'] = 0
+        entry['heads'].append(base)
+        self.put(path, json.dumps(self.data, indent=2))
+        heads_side = self.commit('planning')
+        self.assertTrue(ledger.transition_errors(self.root, heads_side, path, sdd.git))
+        self.git('merge', '--no-ff', '-S', '-m', 'automatic synthesis\n\nSDD-Type: planning', 'count-side')
+        merge = self.git('rev-parse', 'HEAD')
+        self.assertEqual(ledger.target_import(self.root, merge, count_side, sdd.git), (True, []))
+        self.assertTrue(ledger.transition_errors(self.root, merge, path, sdd.git))
+        with patch.multiple(signatures, KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
+            self.assertTrue(sdd.validate_repo(self.root, self.baseline))
+        entry.update(correction_cycles=2, heads=[self.source, base, count_side])
+        self.put(path, json.dumps(self.data, indent=2)); self.git('add', '.')
+        self.git('commit', '--amend', '-S', '--no-edit')
+        altered = self.git('rev-parse', 'HEAD')
+        self.assertTrue(ledger.target_import(self.root, altered, count_side, sdd.git)[1])
+        self.assertTrue(ledger.transition_errors(self.root, altered, path, sdd.git))
+
+    def test_initial_registration_requires_protected_signed_preopening_history(self):
+        self.start_task(); self.evidence()
+        self.pr['head']['sha'] = self.source
+        result = dict(self.context, target_sha=self.git('rev-parse', self.source + '^'),
+                      execution=dict(self.data, task_prs={}),
+                      prs=[dict(number=10, state='open', head='task/r3.5/t003', sha=self.source)])
+        def resume(api=None):
+            with patch.object(milestone, 'github', side_effect=api or self.api), patch.multiple(signatures,
+                    KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
+                return milestone.task_progress(self.root, result)['10']
+        self.assertEqual(resume()['state'], 'registration-required')
+        good = self.api('api', 'repos/clemarc/fava/rulesets/1')
+        initial_time = self.git('show', '-s', '--format=%cI', self.source)
+        for changed in [dict(updated_at=initial_time), dict(created_at=self.at(self.clock), updated_at=self.at(self.clock)),
+                        dict(enforcement='disabled'), dict(bypass_actors=[{'actor_id':1}]),
+                        dict(updated_at=None), dict(rules=[])]:
+            self.protection = dict(good, **changed)
+            with self.assertRaisesRegex(ValueError, 'owner reconciliation'): resume()
+        self.protection = good
+        def unsigned(*args):
+            if args[-1].endswith('/commits/' + self.source):
+                return {'commit': {'verification': {'verified':False, 'reason':'unsigned'}}}
+            return self.api(*args)
+        with self.assertRaisesRegex(ValueError, 'signature'): resume(unsigned)
+        self.pr['created_at'] = initial_time
+        with self.assertRaisesRegex(ValueError, 'owner reconciliation'): resume()
+
+    def test_preparation_extra_round_requires_immutable_prior_authorization(self):
+        self.source_path = 'docs/note.md'; self.setUp()
+        opened = self.at(self.clock + 1)
+        self.data['preparation_prs'] = {'10':dict(branch='prepare/r3.5', correction_cycles=0,
+                                               heads=[self.source], owner_extra_cycles={'comment_id':321})}
+        path = self.feature + '/execution.json'
+        self.put(path, json.dumps(self.data)); self.commit('planning')
+        authorization_time = self.at(self.clock + 1)
+        for count in range(1, 5):
+            record = self.data['preparation_prs']['10']
+            record['heads'].append(self.git('rev-parse', 'HEAD'))
+            record['correction_cycles'] = count
+            self.put(path, json.dumps(self.data)); self.put(self.source_path, '// artifact fix ' + str(count))
+            head = self.commit('planning')
+        self.authorization = dict(issue_url='https://api.github.com/repos/clemarc/fava/issues/10', user={'login':'clemarc'},
+                                  created_at=authorization_time, updated_at=authorization_time,
+                                  body=json.dumps(dict(type='fava-correction-authorization', phase='prepare', milestone='R3.5', max_cycles=4)))
+        result = dict(id='R3.5', main_sha=self.baseline, target_sha=self.baseline, ledger=path, preparation_branch='prepare/r3.5',
+                      execution=self.data, prs=[dict(number=10, head='prepare/r3.5', state='open', sha=head)])
+        def api(*args):
+            if args[-1].endswith('/pulls/10'): return {'created_at':opened}
+            return self.api(*args)
+        def resume():
+            with patch.object(milestone, 'github', side_effect=api), patch.multiple(signatures,
+                    KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
+                return milestone.preparation_progress(self.root, result)
+        self.assertEqual(resume()['maximum_cycles'], 4)
+        extra_time = self.at(self.clock)
+        self.authorization['created_at'] = self.authorization['updated_at'] = extra_time
+        with self.assertRaisesRegex(ValueError, 'limit exhausted'): resume()
+        self.data['linear'] = {'state':'pending'}
+        self.put(path, json.dumps(self.data)); result['prs'][0]['sha'] = self.commit('planning')
+        with self.assertRaisesRegex(ValueError, 'limit exhausted'): resume()  # Later metadata cannot move deadline.
+        self.authorization['created_at'] = authorization_time
+        with self.assertRaisesRegex(ValueError, 'limit exhausted'): resume()  # Edited same-ID authorization.
+        self.authorization['updated_at'] = authorization_time
+        self.assertEqual(resume()['maximum_cycles'], 4)
+        self.later_authorization = dict(self.authorization, created_at=self.at(self.clock + 1),
+                                       updated_at=self.at(self.clock + 1),
+                                       body=json.dumps(dict(type='fava-correction-authorization', phase='prepare', milestone='R3.5', max_cycles=5)))
+        record = self.data['preparation_prs']['10']
+        record['owner_extra_cycles'] = {'comment_id':322}
+        record['heads'].append(self.git('rev-parse', 'HEAD'))
+        record['correction_cycles'] = 5
+        self.put(path, json.dumps(self.data)); self.put(self.source_path, '// artifact fix 5')
+        result['prs'][0]['sha'] = self.commit('planning')
+        self.assertEqual(resume()['maximum_cycles'], 5)
+        prior = copy.deepcopy(self.authorization)
+        for change in ({'created_at':extra_time, 'updated_at':extra_time},
+                       {'updated_at':extra_time}, {'body':'{}'}):
+            self.authorization = dict(prior, **change)
+            with self.assertRaisesRegex(ValueError, 'limit exhausted'): resume()
+        self.authorization = prior
+        self.assertEqual(resume()['maximum_cycles'], 5)
+        protection = self.api('api', 'repos/clemarc/fava/rulesets/1')
+        self.protection = dict(protection, updated_at=extra_time)
+        with self.assertRaisesRegex(ValueError, 'owner reconciliation'): resume()
 
     def test_counter_jumps_and_nonzero_initial_registration_fail(self):
         entry = dict(branch='task/r3.5/t003', tasks=['T003'], correction_cycles=0, heads=['a'*40])

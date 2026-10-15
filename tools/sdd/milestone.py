@@ -1,5 +1,6 @@
 """Shared read-only milestone resolution. Branch creation is a separate guarded step."""
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -156,6 +157,30 @@ def latest_preparation(result):
     return latest
 
 
+def preparation_limit(record, number, milestone, before):
+    """Verify a preparation grant as it existed at the relevant publication."""
+    from ledger import AUTOMATIC_CORRECTION_LIMIT
+    from integration import timestamp
+    authorization = record.get('owner_extra_cycles')
+    if not isinstance(authorization, dict) or type(authorization.get('comment_id')) is not int:
+        return AUTOMATIC_CORRECTION_LIMIT
+    comment = github('api', f'repos/clemarc/fava/issues/comments/{authorization["comment_id"]}')
+    try:
+        approval = json.loads(comment['body'])
+        limit = approval.get('max_cycles')
+        if (comment.get('issue_url') == f'https://api.github.com/repos/clemarc/fava/issues/{number}'
+                and comment.get('user', {}).get('login') == 'clemarc'
+                and comment.get('created_at') == comment.get('updated_at')
+                and timestamp(comment['created_at']) < before
+                and approval.get('type') == 'fava-correction-authorization'
+                and approval.get('phase') == 'prepare' and approval.get('milestone') == milestone
+                and type(limit) is int and limit > AUTOMATIC_CORRECTION_LIMIT):
+            return limit
+    except (ValueError, TypeError, AttributeError, KeyError):
+        pass
+    return AUTOMATIC_CORRECTION_LIMIT
+
+
 def preparation_progress(root, result):
     """Resume budget from protected signed prep history, never prior chat."""
     from ledger import AUTOMATIC_CORRECTION_LIMIT, transition_errors, preparation_round_errors
@@ -172,14 +197,17 @@ def preparation_progress(root, result):
     count = record.get('correction_cycles')
     if not isinstance(count, int) or isinstance(count, bool) or count < 0:
         raise ValueError('invalid preparation correction count')
-    rules = github('api', 'repos/clemarc/fava/rules/branches/' + quote(result['preparation_branch'], safe=''))
-    if not {'required_signatures', 'non_fast_forward', 'deletion'} <= {r['type'] for r in rules}:
-        raise ValueError('preparation history needs signed/no-force-push/no-deletion protections before resume')
     if not record.get('heads') or any(not ancestor(root, h, pr['sha']) for h in record['heads']):
         raise ValueError('preparation PR discarded registered history')
+    from integration import timestamp
+    task_history_protection(result['preparation_branch'], timestamp(git(root, 'show', '-s', '--format=%cI', record['heads'][0]).strip()), github)
     details = github('api', f'repos/clemarc/fava/pulls/{pr["number"]}')
     opened_at = details['created_at']
-    for sha in git(root, 'rev-list', f'{result["main_sha"]}..{pr["sha"]}').splitlines():
+    commits = set(git(root, 'rev-list', f'{result["main_sha"]}..{pr["sha"]}').splitlines()) | {record['heads'][0]}
+    for sha in commits:
+        signature = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
+        if signature.get('verified') is not True or signature.get('reason') != 'valid':
+            raise ValueError('preparation resume history contains an unverified signature')
         if transition_errors(root, sha, result['ledger'], git):
             raise ValueError('invalid intermediate preparation ledger transition')
     for sha in git(root, 'rev-list', '--first-parent', f'{result["main_sha"]}..{pr["sha"]}').splitlines():
@@ -187,25 +215,51 @@ def preparation_progress(root, result):
                                           result.get('target_sha', result['main_sha']), git)
         if errors:
             raise ValueError('; '.join(errors))
-    cap = AUTOMATIC_CORRECTION_LIMIT
-    authorization = record.get('owner_extra_cycles')
-    if isinstance(authorization, dict) and isinstance(authorization.get('comment_id'), int):
-        comment = github('api', f'repos/clemarc/fava/issues/comments/{authorization["comment_id"]}')
         try:
-            approval = json.loads(comment['body'])
-            limit = approval.get('max_cycles')
-            if (comment.get('issue_url') == f'https://api.github.com/repos/clemarc/fava/issues/{pr["number"]}'
-                    and comment.get('user', {}).get('login') == 'clemarc'
-                    and approval.get('type') == 'fava-correction-authorization'
-                    and approval.get('phase') == 'prepare' and approval.get('milestone') == result['id']
-                    and isinstance(limit, int) and not isinstance(limit, bool) and limit > cap):
-                cap = limit
-        except (ValueError, TypeError, AttributeError):
-            pass
+            retained = json.loads(read(root, sha, result['ledger'])).get('preparation_prs', {}).get(str(pr['number']), {})
+        except subprocess.CalledProcessError:
+            retained = {}
+        if retained.get('correction_cycles', 0) > AUTOMATIC_CORRECTION_LIMIT:
+            before = timestamp(git(root, 'show', '-s', '--format=%cI', sha).strip())
+            if retained['correction_cycles'] > preparation_limit(retained, pr['number'], result['id'], before):
+                raise ValueError('preparation correction limit exhausted at retained publication without timely authorization')
+    cap = preparation_limit(record, pr['number'], result['id'], datetime.now(timezone.utc))
     if count > cap:
         raise ValueError('preparation correction limit exhausted without verified owner authorization')
     return dict(pr=pr['number'], head=pr['sha'], correction_cycles=count, maximum_cycles=cap,
                 next_round_authorized=count < cap, blocked=record.get('state') == 'blocked')
+
+
+def task_history_protection(branch, initial_time, api):
+    """Conservative proof that effective immutable-history rules predate work.
+
+    Current rule presence alone cannot establish past enforcement. Any changed,
+    bypassed, missing or unsupported provenance requires owner reconciliation.
+    """
+    from integration import timestamp
+    from urllib.parse import quote
+    rules = api('api', 'repos/clemarc/fava/rules/branches/' + quote(branch, safe=''))
+    required = {'required_signatures', 'non_fast_forward', 'deletion'}
+    proven = set()
+    snapshots = {}
+    for rule in rules:
+        if (rule['type'] not in required or rule.get('ruleset_source_type') != 'Repository'
+                or rule.get('ruleset_source') != 'clemarc/fava' or type(rule.get('ruleset_id')) is not int):
+            continue
+        ident = rule['ruleset_id']
+        if ident not in snapshots:
+            snapshots[ident] = api('api', f'repos/clemarc/fava/rulesets/{ident}')
+        state = snapshots[ident]
+        try:
+            valid = (state.get('enforcement') == 'active' and state.get('bypass_actors') == []
+                     and timestamp(state['created_at']) <= timestamp(state['updated_at']) < initial_time
+                     and rule['type'] in {r['type'] for r in state['rules']})
+        except (KeyError, ValueError, TypeError, AttributeError):
+            valid = False
+        if valid:
+            proven.add(rule['type'])
+    if not required <= proven:
+        raise ValueError('branch publication protection history is unprovable; owner reconciliation required before registration/resume')
 
 
 def task_progress(root, result):
@@ -221,25 +275,35 @@ def task_progress(root, result):
         details = github('api', f'repos/clemarc/fava/pulls/{key}')
         if details['head']['sha'] != pr['sha'] or details['head']['ref'] != pr['head'] or details['base']['ref'] != result['milestone_branch']:
             raise ValueError('task PR moved during resume inspection')
+        from integration import timestamp
+        initial = record['heads'][0] if record else pr['sha']
+        initial_time = timestamp(git(root, 'show', '-s', '--format=%cI', initial).strip())
+        task_history_protection(pr['head'], initial_time, github)
         if not record:
+            if initial_time >= timestamp(details['created_at']):
+                raise ValueError('unregistered task already changed after PR opening; owner reconciliation required')
+            commits = set(git(root, 'rev-list', f'{result["target_sha"]}..{pr["sha"]}').splitlines()) | {initial}
+            for sha in commits:
+                signature = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
+                if signature.get('verified') is not True or signature.get('reason') != 'valid':
+                    raise ValueError('unregistered task history contains an unverified signature')
             progress[key] = dict(state='registration-required', head=pr['sha'], opened_at=details['created_at'])
-            continue  # Not permission to publish again or infer a zero budget.
+            continue  # Verified initial publication only; never permission to publish again.
         if record['branch'] != pr['head']:
             raise ValueError('registered task branch identity differs from actual PR')
-        rules = github('api', 'repos/clemarc/fava/rules/branches/' + quote(pr['head'], safe=''))
-        if not {'required_signatures', 'non_fast_forward', 'deletion'} <= {r['type'] for r in rules}:
-            raise ValueError('task resume requires signed/no-force-push/no-deletion protections')
         current = task_publication_progress(root, result['target_sha'], pr['sha'], result['ledger'],
                                             pr['number'], details['created_at'], git)
         for sha in set(current['reservations'].values()) | set(git(root, 'rev-list', f'{result["target_sha"]}..{pr["sha"]}').splitlines()):
             signature = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
             if signature.get('verified') is not True or signature.get('reason') != 'valid':
                 raise ValueError('task resume history contains an unverified signature')
-        from integration import verified_owner_limits, timestamp
+        from integration import verified_owner_limits, reservation_authorization_errors
         from ledger import AUTOMATIC_CORRECTION_LIMIT
-        deadline = min((timestamp(git(root, 'show', '-s', '--format=%cI', sha).strip())
-                        for cycle, sha in current['reservations'].items() if cycle > AUTOMATIC_CORRECTION_LIMIT), default=None)
-        limits = verified_owner_limits(result['execution'], set(record['tasks']), pr['number'], result['id'], deadline)
+        errors = reservation_authorization_errors(root, result['ledger'], current['reservations'],
+                                                  set(record['tasks']), pr['number'], result['id'])
+        if errors:
+            raise ValueError('task correction budget exhausted: ' + '; '.join(errors))
+        limits = verified_owner_limits(result['execution'], set(record['tasks']), pr['number'], result['id'], datetime.now(timezone.utc))
         cap = min(limits.get(t, AUTOMATIC_CORRECTION_LIMIT) for t in record['tasks'])
         count = current['correction_cycles']
         if count > cap:

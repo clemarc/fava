@@ -63,3 +63,16 @@ registration/reservation signatures. This is a new adoption prerequisite; the
 status checks or conversation resolution. No settings were changed. Current
 protections cannot reconstruct work deleted before protection was installed;
 ambiguous old history needs explicit owner reconciliation, never a guessed count.
+
+Work-branch protection must cover the initial publication, not merely exist at
+resume. Task/preparation inspection traces each effective signature/no-force/
+no-deletion rule to an active repository ruleset with no bypass actors. Its
+creation and last-update timestamps must precede the retained initial head's
+commit time. Missing/unsupported provenance, late rules, or even a benign later
+ruleset edit conservatively stops for owner reconciliation; the helper cannot
+recover discarded work or silently issue a fresh zero budget. Install these
+rules before initial work. Initial unregistered task heads also need verified
+signatures and must predate actual PR opening. Current rules alone are not proof
+of past protection. This does not provide an automatic reconciliation override:
+the owner must inspect retained Git/PR/audit evidence and authorize a separately
+reviewed migration if historical continuity cannot be proved.
