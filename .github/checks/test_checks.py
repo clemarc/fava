@@ -71,6 +71,10 @@ class FeatureTests(unittest.TestCase):
         self.assertTrue(sdd.validate_commit('chore: workflow\n\nSDD-Type: tooling', ['Fava/Reader.swift'], read))
         self.assertTrue(sdd.validate_commit('chore: spec\n\nSDD-Type: tooling', ['specs/demo-01-read/spec.md'], read))
         self.assertTrue(sdd.validate_commit('chore: workflow\n\nSDD-Type: imaginary', ['README.md'], read))
+        task_message = message + 'SDD-Type: tooling\n'
+        self.assertEqual(sdd.validate_commit(task_message, ['docs/note.md'], read), [])
+        self.assertTrue(sdd.validate_commit(task_message.replace('Spec:', 'Missing-Spec:'), ['docs/note.md'], read))
+        self.assertTrue(sdd.validate_commit(task_message.replace('Implements:', 'Missing-Implements:'), ['docs/note.md'], read))
 
 
 class RepositoryTests(unittest.TestCase):

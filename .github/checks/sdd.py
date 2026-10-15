@@ -1,8 +1,12 @@
 """Offline Fava SDD gates. Validation never rewrites repository artifacts."""
 import argparse
+import json
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools/sdd'))
 
 FEATURE = r'(?:[0-9]{3}-[a-z0-9]+(?:-[a-z0-9]+)*|[0-9]{8}-[0-9]{6}-[a-z0-9]+(?:-[a-z0-9]+)*|[a-z][a-z0-9]*(?:-[a-z0-9]+)*-[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*)'
 FR = r'FR-[0-9]{3}'
@@ -173,8 +177,9 @@ def validate_commit(message, paths, read):
             errors.append('spec artifacts require roadmap, specification, planning or reconciliation SDD-Type')
         elif kind[0] == 'reconciliation' and any(not (p.startswith('specs/_system/') or governance_path(p)) for p in paths):
             errors.append('reconciliation exception only permits current-state specs and governance paths')
-        return errors
-    if kind: errors.append('SDD-Type exception cannot cover application source/tests or unknown paths')
+        if not t.get('Task'):
+            return errors
+    if native and kind: errors.append('SDD-Type exception cannot cover application source/tests or unknown paths')
     specs = t.get('Spec', [])
     if len(specs) != 1 or not re.fullmatch('specs/' + FEATURE, specs[0]):
         return errors + ['implementation commit needs one Spec: specs/<feature-directory> trailer; split cross-feature commits']
@@ -198,7 +203,7 @@ def validate_commit(message, paths, read):
     return errors
 
 
-def validate_repo(root, base=None, head='HEAD', message=None):
+def validate_repo(root, base=None, head='HEAD', message=None, preparation_pr=None, preparation_opened_at=None):
     errors = []
     if not (root / 'specs').is_dir(): return ['missing specs/ directory']
     if not (root / '.specify/memory/constitution.md').is_file(): errors.append('missing .specify/memory/constitution.md')
@@ -257,6 +262,24 @@ def validate_repo(root, base=None, head='HEAD', message=None):
             decisions = re.findall(r'^#{1,3}\s+(DEC-\S+)', log_path.read_text(), re.M)
             if len(decisions) != len(set(decisions)) or any(not re.fullmatch(r'DEC-[0-9]{3}', d) for d in decisions):
                 errors.append(f'{key}/decision-log.md: use unique DEC-NNN headings')
+        ledger_path = directory / 'execution.json'
+        if ledger_path.exists():
+            from ledger import validate as validate_ledger
+            try:
+                errors += [f'{key}/execution.json: {e}' for e in validate_ledger(
+                    json.loads(ledger_path.read_text()), key, tasks)]
+            except (ValueError, TypeError, KeyError) as error:
+                errors.append(f'{key}/execution.json: invalid ledger: {error}')
+            if base:
+                try:
+                    old_ledger = json.loads(git(root, 'show', f'{base}:{key}/execution.json'))
+                    new_ledger = json.loads(ledger_path.read_text())
+                    from ledger import history_errors
+                    errors += [f'{key}/execution.json: {e}' for e in history_errors(old_ledger, new_ledger, publication=False)]
+                except subprocess.CalledProcessError:
+                    pass
+                except (ValueError, TypeError, KeyError):
+                    errors.append(f'{key}/execution.json: invalid history')
         parent = re.search(r'Parent roadmap:\s*(specs/[^\s]+/roadmap.md)\s*→\s*entry\s+(' + ROADMAP_ID + r')(?![\w.])', spec)
         if key in roadmap_entries and (not parent or parent.groups() != roadmap_entries[key]): errors.append(f'{key}: Parent roadmap must match {roadmap_entries[key]}')
         if parent and roadmap_entries.get(key) != parent.groups(): errors.append(f'{key}: parent roadmap entry does not resolve back to this directory')
@@ -278,6 +301,17 @@ def validate_repo(root, base=None, head='HEAD', message=None):
                 except subprocess.CalledProcessError: old_log = ''
                 if old_log and (not (directory / 'decision-log.md').exists() or not (directory / 'decision-log.md').read_text().startswith(old_log)): errors.append(f'{key}: decision-log.md must remain append-only')
     if base:
+        if preparation_pr:
+            from ledger import preparation_round_errors
+            ledgers = [p for p in git(root, 'ls-tree', '-r', '--name-only', head).splitlines()
+                       if p.startswith('specs/') and p.endswith('/execution.json')]
+            registered = [p for p in ledgers if str(preparation_pr) in json.loads(git(root, 'show', f'{head}:{p}')).get('preparation_prs', {})]
+            if len(registered) != 1 or not preparation_opened_at:
+                errors.append('preparation PR requires exactly one registered ledger and actual opening timestamp')
+            for sha in git(root, 'rev-list', '--first-parent', f'{base}..{head}').splitlines():
+                for path in registered:
+                    errors += [f'commit {sha[:12]}: {e}' for e in preparation_round_errors(
+                        root, sha, path, preparation_pr, preparation_opened_at, base, git)]
         # Deleted contracts/completed directories cannot evade the current-tree walk.
         for path in git(root, 'diff', '--name-only', '--diff-filter=D', base, head, '--', 'specs').splitlines():
             if path.endswith('/roadmap.md'): errors.append(f'{path}: historical roadmaps cannot be deleted')
@@ -297,11 +331,37 @@ def validate_repo(root, base=None, head='HEAD', message=None):
                     except subprocess.CalledProcessError: errors.append(f'{p}: implementation must follow a merged specification and planning PR')
         # Source work requires an already approved breakdown in the base.
         for sha in git(root, 'rev-list', '--reverse', f'{base}..{head}').splitlines():
-            paths = git(root, 'diff-tree', '--root', '--no-commit-id', '-r', '--name-only', '-m', sha).splitlines()
-            if implementation_paths(paths):
+            # A merge records integration relative to its first parent; comparing
+            # every parent incorrectly attributes target-only changes to the task.
+            parents = git(root, 'show', '-s', '--format=%P', sha).split()
+            paths = (git(root, 'diff-tree', '--no-commit-id', '-r', '--name-only', parents[0], sha)
+                     if parents else git(root, 'diff-tree', '--root', '--no-commit-id', '-r', '--name-only', sha)).splitlines()
+            if preparation_pr and implementation_paths(paths):
+                from ledger import target_import
+                imported, issues = target_import(root, sha, base, git)
+                if not imported or issues:
+                    errors.append(f'commit {sha[:12]}: preparation cannot introduce application implementation')
+            from ledger import transition_errors, task_merge_errors
+            for path in paths:
+                if path.startswith('specs/') and path.endswith('/execution.json'):
+                    errors += [f'commit {sha[:12]}: {e}' for e in transition_errors(root, sha, path, git)]
+                    try:
+                        execution = json.loads(git(root, 'show', f'{sha}:{path}'))
+                        for ident, record in execution.get('tasks', {}).items():
+                            if record.get('state') == 'integrated':
+                                errors += task_merge_errors(root, path.rsplit('/', 1)[0], ident, record, sha, git)
+                    except (ValueError, TypeError, KeyError, subprocess.CalledProcessError):
+                        errors.append(f'commit {sha[:12]}: invalid execution history')
+            if implementation_paths(paths) or trailers(git(root, 'show', '-s', '--format=%B', sha)).get('Task'):
                 cited = trailers(git(root, 'show', '-s', '--format=%B', sha)).get('Spec', [])
                 for feature in cited:
                     planning_ref = pilot_planning_ref(root, base, sha, feature, git(root, 'show', '-s', '--format=%B', sha))
+                    if planning_ref == base:
+                        from lifecycle import planning_ref as milestone_planning_ref
+                        try:
+                            planning_ref = milestone_planning_ref(root, base, sha, feature, git)
+                        except (ValueError, subprocess.CalledProcessError) as error:
+                            errors.append(f'{feature}: invalid reviewed planning proof: {error}')
                     for artifact in ['plan.md', 'tasks.md']:
                         try: git(root, 'cat-file', '-e', f'{planning_ref}:{feature}/{artifact}')
                         except subprocess.CalledProcessError: errors.append(f'{feature}/{artifact}: merge planning PR before implementation')
@@ -319,8 +379,10 @@ def main():
     parser.add_argument('--base', help='merge base for lifecycle and every new commit')
     parser.add_argument('--head', default='HEAD')
     parser.add_argument('--message-file', type=Path, help='validate pending message against staged paths')
+    parser.add_argument('--preparation-pr', type=int, help='actual PR number from trusted Actions context')
+    parser.add_argument('--preparation-opened-at', help='actual PR created_at from trusted Actions context')
     args = parser.parse_args()
-    errors = validate_repo(args.root, args.base, args.head, args.message_file)
+    errors = validate_repo(args.root, args.base, args.head, args.message_file, args.preparation_pr, args.preparation_opened_at)
     for error in errors: print('ERROR:', error)
     if not errors: print('SDD quality passed (roadmap slices may precede feature specifications).')
     raise SystemExit(bool(errors))

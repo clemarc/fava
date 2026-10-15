@@ -1,6 +1,7 @@
 # CI and agent verification
 
-Fava's public GitHub Free repository delivers through PRs against `main`. Codex
+Fava's public GitHub Free repository delivers through lifecycle-scoped PRs
+(see [SDD v2 amendment](#sdd-v2-milestone-delivery-amendment)). Codex
 Cloud validates tooling on Linux, publishes verified GitHub GraphQL commits and
 monitors Actions; the owner reviews and merges manually. This setup changes no
 R1–R3 product requirements and creates no placeholder application.
@@ -271,9 +272,12 @@ already-authorized GitHub integration's workflow job-log/artifact tools. In this
 setup the connector retrieved logs successfully while direct downloads were
 proxy-denied; do not bypass the proxy or add credentials to work around it.
 On failure diagnose actual evidence, fix within scope, rerun checks, make a new
-verified GraphQL commit on the same branch and monitor the new SHA. Two automatic
+verified GraphQL commit on the same branch and monitor the new SHA. Three automatic
 correction cycles maximum; thereafter report the blocker. A skipped, cancelled,
 missing or old successful check cannot prove the latest native change passed.
+Use [the escalation template](../../.specify/templates/escalation-template.md):
+linked findings and severity/impact, evidence/attempted fixes, a concrete proposed
+fix and validation plan, risks and the precise owner decision/extra rounds needed.
 
 ## Owner's main ruleset
 
@@ -312,9 +316,10 @@ an adversarial edit to its own workflow without that review.
 Reuse the pinned project-local Linear CLI and companion skill; see
 [Linear integration](linear-integration.md). Preserve local MCP configuration.
 Project → epic, milestone → roadmap slice, parent issue → story, sub-issue → task;
-repository keys (feature/TNNN, feature/USN) identify projected work. Task projection
-is not implemented, no statuses are updated here, and no second GraphQL client or
-synchronization service is introduced. LINEAR_API_KEY is for authorized cloud CLI
+repository keys (feature/TNNN, feature/USN) identify projected work. SDD v2 adds
+a tested pinned-CLI projection helper; actual upsert/verification runs in the
+owner-started Cloud tasks. No second GraphQL client or synchronization service
+is introduced. This governance task performs no tracker mutations. LINEAR_API_KEY is for authorized cloud CLI
 operations only and never a CI dependency or Actions secret.
 
 Public source/history/PRs/logs/artifacts require synthetic fixtures only, no real
@@ -338,7 +343,45 @@ public hosted runners are free; prioritize native reliability over minute saving
 | Linear outage | Report projection pending; keep SDD/native CI independent |
 
 Deferred: initial real native run and R1 acceptance, iPad CI expansion, dependency
-cache if justified, full secret scanning, broader semantic/path analysis, tested
-Linear task projection and reviewed community extensions. Deterministic checks
+cache if justified, full secret scanning, broader semantic/path analysis and reviewed community
+extensions. SDD v2 supplies tested CLI projection; live mutation results remain
+a milestone-task responsibility. Deterministic checks
 validate structural contracts; agent analysis and human review remain responsible
 for requirement meaning and test sufficiency.
+
+## SDD v2 milestone delivery amendment
+
+The owner-started lifecycle in [SDD v2](sdd-v2.md) governs PR destinations:
+roadmap/spec/governance/final milestone target main; preparation/task/checkpoint
+PRs target their registered milestone. Owner merges preparation/main; after
+owner governance adoption the coordinator may integrate gated task PRs only to
+milestone. Earlier blanket agent-merge prohibition remains until adoption.
+This overrides the main-only delivery examples above, not mandatory tests/signing.
+
+The validator compares merge commits to their first parent and preserves both
+parents/task history. For promotion it verifies reviewed planning via full ledger
+SHAs, immutable approved spec baseline, signed owner planning merge and chronology
+before each source commit. It cryptographically checks the pinned public GitHub
+key with isolated GnuPG; no signing private key or network credential is used.
+Fixtures cover actual signed approval and missing/wrong/late approval, decimal
+resolution, interrupted branches, retired/completed work and integration gates.
+The fixed historical pilot exception is unchanged. Semantic/native/review reports
+still require independent inspection; ledger assertions cannot replace evidence.
+
+All introduced/integration commits must be GitHub Verified. Use valid union
+Spec/Task/Implements mappings on source-bearing merges, SDD-Type: planning on
+no-source planning/checkpoint merges. Head/target changes invalidate evidence.
+Keep three automatic correction cycles per task PR, persisted across restarts.
+Record cycles before publication; new findings do not reset the budget. Prepare
+a reviewable proposed fix at escalation and continue unrelated ready tasks.
+PR-keyed target checkpoints retain branch/task identity, counters and prior
+heads; every intermediate ledger transition is checked. Newly integrated task
+records must resolve to that exact task's source/merge trailers and PR evidence,
+including on metadata-only checkpoints without Task trailers.
+
+Current settings inspection supersedes the dated snapshot above; see
+[sdd-v2-settings.md](sdd-v2-settings.md). No settings are changed by this PR.
+The pinned CLI projection tool is now supplied; live read access is verified,
+mutations are covered by synthetic fixtures. Actual milestone upsert results must
+be recorded during authorized preparation/implementation, never inferred from
+this tooling delivery. No R3.5 preparation/projection/application changes here.

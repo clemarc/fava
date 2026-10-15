@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "milestone": "REPLACE_CANONICAL_ID",
+  "feature": "REPLACE_RESOLVED_DIRECTORY",
+  "specification_base": "REPLACE_INSPECTED_MAIN_SHA",
+  "milestone_branch": "REPLACE_RESOLVED_BRANCH",
+  "preparation_pr": null,
+  "preparation_prs": {},
+  "planning_revision": null,
+  "state": "preparing",
+  "retired_task_ids": [],
+  "tasks": {},
+  "task_prs": {},
+  "parallel_groups": [],
+  "shared_file_owners": {},
+  "checkpoints": [],
+  "findings": [],
+  "physical_acceptance": {"iPhone": null, "iPad": null},
+  "linear": {"state": "pending", "verified_at": null, "evidence": [], "pending_keys": []}
+}

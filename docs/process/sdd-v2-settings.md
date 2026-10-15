@@ -1,0 +1,78 @@
+# SDD v2 GitHub settings proposal
+
+Read-only inspection on 2026-10-13 found main ruleset **24928891**, active,
+targeting ~DEFAULT_BRANCH with no bypass actors. Existing rules: deletion and
+force-push protection, required signatures, PRs with zero required approvals,
+merge method only, no code-owner/last-push approval, no stale-review dismissal,
+no thread-resolution requirement and extra approval for unattributed changes.
+No status checks are required. No milestone ruleset was returned. Repository
+allows merge commits only; squash/rebase and auto-merge are disabled. These are
+observed protections, not a claim that proposed CI/review gates are enforced.
+
+After governance/latest CI validation, the owner should modify main ruleset:
+retain signatures, PRs, deletion/force-push blocks and empty bypass; require
+**ci-required** from GitHub Actions with branches up to date and conversation
+resolution. Preserve merge commits; leave auto-merge off. Keep zero approvals
+for the solo owner process if identity separation is not configured. Human
+review remains a process requirement; zero approvals cannot enforce it.
+
+Create a separate active ruleset targeting `refs/heads/milestone/*`: PR-only,
+verified signed commits, ci-required from Actions with up-to-date branches,
+conversation resolution, deletion/force-push protection, merge commits only,
+no bypass. Preserve task/planning history. Configure these rules before enabling
+agent task integration; do not change protections to unblock a failed task.
+No rulesets, credentials or repository settings are changed by the workflow PR.
+
+Before preparation publication, add a separate rule for `refs/heads/prepare/*`
+requiring signatures and prohibiting force pushes/deletion, with no bypass.
+This preserves preparation's signed correction history across fresh invocations.
+Direct signed publication to this work branch remains necessary; its owner
+merge destination is protected separately. These prepare protections are newly
+proposed, not present in the inspected settings. The resolver checks effective
+rules before resuming a preparation PR; missing rules are an owner prerequisite.
+
+The Cloud credential currently authenticates as **clemarc**, the owner. GitHub
+cannot distinguish an owner click from an agent API merge using that identity;
+signed commits attest credential/commit identity, not human intent. A signed
+owner merge is durable evidence plus a process rule, not technical proof of a
+human operating the credential. The coordinator must obey main/prep prohibitions.
+
+Stronger enforcement requires a separately provisioned GitHub App/bot identity
+with permission to integrate milestone PRs and **no ability to update/merge main**,
+plus owner-only main update restrictions, no bypass for that app, and required
+owner approval for preparation. Validate the applicable plan/ruleset feature
+availability first. Restrict main updates by actor rather than granting a bypass;
+the app still obeys required CI/signatures on milestone branches. GitHub PR authors
+cannot approve their own PR, so owner/app separation permits enforceable owner
+approval. Independent Cloud subagents often still share the same GitHub identity;
+their reports supply process evidence, not an extra GitHub approving actor.
+Do not provision tokens/apps/keys, weaken gates or change settings silently.
+If separation is not adopted, document the residual process-only human boundary.
+The current inspection helpers expect clemarc for task merges/report comments.
+Adopting an App also requires a separately reviewed update to the configured
+task-coordinator identity checks, followed by end-to-end signing/gate validation;
+owner roadmap/specification/preparation/main approval checks remain owner-only.
+Provisioning the App alone does not make this alternate identity path operational.
+
+Before any task publication, separately protect `refs/heads/task/*` with required
+signatures, no force pushes, no deletion and no bypass. Direct signed publication
+remains necessary; PR-only rules belong on its milestone destination. The task
+resume/integration helpers check these effective rules and verify retained
+registration/reservation signatures. This is a new adoption prerequisite; the
+2026-10-14 reinspection still found only main ruleset 24928891, with no required
+status checks or conversation resolution. No settings were changed. Current
+protections cannot reconstruct work deleted before protection was installed;
+ambiguous old history needs explicit owner reconciliation, never a guessed count.
+
+Work-branch protection must cover the initial publication, not merely exist at
+resume. Task/preparation inspection traces each effective signature/no-force/
+no-deletion rule to an active repository ruleset with no bypass actors. Its
+creation and last-update timestamps must precede the retained initial head's
+commit time. Missing/unsupported provenance, late rules, or even a benign later
+ruleset edit conservatively stops for owner reconciliation; the helper cannot
+recover discarded work or silently issue a fresh zero budget. Install these
+rules before initial work. Initial unregistered task heads also need verified
+signatures and must predate actual PR opening. Current rules alone are not proof
+of past protection. This does not provide an automatic reconciliation override:
+the owner must inspect retained Git/PR/audit evidence and authorize a separately
+reviewed migration if historical continuity cannot be proved.
