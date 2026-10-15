@@ -193,7 +193,7 @@ def preparation_progress(root, result):
     return preparation_revision_progress(root, result, pr, record)
 
 
-def preparation_revision_progress(root, result, pr, record, cutoff=None):
+def preparation_revision_progress(root, result, pr, record, cutoff=None, verification_base=None):
     """Verify one explicit preparation revision, whether open or already merged."""
     from ledger import AUTOMATIC_CORRECTION_LIMIT, transition_errors, preparation_round_errors
     if not record or record.get('branch') != result['preparation_branch']:
@@ -208,7 +208,8 @@ def preparation_revision_progress(root, result, pr, record, cutoff=None):
     task_history_protection(result['preparation_branch'], timestamp(git(root, 'show', '-s', '--format=%cI', record['heads'][0]).strip()), github)
     details = github('api', f'repos/clemarc/fava/pulls/{pr["number"]}')
     opened_at = details['created_at']
-    commits = set(git(root, 'rev-list', f'{result["main_sha"]}..{pr["sha"]}').splitlines()) | {record['heads'][0]}
+    proof_base = verification_base or result['main_sha']
+    commits = set(git(root, 'rev-list', f'{proof_base}..{pr["sha"]}').splitlines()) | {record['heads'][0]}
     for sha in commits:
         signature = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
         if signature.get('verified') is not True or signature.get('reason') != 'valid':
@@ -269,7 +270,7 @@ def retained_preparation_progress(root, result):
         baseline = git(root, 'rev-parse', initial + '^1').strip()
         context = dict(result, main_sha=baseline, target_sha=parents[0])
         verified[str(pr['number'])] = preparation_revision_progress(
-            root, context, dict(pr, sha=parents[1]), record, timestamp(pr['merged']))
+            root, context, dict(pr, sha=parents[1]), record, timestamp(pr['merged']), verification_base=parents[0])
     return verified
 
 

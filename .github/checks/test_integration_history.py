@@ -577,6 +577,66 @@ class RetainedGateTests(fixtures.SignedLifecycleTests):
         self.put(path, json.dumps(data)); self.commit('planning')
         with self.assertRaisesRegex(ValueError, 'do not match merged'): inspect()
 
+    def test_retained_preparation_checks_commits_before_initial_publication(self):
+        for defect in (None, 'unsigned', 'transition'):
+            with self.subTest(defect=defect):
+                self.setUp()
+                self.git('switch', 'prepare/r3.5')
+                path = self.feature + '/execution.json'
+                data = json.loads(self.git('show', self.prep_head + ':' + path))
+                if defect == 'transition':
+                    data['task_prs'] = {'99':dict(branch='task/r3.5/t003', tasks=['T003'],
+                                                correction_cycles=1, heads=[self.prep_head]*2)}
+                    self.put(path, json.dumps(data))
+                self.put('docs/initial-artifact.md', 'initial publication contains multiple commits')
+                self.git('add', '.')
+                self.git('commit', '--no-gpg-sign' if defect == 'unsigned' else '-S', '-qm', 'initial artifact\n\nSDD-Type: planning')
+                data.pop('task_prs', None)
+                self.put(path, json.dumps(data)); self.put('docs/initial-final.md', 'signed published tip')
+                initial = self.commit('planning')
+                if defect == 'transition':
+                    self.put('docs/initial-final.md', 'clean signed publication after restored ledger')
+                    initial = self.commit('planning')
+                opened = self.at(self.clock + 1)
+                data['preparation_prs'] = {'20':dict(branch='prepare/r3.5', correction_cycles=0, heads=[initial])}
+                self.put(path, json.dumps(data)); head = self.commit('planning')
+                self.git('switch', '-c', 'retained-target', self.baseline)
+                self.git('merge', '--no-ff', '-S', '-m', 'owner preparation\n\nSDD-Type: planning', 'prepare/r3.5')
+                merge = self.git('rev-parse', 'HEAD'); merged_at = self.at(self.clock + 1)
+                pr = dict(number=20, head='prepare/r3.5', sha=head, merge_sha=merge, merged=merged_at)
+                result = dict(id='R3.5', main_sha=self.baseline, target_sha=merge, ledger=path,
+                              preparation_branch='prepare/r3.5', milestone_branch='milestone/r3.5', execution=data, prs=[pr])
+                actual = dict(created_at=opened, merged_at=merged_at, merge_commit_sha=merge,
+                              merged_by={'login':'clemarc'}, head={'ref':'prepare/r3.5','sha':head}, base={'ref':'milestone/r3.5'})
+                def api(*args):
+                    if args[-1].endswith('/pulls/20'): return actual
+                    return self.api(*args)
+                with patch.object(milestone, 'github', side_effect=api), patch.multiple(signatures,
+                        KEY=self.public, FINGERPRINT=self.fingerprint, OWNER_EMAIL='fixture@example.invalid'):
+                    if defect:
+                        with self.assertRaisesRegex(ValueError, 'signature|transition'):
+                            milestone.retained_preparation_progress(self.root, result)
+                    else:
+                        self.assertEqual(milestone.retained_preparation_progress(self.root, result)['20']['correction_cycles'], 0)
+
+    def test_task_and_checkpoint_cannot_mutate_preparation_records(self):
+        self.data['preparation_prs'] = {'20':dict(branch='prepare/r3.5', correction_cycles=0, heads=[self.prep_head])}
+        self.start_task(); self.evidence()
+        self.assertEqual(self.assess(), [])
+        path = self.feature + '/execution.json'
+        corrupted = copy.deepcopy(self.data)
+        corrupted['preparation_prs']['20'].update(correction_cycles=1, heads=[self.prep_head, self.source])
+        self.put(path, json.dumps(corrupted)); self.head = self.commit('planning'); self.evidence()
+        self.assertIn('task/checkpoint cannot alter retained preparation history', self.assess())
+        self.git('switch', '-c', 'checkpoint/r3.5/fixture', 'target')
+        self.put(self.feature + '/decision-log.md', 'DEC-002: checkpoint')
+        self.head = self.commit('planning'); self.evidence()
+        self.view['headRefName'] = 'checkpoint/r3.5/fixture'
+        self.assertEqual(self.assess(), [])
+        self.put(path, json.dumps(corrupted)); self.head = self.commit('planning'); self.evidence()
+        self.view['headRefName'] = 'checkpoint/r3.5/fixture'
+        self.assertIn('task/checkpoint cannot alter retained preparation history', self.assess())
+
     def test_counter_jumps_and_nonzero_initial_registration_fail(self):
         entry = dict(branch='task/r3.5/t003', tasks=['T003'], correction_cycles=0, heads=['a'*40])
         old = {'task_prs':{'10':entry}}

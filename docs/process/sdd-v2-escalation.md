@@ -160,3 +160,47 @@ credential changes, application/spec changes or R3.5 work. The final closure
 review covers lifecycle transitions before publication. Any new critical finding
 after round ten requires a concrete owner decision about remediation or reduced
 scope; no eleventh publication or weakening of gates is authorized.
+
+## Round ten closure: two remaining P1s, no further publication authorized
+
+Published head ec378950aaa7712451553a89ecff5c98a9b0fc61 consumed the tenth and
+final authorized publication. Fresh independent published-head review reported
+no actionable findings, but fresh Codex review 5533796314 identified two justified
+remaining defects. Independent reassessment confirmed both; review completion
+alone was not treated as approval.
+
+- [Initial publication signature coverage](https://github.com/clemarc/fava/pull/10#discussion_r4283500133): the initial-head-parent boundary is appropriate for correction accounting but excludes older commits in the initial publication from signature/transition proof. The local follow-up passes the actual retained merge target separately as the complete introduced-history verification base. Round accounting retains its original boundary.
+- [Freeze preparation records before integration](https://github.com/clemarc/fava/pull/10#discussion_r4283500144): task/checkpoint metadata can append to preparation records, then make startup fail its frozen-record equality check. The local follow-up rejects any difference between canonical and PR-head preparation records in shared assessment, before integration. Owner preparation amendments use their separate reviewed path.
+
+A concrete **uncommitted, unpublished** patch changes only these helpers,
+regression fixtures and this escalation. Local validation: 100 workflow tests,
+seven publication tests, SDD/tooling/whitespace checks pass. New fixtures use real
+signed and unsigned multi-commit preparation history, an invalid earlier ledger
+transition, valid task/checkpoint assessments and preparation-record mutations.
+The existing valid preparation amendment and full task lifecycle tests still pass.
+Published-head CI/native evidence cannot validate this local patch.
+
+The agreed bounded closure pass has ended with blockers; no round eleven is
+authorized and the workflow is not ready for adoption. The next step is an owner
+disposition of this concrete patch and the intended automation scope, rather than
+another automatically requested correction round. Recommended: review the two
+specific fixes and the lifecycle contract together before deciding whether to
+permit a separately bounded publication. Alternatively, defer autonomous task
+integration and redesign a smaller owner-mediated workflow under explicit scope
+approval; that would change the original goal and is not applied here. Do not
+merge this PR or weaken signature, review, test or authorization gates to end the
+loop. No settings/credentials, application/specification, R3.5 or Linear changes.
+
+## Owner authorization for final review: round eleven
+
+On 2026-10-15, after the exact tested two-fix patch and remaining blockers were
+presented, the owner instructed “go ahead so we can have a final review”. This
+authorizes one additional scoped correction publication, round eleven, maximum
+eleven total, for that patch, verified signing and fresh CI/native/independent/
+Codex review. Earlier statements that round eleven was unauthorized describe the
+prior pause; this explicit instruction supersedes that limit for this one round.
+No merge, auto-merge, settings/credentials, application/specification, R3.5 or
+tracker changes. No twelfth publication is authorized.
+
+Round ten completed all six CI checks in run 38741304394. That evidence applies
+only to its published head; round eleven requires new exact-head validation.

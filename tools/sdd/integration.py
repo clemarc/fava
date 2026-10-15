@@ -252,6 +252,8 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
     protected = protected and any(r['type'] == 'pull_request' and r.get('parameters', {}).get('required_review_thread_resolution') for r in rules)
     feature = context['feature']
     ledger = json.loads(read(root, head, context['ledger']))
+    if ledger.get('preparation_prs', {}) != (context.get('execution') or {}).get('preparation_prs', {}):
+        raise ValueError('task/checkpoint cannot alter retained preparation history')
     # Durable report is necessary, never sufficient: compare live evidence below.
     # Validation occurs after publication. A commit cannot contain its own SHA;
     # put the SHA-bound report in a coordinator PR comment, not a self-referential
