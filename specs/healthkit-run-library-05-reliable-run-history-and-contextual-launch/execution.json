@@ -8,10 +8,11 @@
   "preparation_prs": {
     "14": {
       "branch": "prepare/r3.5",
-      "correction_cycles": 1,
+      "correction_cycles": 2,
       "heads": [
         "dd13902af5f93f60a0500c2de1486d342c7f4663",
-        "117f90abdf557131eea6d9425090dfb525388814"
+        "117f90abdf557131eea6d9425090dfb525388814",
+        "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882"
       ]
     }
   },
@@ -86,6 +87,7 @@
         "Fava/FavaApp.swift",
         "Fava/LaunchContext.swift",
         "Fava/RootView.swift",
+        "Fava/SyntheticLibraryFixtures.swift",
         "FavaTests/LaunchContextTests.swift",
         "FavaUITests/FoundationUITests.swift",
         "FavaUITests/RunLibraryUITests.swift"
@@ -169,8 +171,10 @@
         "T005"
       ],
       "paths": [
+        "Fava/FavaApp.swift",
         "Fava/RunLibraryPresentation.swift",
         "Fava/RunLibraryView.swift",
+        "Fava/SyntheticLibraryFixtures.swift",
         "FavaTests/RunLibraryTests.swift",
         "FavaUITests/RunLibraryUITests.swift"
       ],
@@ -227,11 +231,14 @@
         "T007"
       ],
       "paths": [
+        "Fava/FavaApp.swift",
         "Fava/LaunchContext.swift",
         "Fava/RootView.swift",
         "Fava/RunLibraryPresentation.swift",
         "Fava/SettingsView.swift",
-        "FavaTests/LaunchContextTests.swift"
+        "Fava/SyntheticLibraryFixtures.swift",
+        "FavaTests/LaunchContextTests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
       ],
       "requirements": [
         "FR-001",
@@ -451,6 +458,36 @@
       "reviewed_head": "117f90abdf557131eea6d9425090dfb525388814",
       "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
       "reviewer": "/root/prep_review"
+    },
+    {
+      "id": "CODEX-001",
+      "severity": "high",
+      "summary": "Clear UI and other changed behaviors need immediate fixture/UI acceptance baselines",
+      "url": "https://github.com/clemarc/fava/pull/14#discussion_r4297108171",
+      "disposition": "fixed",
+      "evidence": [
+        "decision-log.md#dec-007",
+        "decision-log.md#dec-008",
+        "tasks.md",
+        "data-model.md"
+      ],
+      "reviewed_head": "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31"
+    },
+    {
+      "id": "CODEX-002",
+      "severity": "medium",
+      "summary": "Schema-1 capturedAt establishes known prior observation times",
+      "url": "https://github.com/clemarc/fava/pull/14#discussion_r4297108186",
+      "disposition": "fixed",
+      "evidence": [
+        "decision-log.md#dec-007",
+        "decision-log.md#dec-008",
+        "tasks.md",
+        "data-model.md"
+      ],
+      "reviewed_head": "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31"
     }
   ],
   "physical_acceptance": {

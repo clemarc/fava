@@ -63,3 +63,26 @@ T003 owns launch/back helper changes; T004 and T006 maintain affected Settings/
 notice expectations. T005/T010 expand coverage instead of postponing regression
 maintenance. Preserve task IDs and serial ownership; every task still needs
 passing current native/CI gates before integration.
+
+## DEC-007 — Preserve known schema-1 observation times
+
+Supersedes only DEC-001's timestamp interpretation. Codex finding
+https://github.com/clemarc/fava/pull/14#discussion_r4297108186 and renewed source
+inspection show R2/R3 wrote capturedAt when a complete successful read replaced
+the whole snapshot (RunIngestion.swift, RunRecord.swift). All stored identities
+therefore belonged to that observation. Adopt valid capturedAt as the prior
+latest successful observation time and each stored run's last-observed time;
+returned membership is all legacy IDs, including empty. Preserve genuinely
+missing/null legacy times as unknown, never substitute migration/launch/workout
+time. A present malformed timestamp is recovery, not missing. Adoption remains
+read-only, with known values preserved through next-save failure and relaunch.
+
+## DEC-008 — Include minimum fixtures with each behavior change
+
+Codex finding https://github.com/clemarc/fava/pull/14#discussion_r4297108171
+requires T008's destructive UI to have same-task XCUITest coverage, not only
+route-model tests. T003, T006 and T008 each own the minimal DEBUG fixture controls
+and app wiring needed for their launch/recovery, provenance and clear UI tests.
+Every behavior-changing task integrates its acceptance/failure baseline together;
+T009/T010 expand those already passing fixture/test baselines. The coordinator
+serializes shared fixture/app/UI writes. Task IDs and product scope are unchanged.

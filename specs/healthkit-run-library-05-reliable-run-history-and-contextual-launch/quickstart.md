@@ -23,7 +23,9 @@ files/defaults, injected clock and held callbacks. Required cases: absent; legac
 populated/empty; v2 populated/empty; corrupt/unsupported/read-error; local-load
 retry; A/B→B/C; repeated empty; failure after intermediate data; unavailable;
 save failure with and without prior rows; clear failure; held pre-clear callback;
-1,000-run saved launch. Exact fixture names belong to T008's implementation.
+1,000-run saved launch. Each behavior task defines its minimum fixture names;
+T009 expands the combined matrix. Legacy fixtures separately cover valid capturedAt
+(preserved prior/per-row times), absent/null time (unknown) and malformed time (recovery).
 
 1. Launch populated with a held read: rows are immediately selectable, history is
    labelled saved, exactly one entry read and zero access requests occur.

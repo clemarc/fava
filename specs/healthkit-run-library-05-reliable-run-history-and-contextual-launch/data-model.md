@@ -4,8 +4,8 @@ Design names describe new Swift types; approved product meanings remain in spec.
 
 | Entity | Fields and validation |
 | --- | --- |
-| RetainedRunHistory | schemaVersion=2; runs keyed uniquely by UUID; lastObservedAtByID with optional instants; latestSavedObservation optional; legacyPriorEmpty Bool. Every provenance key belongs to runs. |
-| SavedReadObservation | observedAt Date; returnedIDs Set<UUID>; outcome nonempty/empty derived from returnedIDs. Every returned ID belongs to runs; empty is a valid success. |
+| RetainedRunHistory | schemaVersion=2; runs keyed uniquely by UUID; lastObservedAtByID with optional instants; latestSavedObservation optional. Every provenance key belongs to runs. |
+| SavedReadObservation | observedAt Date (optional only for genuinely untimed legacy data); returnedIDs Set<UUID>; outcome nonempty/empty derived from returnedIDs. Every returned ID belongs to runs; empty is a valid success. |
 | RunRecord | Preserve UUID, startDate instant, finite nonnegative duration, optional finite nonnegative recorded distance and original unit. Missing and zero differ. Source data is never changed by display settings. |
 | LocalHistoryState | absent, readable(history), recovery(error). Readable-empty is distinct from absent and recovery. Unsupported version, malformed/invalid values or read failure preserve the original document. |
 | ReadAttempt | idle, loading, sourceFailure, unavailable, sourceSuccess(returnedCount, savingFailure optional). Current session only; never restore active state on launch. |
@@ -13,9 +13,17 @@ Design names describe new Swift types; approved product meanings remain in spec.
 | LaunchRoute | setup when absent/readable-empty; library when populated; recovery on unreadable. Clear success selects setup. Ordinary reads do not unexpectedly replace the user's visible route. |
 
 Schema 1: decode existing RunSnapshot unchanged, validate all records, deduplicate
-UUIDs deterministically with the first record retained, and map times to unknown.
-Keep capturedAt as legacy metadata only. A saved empty snapshot sets legacyPriorEmpty;
-nil load means never-read. Do not eagerly rewrite the legacy file. Schema 2
+UUIDs deterministically with the first record retained. R2/R3 replaced the whole
+collection after each complete success, so seed latestSavedObservation and every
+row time from valid capturedAt, with all saved IDs as returned membership. Saved
+empty is a prior successful-empty observation, timed when capturedAt is known.
+For supported older documents with absent/null capturedAt, keep observation and
+per-row times unknown while retaining the prior-success/membership evidence. A
+present malformed timestamp is recovery. Never use migration/launch/workout time.
+Use the existing JSON numeric reference-date convention, not Unix seconds. The
+migration decoder may use decodeIfPresent for omitted/null capturedAt; a present
+invalid/nonfinite date is corruption. Newly accepted reads always have a clock
+time. Nil load means never-read (DEC-007 supersedes DEC-001 timestamp semantics). Do not eagerly rewrite the legacy file. Schema 2
 validation rejects orphan provenance, missing returned identities, invalid numeric
 values and unsupported versions without treating the file as absent.
 

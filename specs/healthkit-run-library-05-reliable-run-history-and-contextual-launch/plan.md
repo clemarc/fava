@@ -27,7 +27,7 @@ observation provenance separately from current attempts, launch from saved conte
 and clear local history deliberately. Reuse the existing HealthKit reader, access
 state machine, source formatting, units and identity selection. Add a content-versioned
 history envelope, atomic whole-document commits, recovery state, clear generations
-and explicit navigation events. [DEC-001–005](decision-log.md) govern these choices.
+and explicit navigation events. [DEC-001–008](decision-log.md) govern these choices.
 
 Scope is the 19 approved FRs and four stories. R4 detail, new permissions, background
 reconciliation, per-run deletion, design overhaul, accounts/backend/iCloud and AI
@@ -81,8 +81,9 @@ execution.json records pending implementation, not approval or scope.
 Follow [data-model.md](data-model.md) and [contract](contracts/history-and-navigation.md).
 Read storage directly: only genuine file-not-found is absent; do not use a
 fileExists precheck that could mistake inaccessible storage for empty history.
-Legacy populated/empty adoption must preserve original bytes, values and unknown
-times; a next-save migration failure leaves the prior document/view intact.
+Legacy populated/empty adoption must preserve original bytes and values, seed
+known prior/per-row observation times from valid capturedAt, and keep genuinely
+missing times unknown (DEC-007); a next-save migration failure leaves the prior document/view intact.
 Inject clock and file operations for repeatable tests, including privileged CI
 where chmod alone cannot reliably force write failure.
 
@@ -116,7 +117,9 @@ Storage/model foundation → contextual launch/Settings → retained read integr
 T001 adds the typed storage boundary without breaking old callers; T002 activates
 it and adapts all model/presentation/fixture/test consumers together. T003 updates
 launch/back helpers with contextual navigation; T004/T006 maintain affected UI
-expectations immediately. T005/T010 expand coverage from those passing baselines.
+expectations immediately. T003/T006/T008 include minimum synthetic fixture/app
+wiring and UI assertions for the behavior each introduces (DEC-008). T005/T009/T010
+expand coverage from those passing baselines.
 Each task includes its tests before implementation and publishes one coherent
 reviewable change; no failing test-only PR is integrated. Shared source/project
 files are serialized. Baseline parallel_groups is empty: no speculative [P] markers.

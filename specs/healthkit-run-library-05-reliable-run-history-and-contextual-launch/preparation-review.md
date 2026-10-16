@@ -23,9 +23,10 @@ their physical acceptance remains separate and pending.
 
 ## Migration, persistence and concurrency
 
-[DEC-001–006](decision-log.md) choose one protected content-versioned file,
+[DEC-001–008](decision-log.md) choose one protected content-versioned file,
 read-only legacy adoption, atomic save-before-publish and generation/transport
-separation. Unknown legacy times remain unknown; legacy empty remains prior empty.
+separation. Valid legacy capturedAt seeds prior observation/per-row times; genuinely missing
+times remain unknown. Legacy empty remains prior empty, timed when known (DEC-007).
 Source success/save failure keeps exactly the prior saved rows/provenance and
 retries with a fresh source read. Local recovery preserves unreadable bytes until
 successful local retry or confirmed clear. Clear writes an empty tombstone before
@@ -112,3 +113,18 @@ immediate caller/test/helper maintenance. No product or contract change is neede
 The 12 task IDs remain; no integrated task or retirement exists. Correction 1
 appends the prior published head and increments its durable counter in this same
 artifact commit. The PR retains the exact review and refreshed-head validation.
+
+## Actual Codex review and correction 2
+
+Codex reviewed afc577c2f2cd65399cb99b60f7f0a0d0d97c5882 in
+https://github.com/clemarc/fava/pull/14#pullrequestreview-5550965809. Its P1
+https://github.com/clemarc/fava/pull/14#discussion_r4297108171 requires clear UI
+coverage/fixtures in T008. DEC-008 and task paths add that baseline immediately,
+plus corresponding minimum recovery/provenance fixture ownership in T003/T006.
+Its P2 https://github.com/clemarc/fava/pull/14#discussion_r4297108186 correctly
+identifies known capturedAt evidence. Source and predecessor contract show the
+whole schema-1 snapshot is the last complete successful observation. DEC-007
+reverses the earlier conservative timestamp interpretation; migration now preserves
+known times and keeps only genuinely absent times unknown. No approved requirement
+or earlier decision entry was rewritten. Correction 2 retains the prior head and
+all 12 task IDs. Fresh-head review/validation evidence belongs in the PR.

@@ -6,7 +6,7 @@ T001 introduces an additive typed history store boundary while retaining the old
 RunSnapshotStoring API for unchanged callers. T002 switches all callers/conformers
 and tests together, then removes transitional APIs if unused. The active boundary
 loads typed retained history, commits a whole history
-document, and clear atomically using the same protected path. Its test doubles
+document, and clears atomically using the same protected path. Its test doubles
 support load/save/clear failure injection and inspection of committed bytes.
 Load failures are distinguishable from absence. Writes are synchronous and
 serialized through the MainActor model; no asynchronous write may outlive its
