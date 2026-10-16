@@ -1,0 +1,691 @@
+{
+  "schema": 1,
+  "milestone": "R3.5",
+  "feature": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch",
+  "specification_base": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
+  "milestone_branch": "milestone/r3.5",
+  "preparation_pr": "https://github.com/clemarc/fava/pull/14",
+  "preparation_prs": {
+    "14": {
+      "branch": "prepare/r3.5",
+      "correction_cycles": 4,
+      "heads": [
+        "dd13902af5f93f60a0500c2de1486d342c7f4663",
+        "117f90abdf557131eea6d9425090dfb525388814",
+        "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882",
+        "44572793449f8707cf0319be14b4c4e72d0ef045",
+        "e1b7e81890ef8aee77b006aa1931c345ed439aa3"
+      ],
+      "state": "review",
+      "owner_extra_cycles": {
+        "comment_id": 6222134675
+      }
+    }
+  },
+  "planning_revision": null,
+  "state": "preparing",
+  "retired_task_ids": [],
+  "tasks": {
+    "T001": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [],
+      "paths": [
+        "Fava.xcodeproj/project.pbxproj",
+        "Fava/RunHistory.swift",
+        "Fava/RunRecord.swift",
+        "Fava/RunSnapshotStore.swift",
+        "FavaTests/RunSnapshotStoreTests.swift"
+      ],
+      "requirements": [
+        "FR-005",
+        "FR-009",
+        "FR-012",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T002": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T001"
+      ],
+      "paths": [
+        "Fava/FavaApp.swift",
+        "Fava/RootView.swift",
+        "Fava/RunIngestion.swift",
+        "Fava/RunLibraryPresentation.swift",
+        "Fava/RunLibraryView.swift",
+        "Fava/RunSnapshotStore.swift",
+        "Fava/SyntheticLibraryFixtures.swift",
+        "FavaTests/RunIngestionTests.swift",
+        "FavaTests/RunLibraryTests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
+      ],
+      "requirements": [
+        "FR-002",
+        "FR-004",
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-015",
+        "FR-016",
+        "FR-018"
+      ],
+      "stories": [
+        "US2",
+        "US3",
+        "US1"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T003": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T002"
+      ],
+      "paths": [
+        "Fava.xcodeproj/project.pbxproj",
+        "Fava/FavaApp.swift",
+        "Fava/LaunchContext.swift",
+        "Fava/RootView.swift",
+        "Fava/SyntheticLibraryFixtures.swift",
+        "FavaTests/LaunchContextTests.swift",
+        "FavaUITests/FoundationUITests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-002",
+        "FR-004",
+        "FR-016",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [
+        "US1"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T004": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T003"
+      ],
+      "paths": [
+        "Fava.xcodeproj/project.pbxproj",
+        "Fava/RootView.swift",
+        "Fava/RunLibraryView.swift",
+        "Fava/SettingsView.swift",
+        "FavaTests/LaunchContextTests.swift",
+        "FavaUITests/FoundationUITests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
+      ],
+      "requirements": [
+        "FR-003",
+        "FR-004",
+        "FR-014",
+        "FR-015",
+        "FR-017"
+      ],
+      "stories": [
+        "US1"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T005": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T004"
+      ],
+      "paths": [
+        "FavaTests/RunIngestionTests.swift",
+        "FavaTests/RunSnapshotStoreTests.swift"
+      ],
+      "requirements": [
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-016",
+        "FR-017",
+        "FR-018"
+      ],
+      "stories": [
+        "US2"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T006": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T005"
+      ],
+      "paths": [
+        "Fava/FavaApp.swift",
+        "Fava/RunLibraryPresentation.swift",
+        "Fava/RunLibraryView.swift",
+        "Fava/SyntheticLibraryFixtures.swift",
+        "FavaTests/RunLibraryTests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
+      ],
+      "requirements": [
+        "FR-002",
+        "FR-004",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-014",
+        "FR-015",
+        "FR-016",
+        "FR-017"
+      ],
+      "stories": [
+        "US3"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T007": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T006"
+      ],
+      "paths": [
+        "Fava/RunIngestion.swift",
+        "Fava/RunSnapshotStore.swift",
+        "FavaTests/RunIngestionTests.swift",
+        "FavaTests/RunSnapshotStoreTests.swift"
+      ],
+      "requirements": [
+        "FR-011",
+        "FR-012",
+        "FR-013",
+        "FR-017",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [
+        "US4"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T008": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T007"
+      ],
+      "paths": [
+        "Fava/FavaApp.swift",
+        "Fava/LaunchContext.swift",
+        "Fava/RootView.swift",
+        "Fava/RunLibraryPresentation.swift",
+        "Fava/SettingsView.swift",
+        "Fava/SyntheticLibraryFixtures.swift",
+        "FavaTests/LaunchContextTests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-003",
+        "FR-011",
+        "FR-012",
+        "FR-013",
+        "FR-014",
+        "FR-015",
+        "FR-017",
+        "FR-019"
+      ],
+      "stories": [
+        "US4"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T009": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T008"
+      ],
+      "paths": [
+        "Fava/FavaApp.swift",
+        "Fava/SyntheticLibraryFixtures.swift",
+        "FavaTests/RunIngestionTests.swift"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-002",
+        "FR-004",
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-011",
+        "FR-012",
+        "FR-013",
+        "FR-016",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [
+        "US1",
+        "US2",
+        "US3",
+        "US4"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T010": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T009"
+      ],
+      "paths": [
+        "FavaUITests/FoundationUITests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-002",
+        "FR-003",
+        "FR-004",
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-011",
+        "FR-012",
+        "FR-013",
+        "FR-014",
+        "FR-015",
+        "FR-016",
+        "FR-017",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [
+        "US1",
+        "US2",
+        "US3",
+        "US4"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T011": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T010"
+      ],
+      "paths": [
+        "Fava.xcodeproj/project.pbxproj",
+        "Fava/RunLibraryPresentation.swift",
+        "FavaUITests/HistoryPerformanceUITests.swift"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-004",
+        "FR-015",
+        "FR-016",
+        "FR-017"
+      ],
+      "stories": [
+        "US1",
+        "US3"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T012": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T011"
+      ],
+      "paths": [
+        "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/execution.json",
+        "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/quickstart.md",
+        "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/verification.md"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-002",
+        "FR-003",
+        "FR-004",
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-011",
+        "FR-012",
+        "FR-013",
+        "FR-014",
+        "FR-015",
+        "FR-016",
+        "FR-017",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [
+        "US1",
+        "US2",
+        "US3",
+        "US4"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    }
+  },
+  "task_prs": {},
+  "parallel_groups": [],
+  "shared_file_owners": {
+    "Fava.xcodeproj/project.pbxproj": "coordinator; serialize task writers in dependency order",
+    "Fava/FavaApp.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/LaunchContext.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RootView.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunHistory.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunIngestion.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunLibraryPresentation.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunLibraryView.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunRecord.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunSnapshotStore.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/SettingsView.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/SyntheticLibraryFixtures.swift": "coordinator; serialize task writers in dependency order",
+    "FavaTests/LaunchContextTests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaTests/RunIngestionTests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaTests/RunLibraryTests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaTests/RunSnapshotStoreTests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaUITests/FoundationUITests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaUITests/HistoryPerformanceUITests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaUITests/RunLibraryUITests.swift": "coordinator; serialize task writers in dependency order",
+    "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/execution.json": "coordinator; serialize task writers in dependency order",
+    "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/quickstart.md": "coordinator; serialize task writers in dependency order",
+    "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/verification.md": "coordinator; serialize task writers in dependency order"
+  },
+  "checkpoints": [],
+  "findings": [
+    {
+      "id": "PREP-001",
+      "severity": "high",
+      "summary": "Retention/launch changes preceded required existing regression maintenance",
+      "disposition": "fixed",
+      "evidence": [
+        "decision-log.md#dec-006",
+        "tasks.md T001-T006/T010"
+      ],
+      "reviewed_head": "117f90abdf557131eea6d9425090dfb525388814",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
+      "reviewer": "/root/prep_review"
+    },
+    {
+      "id": "PREP-002",
+      "severity": "medium",
+      "summary": "Typed-store/state migration lacked a buildable compatibility boundary",
+      "disposition": "fixed",
+      "evidence": [
+        "decision-log.md#dec-006",
+        "tasks.md T001-T006/T010"
+      ],
+      "reviewed_head": "117f90abdf557131eea6d9425090dfb525388814",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
+      "reviewer": "/root/prep_review"
+    },
+    {
+      "id": "CODEX-001",
+      "severity": "high",
+      "summary": "Clear UI and other changed behaviors need immediate fixture/UI acceptance baselines",
+      "url": "https://github.com/clemarc/fava/pull/14#discussion_r4297108171",
+      "disposition": "fixed",
+      "evidence": [
+        "decision-log.md#dec-007",
+        "decision-log.md#dec-008",
+        "tasks.md",
+        "data-model.md"
+      ],
+      "reviewed_head": "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31"
+    },
+    {
+      "id": "CODEX-002",
+      "severity": "medium",
+      "summary": "Schema-1 capturedAt establishes known prior observation times",
+      "url": "https://github.com/clemarc/fava/pull/14#discussion_r4297108186",
+      "disposition": "fixed",
+      "evidence": [
+        "decision-log.md#dec-007",
+        "decision-log.md#dec-008",
+        "tasks.md",
+        "data-model.md"
+      ],
+      "reviewed_head": "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31"
+    },
+    {
+      "id": "CODEX-003",
+      "severity": "high",
+      "summary": "Retained union activation must include truthful provenance and immediate UI assertions",
+      "url": "https://github.com/clemarc/fava/pull/14#discussion_r4297362107",
+      "disposition": "fixed",
+      "evidence": [
+        "decision-log.md#dec-009",
+        "tasks.md T002/T006",
+        "contracts/history-and-navigation.md"
+      ],
+      "reviewed_head": "44572793449f8707cf0319be14b4c4e72d0ef045",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31"
+    },
+    {
+      "id": "CODEX-004",
+      "severity": "medium",
+      "summary": "Expanded T002 omits implemented US2/US3/US1 story mappings and projects without a story parent",
+      "url": "https://github.com/clemarc/fava/pull/14#discussion_r4297459975",
+      "disposition": "fixed",
+      "reviewed_head": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/14#issuecomment-6221203857",
+        "https://github.com/clemarc/fava/pull/14#issuecomment-6222134675",
+        "decision-log.md#dec-010",
+        "tasks.md T002",
+        "execution.json tasks.T002.stories"
+      ],
+      "proposal": "Add [US2] [US3] [US1] to T002, set identical ordered ledger stories, append DEC/report rationale, reproject existing FAV-42 under US2/FAV-38; no behavior/identity/FR/path/dependency changes. Patch validated with SDD/tooling/ledger and desired parent preview.",
+      "required_owner_decision": "One extra preparation correction round, absolute cap 4, through actual new unedited owner JSON comment on PR14."
+    }
+  ],
+  "physical_acceptance": {
+    "iPhone": null,
+    "iPad": null
+  },
+  "linear": {
+    "state": "verified",
+    "verified_at": "2026-10-16T18:38:03.382244+00:00",
+    "source_revision": "33a5df48ea80e8379b76220918289ef8a1a31bad",
+    "project_id": "f823cc39-b818-460f-8682-bb4ec831885a",
+    "milestone_id": "5f470b82-5ad7-40d8-a36d-eea3b2bf7dd3",
+    "evidence": [
+      "https://linear.app/clemarc/issue/FAV-37/r35-us1",
+      "https://linear.app/clemarc/issue/FAV-38/r35-us2",
+      "https://linear.app/clemarc/issue/FAV-39/r35-us3",
+      "https://linear.app/clemarc/issue/FAV-40/r35-us4",
+      "https://linear.app/clemarc/issue/FAV-41/r35-t001-implement-schema-2-history-validation-and-schema-1-read-only",
+      "https://linear.app/clemarc/issue/FAV-42/r35-t002-us2-us3-us1-implement-retained-uuid-union-independent",
+      "https://linear.app/clemarc/issue/FAV-43/r35-t003-us1-add-explicit-launchentry-coordination-in",
+      "https://linear.app/clemarc/issue/FAV-44/r35-t004-us1-extractexpand-settings-in-favasettingsviewswift-and",
+      "https://linear.app/clemarc/issue/FAV-45/r35-t005-us2-expand-favatestsruningestiontestsswift-and",
+      "https://linear.app/clemarc/issue/FAV-46/r35-t006-us3-expand-the-already-truthful-saved",
+      "https://linear.app/clemarc/issue/FAV-47/r35-t007-us4-implement-confirmed-durable-clear-in",
+      "https://linear.app/clemarc/issue/FAV-48/r35-t008-us4-add-settings-destructive-confirmationcancelfailure-retry",
+      "https://linear.app/clemarc/issue/FAV-49/r35-t009-us1-us2-us3-us4-expand-the-already-integrated-minimal",
+      "https://linear.app/clemarc/issue/FAV-50/r35-t010-us1-us2-us3-us4-extend-favauitestsrunlibraryuitestsswift-and",
+      "https://linear.app/clemarc/issue/FAV-51/r35-t011-us1-us3-add-favauitestshistoryperformanceuitestsswift-and",
+      "https://linear.app/clemarc/issue/FAV-52/r35-t012-us1-us2-us3-us4-validate-complete-regression-semantic-drift"
+    ],
+    "verified_items": [
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US1",
+        "url": "https://linear.app/clemarc/issue/FAV-37/r35-us1",
+        "identifier": "FAV-37"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US2",
+        "url": "https://linear.app/clemarc/issue/FAV-38/r35-us2",
+        "identifier": "FAV-38"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US3",
+        "url": "https://linear.app/clemarc/issue/FAV-39/r35-us3",
+        "identifier": "FAV-39"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US4",
+        "url": "https://linear.app/clemarc/issue/FAV-40/r35-us4",
+        "identifier": "FAV-40"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T001",
+        "url": "https://linear.app/clemarc/issue/FAV-41/r35-t001-implement-schema-2-history-validation-and-schema-1-read-only",
+        "identifier": "FAV-41"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002",
+        "url": "https://linear.app/clemarc/issue/FAV-42/r35-t002-us2-us3-us1-implement-retained-uuid-union-independent",
+        "identifier": "FAV-42"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T003",
+        "url": "https://linear.app/clemarc/issue/FAV-43/r35-t003-us1-add-explicit-launchentry-coordination-in",
+        "identifier": "FAV-43"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T004",
+        "url": "https://linear.app/clemarc/issue/FAV-44/r35-t004-us1-extractexpand-settings-in-favasettingsviewswift-and",
+        "identifier": "FAV-44"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T005",
+        "url": "https://linear.app/clemarc/issue/FAV-45/r35-t005-us2-expand-favatestsruningestiontestsswift-and",
+        "identifier": "FAV-45"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T006",
+        "url": "https://linear.app/clemarc/issue/FAV-46/r35-t006-us3-expand-the-already-truthful-saved",
+        "identifier": "FAV-46"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T007",
+        "url": "https://linear.app/clemarc/issue/FAV-47/r35-t007-us4-implement-confirmed-durable-clear-in",
+        "identifier": "FAV-47"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T008",
+        "url": "https://linear.app/clemarc/issue/FAV-48/r35-t008-us4-add-settings-destructive-confirmationcancelfailure-retry",
+        "identifier": "FAV-48"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T009",
+        "url": "https://linear.app/clemarc/issue/FAV-49/r35-t009-us1-us2-us3-us4-expand-the-already-integrated-minimal",
+        "identifier": "FAV-49"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T010",
+        "url": "https://linear.app/clemarc/issue/FAV-50/r35-t010-us1-us2-us3-us4-extend-favauitestsrunlibraryuitestsswift-and",
+        "identifier": "FAV-50"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T011",
+        "url": "https://linear.app/clemarc/issue/FAV-51/r35-t011-us1-us3-add-favauitestshistoryperformanceuitestsswift-and",
+        "identifier": "FAV-51"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T012",
+        "url": "https://linear.app/clemarc/issue/FAV-52/r35-t012-us1-us2-us3-us4-validate-complete-regression-semantic-drift",
+        "identifier": "FAV-52"
+      }
+    ],
+    "pending_keys": [],
+    "actual_states": "All four stories and 12 implementation tasks verified Todo; none implemented.",
+    "hierarchy": "T001 directly in milestone. T002 under US2/FAV-38, preserving US2/US3/US1 in its description. Other tasks use their first mapped story as parent, preserving every story mapping in descriptions.",
+    "cli": "@schpet/linear-cli 3.0.0 through tools/sdd/linear_projection.py project()",
+    "rendering": {
+      "reason": "Linear exports canonical Markdown; original raw-string descriptions failed exact verification after successful creates.",
+      "method": "Render desired descriptions before calling the existing helper; leave its exact field/key/project/milestone/parent/state verification unchanged.",
+      "rules": [
+        "Source URL line becomes Source: [URL](<URL>)",
+        "Markdown bullet line prefix - space becomes * space",
+        "Literal story markers [USn] become escaped Markdown brackets in descriptions only",
+        "Trim trailing whitespace in the already length-limited desired title",
+        "Remove trailing whitespace/newlines from the desired description"
+      ],
+      "scope": "Representation only; approved Git wording, identities, source links and requirements unchanged. No second API client or committed tooling change.",
+      "stable_sources": "For unchanged definitions, preserve the previously verified signed ancestor source only after comparing generated wording/title/state/parent exactly (excluding the source URL). Changed T002 uses the newly signed mapping revision; all 16 actual Linear items still pass the pinned helper exact verification. No comparison/identity/hierarchy/status gate is changed."
+    },
+    "attempts": [
+      "Original helper created FAV-37/US1 then stopped on source-link/bullet/trailing-newline formatting; keyed item was reinspected before retry.",
+      "Canonical rendering verified stories and T001/T002, created FAV-43/T003 then stopped on escaped literal story-marker brackets; exact description and correct parent FAV-37 were reinspected.",
+      "The next pass verified T003 and created FAV-44/T004, then stopped because the 200-character desired title ended in a space trimmed by Linear; keyed title/description/parent/state were reinspected.",
+      "Final canonical dry-run retained existing keyed items with no definition changes; final apply verified all 16, without duplicates or pending keys.",
+      "Owner-authorized round 4 changed only T002 definition/story parent. Dry-run found exactly T002 title/description/parent changes; apply verified all 16 current items, reparented FAV-42 to US2/FAV-38, retained stable keys, and confirmed all Todo with no pending keys."
+    ],
+    "source_revisions": {
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US1": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US2": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US3": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US4": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T001": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002": "33a5df48ea80e8379b76220918289ef8a1a31bad",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T003": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T004": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T005": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T006": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T007": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T008": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T009": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T010": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T011": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T012": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a"
+    }
+  }
+}
