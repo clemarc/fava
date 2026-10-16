@@ -116,8 +116,73 @@ changes require a spec lifecycle type rather than a generic tooling/process type
 Reconciliation only permits `_system` and governance paths. SDD-Type records
 intent; the validator also examines paths and enforces frozen contracts. Human
 review verifies that the exception accurately describes the change. The owner must
-preserve the applicable trailers in squash/merge commit messages; main-push CI
-validates them independently too.
+preserve the applicable trailers in merge commit messages; main-push CI validates
+them independently too. Retain two-parent merges and reviewed task history as
+required by SDD v2; do not squash or rebase away that evidence.
+
+### Owner merge message handoff
+
+PR-head CI cannot validate the future owner merge message. GitHub's generated
+merge title/body may contain the PR description without the commit's trailers.
+Before handing off a PR, provide separate, copyable **merge title** and **merge
+body**, selected from the actual diff against the inspected target:
+
+| Merge content | Required terminal trailer block |
+| --- | --- |
+| Non-feature maintenance | Exactly one applicable `SDD-Type` from the table above; process documentation uses `SDD-Type: process` |
+| Non-source preparation/checkpoint | `SDD-Type: planning`; preserve any applicable task mappings |
+| Source-bearing task/final milestone | One `Spec`, the union of real `Task` IDs and their exact `Implements` FR mappings; no SDD-Type exception for application changes |
+
+For wholly FR-exempt Setup/Foundational work, retain Spec/Task and the documented
+exemption rather than inventing Implements. Cross-feature work must be split.
+These messages do not replace signed history, reviewed planning, current CI,
+independent review, owner approval or physical-device acceptance requirements.
+
+For this process-documentation maintenance, copy this title:
+
+```text
+docs: preserve SDD trailers in owner merge handoffs
+```
+
+Copy this body (only the text inside the fence):
+
+```text
+Document lifecycle-specific merge messages and post-merge verification.
+Preserve the historical PR #10 merge and failed run without rewriting history.
+
+SDD-Type: process
+```
+
+The owner selects **Create a merge commit**, replaces the generated title/body
+with the reviewed handoff, and checks the final dialog before confirming. Keep a
+blank line before the terminal trailer block; use literal `Key: value` lines,
+without bullets or code fences. Do not put prose after the block, duplicate
+SDD-Type, or copy this process exception onto application work. Revalidate and
+refresh the handoff if the head or target changes. Agents leave main PRs unmerged
+and auto-merge disabled.
+
+Before publication, stage the intended paths and validate the complete proposed
+merge title/body with the existing `sdd.py --message-file` command below. This
+checks the message against staged paths; it is not proof of the future merge or
+its signature. PR-head CI still validates the actual published commits.
+
+After the owner merges, inspect the actual merge SHA, destination, both parents,
+reviewed tree, full message and GitHub Verified signature. Find the automatic
+**push to main** Fava CI run whose head SHA is that merge. Wait for sdd-quality,
+tooling-validation, ci-applicability and ci-required to succeed; inspect native
+build/nonzero test results when required, or report the documented native skip.
+Read actual failed logs and stop further delivery on failure. A PR run, manual
+dispatch or older green run is not post-merge evidence.
+
+[PR #10](https://github.com/clemarc/fava/pull/10) illustrates the distinction:
+verified merge `70d9c74af0f8448603d7ec818dbbe383649661df` retained the reviewed
+head's tree but omitted SDD-Type. The
+[main-push run](https://github.com/clemarc/fava/actions/runs/38797858410) failed
+SDD and therefore ci-required despite successful native builds and 41 simulator
+tests per family. That commit/message and run remain historical facts. A new
+compliant PR and correctly trailered owner merge can advance main to a passing
+revision; they do not repair the old commit/run. Never rewrite that history or
+weaken validation to conceal it.
 
 ## Local checks and Spec Kit
 

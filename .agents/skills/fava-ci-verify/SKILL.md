@@ -65,6 +65,13 @@ invent missing feature artifacts or validation evidence.
    traceability remains intact, and outstanding device checks are explicit.
    Before R1, report native CI as provisioned but unvalidated. Report exact
    limitations, URLs, SHA, signing result and correction attempts.
+   Include separate copyable owner merge title/body with the applicable terminal
+   trailers, following the owner merge message handoff in
+   `docs/process/ci-and-agent-verification.md`. Validate the proposed message
+   against staged paths before publication. Distinguish maintenance exceptions,
+   non-source planning merges and source-bearing task/final mappings. Tell the
+   owner to replace GitHub's generated message and verify the actual subsequent
+   main-push run; a green PR head does not establish a green owner merge.
 
 Linear is optional progress projection, never a CI dependency. For authorized
 cloud operations read `.agents/skills/linear-cli/SKILL.md` and
