@@ -1,0 +1,437 @@
+{
+  "schema": 1,
+  "milestone": "R3.5",
+  "feature": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch",
+  "specification_base": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
+  "milestone_branch": "milestone/r3.5",
+  "preparation_pr": null,
+  "preparation_prs": {},
+  "planning_revision": null,
+  "state": "preparing",
+  "retired_task_ids": [],
+  "tasks": {
+    "T001": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [],
+      "paths": [
+        "Fava.xcodeproj/project.pbxproj",
+        "Fava/RunHistory.swift",
+        "Fava/RunRecord.swift",
+        "Fava/RunSnapshotStore.swift",
+        "FavaTests/RunSnapshotStoreTests.swift"
+      ],
+      "requirements": [
+        "FR-005",
+        "FR-009",
+        "FR-012",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T002": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T001"
+      ],
+      "paths": [
+        "Fava/RunIngestion.swift",
+        "Fava/SyntheticLibraryFixtures.swift",
+        "FavaTests/RunIngestionTests.swift"
+      ],
+      "requirements": [
+        "FR-004",
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-016",
+        "FR-018"
+      ],
+      "stories": [],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T003": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T002"
+      ],
+      "paths": [
+        "Fava.xcodeproj/project.pbxproj",
+        "Fava/FavaApp.swift",
+        "Fava/LaunchContext.swift",
+        "Fava/RootView.swift",
+        "FavaTests/LaunchContextTests.swift"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-002",
+        "FR-004",
+        "FR-016",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [
+        "US1"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T004": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T003"
+      ],
+      "paths": [
+        "Fava.xcodeproj/project.pbxproj",
+        "Fava/RootView.swift",
+        "Fava/RunLibraryView.swift",
+        "Fava/SettingsView.swift",
+        "FavaTests/LaunchContextTests.swift",
+        "FavaUITests/FoundationUITests.swift"
+      ],
+      "requirements": [
+        "FR-003",
+        "FR-004",
+        "FR-014",
+        "FR-015",
+        "FR-017"
+      ],
+      "stories": [
+        "US1"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T005": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T004"
+      ],
+      "paths": [
+        "FavaTests/RunIngestionTests.swift",
+        "FavaTests/RunSnapshotStoreTests.swift"
+      ],
+      "requirements": [
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-016",
+        "FR-017",
+        "FR-018"
+      ],
+      "stories": [
+        "US2"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T006": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T005"
+      ],
+      "paths": [
+        "Fava/RunLibraryPresentation.swift",
+        "Fava/RunLibraryView.swift",
+        "FavaTests/RunLibraryTests.swift"
+      ],
+      "requirements": [
+        "FR-002",
+        "FR-004",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-014",
+        "FR-015",
+        "FR-016",
+        "FR-017"
+      ],
+      "stories": [
+        "US3"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T007": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T006"
+      ],
+      "paths": [
+        "Fava/RunIngestion.swift",
+        "Fava/RunSnapshotStore.swift",
+        "FavaTests/RunIngestionTests.swift",
+        "FavaTests/RunSnapshotStoreTests.swift"
+      ],
+      "requirements": [
+        "FR-011",
+        "FR-012",
+        "FR-013",
+        "FR-017",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [
+        "US4"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T008": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T007"
+      ],
+      "paths": [
+        "Fava/LaunchContext.swift",
+        "Fava/RootView.swift",
+        "Fava/RunLibraryPresentation.swift",
+        "Fava/SettingsView.swift",
+        "FavaTests/LaunchContextTests.swift"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-003",
+        "FR-011",
+        "FR-012",
+        "FR-013",
+        "FR-014",
+        "FR-015",
+        "FR-017",
+        "FR-019"
+      ],
+      "stories": [
+        "US4"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T009": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T008"
+      ],
+      "paths": [
+        "Fava/FavaApp.swift",
+        "Fava/SyntheticLibraryFixtures.swift",
+        "FavaTests/RunIngestionTests.swift"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-002",
+        "FR-004",
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-011",
+        "FR-012",
+        "FR-013",
+        "FR-016",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [
+        "US1",
+        "US2",
+        "US3",
+        "US4"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T010": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T009"
+      ],
+      "paths": [
+        "FavaUITests/FoundationUITests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-002",
+        "FR-003",
+        "FR-004",
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-011",
+        "FR-012",
+        "FR-013",
+        "FR-014",
+        "FR-015",
+        "FR-016",
+        "FR-017",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [
+        "US1",
+        "US2",
+        "US3",
+        "US4"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T011": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T010"
+      ],
+      "paths": [
+        "Fava.xcodeproj/project.pbxproj",
+        "Fava/RunLibraryPresentation.swift",
+        "FavaUITests/HistoryPerformanceUITests.swift"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-004",
+        "FR-015",
+        "FR-016",
+        "FR-017"
+      ],
+      "stories": [
+        "US1",
+        "US3"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    },
+    "T012": {
+      "state": "pending",
+      "correction_cycles": 0,
+      "dependencies": [
+        "T011"
+      ],
+      "paths": [
+        "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/execution.json",
+        "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/quickstart.md",
+        "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/verification.md"
+      ],
+      "requirements": [
+        "FR-001",
+        "FR-002",
+        "FR-003",
+        "FR-004",
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-011",
+        "FR-012",
+        "FR-013",
+        "FR-014",
+        "FR-015",
+        "FR-016",
+        "FR-017",
+        "FR-018",
+        "FR-019"
+      ],
+      "stories": [
+        "US1",
+        "US2",
+        "US3",
+        "US4"
+      ],
+      "pr": null,
+      "merge_sha": null,
+      "evidence": []
+    }
+  },
+  "task_prs": {},
+  "parallel_groups": [],
+  "shared_file_owners": {
+    "Fava.xcodeproj/project.pbxproj": "coordinator; serialize task writers in dependency order",
+    "Fava/FavaApp.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/LaunchContext.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RootView.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunHistory.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunIngestion.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunLibraryPresentation.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunLibraryView.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunRecord.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/RunSnapshotStore.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/SettingsView.swift": "coordinator; serialize task writers in dependency order",
+    "Fava/SyntheticLibraryFixtures.swift": "coordinator; serialize task writers in dependency order",
+    "FavaTests/LaunchContextTests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaTests/RunIngestionTests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaTests/RunLibraryTests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaTests/RunSnapshotStoreTests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaUITests/FoundationUITests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaUITests/HistoryPerformanceUITests.swift": "coordinator; serialize task writers in dependency order",
+    "FavaUITests/RunLibraryUITests.swift": "coordinator; serialize task writers in dependency order",
+    "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/execution.json": "coordinator; serialize task writers in dependency order",
+    "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/quickstart.md": "coordinator; serialize task writers in dependency order",
+    "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/verification.md": "coordinator; serialize task writers in dependency order"
+  },
+  "checkpoints": [],
+  "findings": [],
+  "physical_acceptance": {
+    "iPhone": null,
+    "iPad": null
+  },
+  "linear": {
+    "state": "pending",
+    "verified_at": null,
+    "evidence": [],
+    "pending_keys": [
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US1",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US2",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US3",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US4",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T001",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T003",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T004",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T005",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T006",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T007",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T008",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T009",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T010",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T011",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T012"
+    ]
+  }
+}
