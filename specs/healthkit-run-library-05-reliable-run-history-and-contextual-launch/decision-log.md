@@ -52,3 +52,14 @@ access presentation, sheet dismissal, unit changes, scene activation, layout and
 view recomputation do not create entries. Settings Done dismisses its whole flow
 to the library in one action. Deliberate authorization remains HealthAccessModel's
 existing workout-only, non-overlapping request flow.
+
+## DEC-006 — Keep each intermediate task buildable and testable
+
+Independent preparation review found that delaying existing test/helper updates
+until T010 would break earlier retention/contextual-launch task PRs. T001 adds
+typed storage APIs alongside the existing caller contract; T002 activates them
+and migrates all consumers/conformers and immediate retention assertions together.
+T003 owns launch/back helper changes; T004 and T006 maintain affected Settings/
+notice expectations. T005/T010 expand coverage instead of postponing regression
+maintenance. Preserve task IDs and serial ownership; every task still needs
+passing current native/CI gates before integration.

@@ -23,7 +23,7 @@ their physical acceptance remains separate and pending.
 
 ## Migration, persistence and concurrency
 
-[DEC-001–005](decision-log.md) choose one protected content-versioned file,
+[DEC-001–006](decision-log.md) choose one protected content-versioned file,
 read-only legacy adoption, atomic save-before-publish and generation/transport
 separation. Unknown legacy times remain unknown; legacy empty remains prior empty.
 Source success/save failure keeps exactly the prior saved rows/provenance and
@@ -99,3 +99,16 @@ Post-merge verification inspects actual owner/destination/signature/parents/tree
 message and validates introduced history against its first parent; no main-push
 run is expected for this destination. Start $fava-milestone-implement R3.5 only
 after that owner merge. No application code is implemented by this preparation.
+
+## Independent preparation review and correction 1
+
+Reviewer /root/prep_review inspected head
+117f90abdf557131eea6d9425090dfb525388814 against milestone target
+922b9c9ab0c25559bfd327fff1b74127e1952f31. It found one high and one medium severity
+staging issue: typed-store caller compatibility and postponed retention/launch
+regression assertions could prevent earlier task PRs from passing their gates.
+DEC-006 and the revised T001–T006/T010 ownership consolidate API activation and
+immediate caller/test/helper maintenance. No product or contract change is needed.
+The 12 task IDs remain; no integrated task or retirement exists. Correction 1
+appends the prior published head and increments its durable counter in this same
+artifact commit. The PR retains the exact review and refreshed-head validation.

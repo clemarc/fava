@@ -113,6 +113,10 @@ change; reuse locale/timezone-aware formatting if measurement identifies a bottl
 
 Storage/model foundation → contextual launch/Settings → retained read integration
 → provenance → confirmed clearing → whole-flow UI/performance/regression evidence.
+T001 adds the typed storage boundary without breaking old callers; T002 activates
+it and adapts all model/presentation/fixture/test consumers together. T003 updates
+launch/back helpers with contextual navigation; T004/T006 maintain affected UI
+expectations immediately. T005/T010 expand coverage from those passing baselines.
 Each task includes its tests before implementation and publishes one coherent
 reviewable change; no failing test-only PR is integrated. Shared source/project
 files are serialized. Baseline parallel_groups is empty: no speculative [P] markers.

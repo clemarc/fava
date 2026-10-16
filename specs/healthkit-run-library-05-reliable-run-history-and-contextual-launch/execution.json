@@ -8,9 +8,10 @@
   "preparation_prs": {
     "14": {
       "branch": "prepare/r3.5",
-      "correction_cycles": 0,
+      "correction_cycles": 1,
       "heads": [
-        "dd13902af5f93f60a0500c2de1486d342c7f4663"
+        "dd13902af5f93f60a0500c2de1486d342c7f4663",
+        "117f90abdf557131eea6d9425090dfb525388814"
       ]
     }
   },
@@ -48,9 +49,15 @@
         "T001"
       ],
       "paths": [
+        "Fava/FavaApp.swift",
         "Fava/RunIngestion.swift",
+        "Fava/RunLibraryPresentation.swift",
+        "Fava/RunLibraryView.swift",
+        "Fava/RunSnapshotStore.swift",
         "Fava/SyntheticLibraryFixtures.swift",
-        "FavaTests/RunIngestionTests.swift"
+        "FavaTests/RunIngestionTests.swift",
+        "FavaTests/RunLibraryTests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
       ],
       "requirements": [
         "FR-004",
@@ -79,7 +86,9 @@
         "Fava/FavaApp.swift",
         "Fava/LaunchContext.swift",
         "Fava/RootView.swift",
-        "FavaTests/LaunchContextTests.swift"
+        "FavaTests/LaunchContextTests.swift",
+        "FavaUITests/FoundationUITests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
       ],
       "requirements": [
         "FR-001",
@@ -108,7 +117,8 @@
         "Fava/RunLibraryView.swift",
         "Fava/SettingsView.swift",
         "FavaTests/LaunchContextTests.swift",
-        "FavaUITests/FoundationUITests.swift"
+        "FavaUITests/FoundationUITests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
       ],
       "requirements": [
         "FR-003",
@@ -161,7 +171,8 @@
       "paths": [
         "Fava/RunLibraryPresentation.swift",
         "Fava/RunLibraryView.swift",
-        "FavaTests/RunLibraryTests.swift"
+        "FavaTests/RunLibraryTests.swift",
+        "FavaUITests/RunLibraryUITests.swift"
       ],
       "requirements": [
         "FR-002",
@@ -414,7 +425,34 @@
     "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/verification.md": "coordinator; serialize task writers in dependency order"
   },
   "checkpoints": [],
-  "findings": [],
+  "findings": [
+    {
+      "id": "PREP-001",
+      "severity": "high",
+      "summary": "Retention/launch changes preceded required existing regression maintenance",
+      "disposition": "fixed",
+      "evidence": [
+        "decision-log.md#dec-006",
+        "tasks.md T001-T006/T010"
+      ],
+      "reviewed_head": "117f90abdf557131eea6d9425090dfb525388814",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
+      "reviewer": "/root/prep_review"
+    },
+    {
+      "id": "PREP-002",
+      "severity": "medium",
+      "summary": "Typed-store/state migration lacked a buildable compatibility boundary",
+      "disposition": "fixed",
+      "evidence": [
+        "decision-log.md#dec-006",
+        "tasks.md T001-T006/T010"
+      ],
+      "reviewed_head": "117f90abdf557131eea6d9425090dfb525388814",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
+      "reviewer": "/root/prep_review"
+    }
+  ],
   "physical_acceptance": {
     "iPhone": null,
     "iPad": null
