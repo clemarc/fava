@@ -14,7 +14,8 @@
         "117f90abdf557131eea6d9425090dfb525388814",
         "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882",
         "44572793449f8707cf0319be14b4c4e72d0ef045"
-      ]
+      ],
+      "state": "blocked"
     }
   },
   "planning_revision": null,
@@ -506,6 +507,20 @@
       ],
       "reviewed_head": "44572793449f8707cf0319be14b4c4e72d0ef045",
       "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31"
+    },
+    {
+      "id": "CODEX-004",
+      "severity": "medium",
+      "summary": "Expanded T002 omits implemented US2/US3/US1 story mappings and projects without a story parent",
+      "url": "https://github.com/clemarc/fava/pull/14#discussion_r4297459975",
+      "disposition": "unresolved-owner-authorization-required",
+      "reviewed_head": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/14#issuecomment-6221203857"
+      ],
+      "proposal": "Add [US2] [US3] [US1] to T002, set identical ordered ledger stories, append DEC/report rationale, reproject existing FAV-42 under US2/FAV-38; no behavior/identity/FR/path/dependency changes. Patch validated with SDD/tooling/ledger and desired parent preview.",
+      "required_owner_decision": "One extra preparation correction round, absolute cap 4, through actual new unedited owner JSON comment on PR14."
     }
   ],
   "physical_acceptance": {
