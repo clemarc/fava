@@ -116,8 +116,107 @@ changes require a spec lifecycle type rather than a generic tooling/process type
 Reconciliation only permits `_system` and governance paths. SDD-Type records
 intent; the validator also examines paths and enforces frozen contracts. Human
 review verifies that the exception accurately describes the change. The owner must
-preserve the applicable trailers in squash/merge commit messages; main-push CI
-validates them independently too.
+preserve the applicable trailers in merge commit messages; main-push CI validates
+them independently too. Retain two-parent merges and reviewed task history as
+required by SDD v2; do not squash or rebase away that evidence.
+
+### Owner merge message handoff
+
+PR-head CI cannot validate the future owner merge message. GitHub's generated
+merge title/body may contain the PR description without the commit's trailers.
+Before handing off a PR, provide separate, copyable **merge title** and **merge
+body**, selected from the actual diff against the inspected target:
+
+| Merge content | Required terminal trailer block |
+| --- | --- |
+| Non-feature maintenance | Exactly one applicable `SDD-Type` from the table above; process documentation uses `SDD-Type: process` |
+| Non-source preparation/checkpoint | `SDD-Type: planning`; preserve any applicable task mappings |
+| Source-bearing task/final milestone | One `Spec`, the union of real `Task` IDs and their exact `Implements` FR mappings; no SDD-Type exception for application changes |
+
+For wholly FR-exempt Setup/Foundational work, retain Spec/Task and the documented
+exemption rather than inventing Implements. Cross-feature work must be split.
+These messages do not replace signed history, reviewed planning, current CI,
+independent review, owner approval or physical-device acceptance requirements.
+
+For this process-documentation maintenance, copy this title:
+
+```text
+docs: preserve SDD trailers in owner merge handoffs
+```
+
+Copy this body (only the text inside the fence):
+
+```text
+Document lifecycle-specific merge messages and post-merge verification.
+Preserve the historical PR #10 merge and failed run without rewriting history.
+
+SDD-Type: process
+```
+
+The owner selects **Create a merge commit**, replaces the generated title/body
+with the reviewed handoff, and checks the final dialog before confirming. Keep a
+blank line before the terminal trailer block; use literal `Key: value` lines,
+without bullets or code fences. Do not put prose after the block, duplicate
+SDD-Type, or copy this process exception onto application work. Revalidate and
+refresh the handoff if the head or target changes. Agents leave main PRs unmerged
+and auto-merge disabled.
+
+Validate each publication's commit message against its staged changes with
+`sdd.py --message-file`. Separately validate the proposed **merge** title/body
+against the complete inspected target-to-PR-head diff, not just the latest
+correction's staged delta. A documentation-only correction does not make an
+otherwise source-bearing PR a process merge.
+
+After publishing/fetching the head, use an isolated temporary worktree whose HEAD
+is the exact target and whose index and files contain the entire PR-head tree:
+
+```sh
+# Set TARGET and PR_HEAD to inspected full SHAs, and MESSAGE to the absolute
+# file containing the proposed merge title, blank line, and complete body.
+set -e
+git merge-base --is-ancestor "$TARGET" "$PR_HEAD" || exit 1
+MERGE_CHECK=$(mktemp -d /tmp/fava-merge-check.XXXXXX)
+git worktree add --detach "$MERGE_CHECK" "$TARGET"
+git -C "$MERGE_CHECK" read-tree --reset -u "$PR_HEAD"
+python3 "$MERGE_CHECK/.github/checks/sdd.py" --root "$MERGE_CHECK" \
+  --message-file "$MESSAGE"
+```
+
+Run this only in the newly created isolated worktree, never the working checkout.
+The staged paths now cover the full merge delta and staged spec/task reads use
+the reviewed head's artifacts. Keep the worktree for inspection; remove it after
+review when no longer needed. If the target is not an ancestor, stop and refresh
+the PR through the normal reviewed integration process, then repeat with fresh
+SHAs. This check validates message/path mappings, not approval, signatures or the
+future merge. PR-head CI still validates the actual published history.
+
+After the owner merges, inspect the actual merge SHA, destination, both parents,
+reviewed tree, full message and GitHub Verified signature. For merges **to main**,
+find the automatic **push to main** Fava CI run whose head SHA is that merge. Wait for sdd-quality,
+tooling-validation, ci-applicability and ci-required to succeed; inspect native
+build/nonzero test results when required, or report the documented native skip.
+Read actual failed logs and stop further delivery on failure. A PR run, manual
+dispatch or older green run is not evidence of that main-push lifecycle.
+
+For preparation/task/checkpoint merges **to a registered milestone branch**,
+the workflow has no push trigger for that destination: do not wait for a main
+run or claim one occurred. Retain the exact reviewed PR-head CI/native and review
+evidence, verify the actual merge metadata above, and validate its introduced
+history with `sdd.py --base FIRST_PARENT --head MERGE_SHA` in an isolated checkout
+of MERGE_SHA, using the actual full SHAs. Follow [SDD v2](sdd-v2.md) for owner
+preparation approval, planning registration and gated task/checkpoint evidence;
+this local check grants no integration authority or missing CI evidence. Final
+promotion to main still requires its own automatic main-push verification.
+
+[PR #10](https://github.com/clemarc/fava/pull/10) illustrates the distinction:
+verified merge `70d9c74af0f8448603d7ec818dbbe383649661df` retained the reviewed
+head's tree but omitted SDD-Type. The
+[main-push run](https://github.com/clemarc/fava/actions/runs/38797858410) failed
+SDD and therefore ci-required despite successful native builds and 41 simulator
+tests per family. That commit/message and run remain historical facts. A new
+compliant PR and correctly trailered owner merge can advance main to a passing
+revision; they do not repair the old commit/run. Never rewrite that history or
+weaken validation to conceal it.
 
 ## Local checks and Spec Kit
 
