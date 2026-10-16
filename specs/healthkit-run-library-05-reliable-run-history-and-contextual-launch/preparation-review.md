@@ -23,7 +23,7 @@ their physical acceptance remains separate and pending.
 
 ## Migration, persistence and concurrency
 
-[DEC-001–008](decision-log.md) choose one protected content-versioned file,
+[DEC-001–009](decision-log.md) choose one protected content-versioned file,
 read-only legacy adoption, atomic save-before-publish and generation/transport
 separation. Valid legacy capturedAt seeds prior observation/per-row times; genuinely missing
 times remain unknown. Legacy empty remains prior empty, timed when known (DEC-007).
@@ -128,3 +128,16 @@ reverses the earlier conservative timestamp interpretation; migration now preser
 known times and keeps only genuinely absent times unknown. No approved requirement
 or earlier decision entry was rewritten. Correction 2 retains the prior head and
 all 12 task IDs. Fresh-head review/validation evidence belongs in the PR.
+
+## Actual Codex re-review and correction 3
+
+Review https://github.com/clemarc/fava/pull/14#pullrequestreview-5551273471
+at 44572793449f8707cf0319be14b4c4e72d0ef045 found P1
+https://github.com/clemarc/fava/pull/14#discussion_r4297362107: retention could
+activate before truthful provenance presentation. DEC-009 and T002 now require
+minimum saved/returned/unobserved/unknown row and attempt notices with controlled
+subset/empty/save-failure UI coverage at activation. T006 expands that correct
+baseline. Correction 3 retains all task identities and prior heads. This exhausts
+the default automatic publication budget; later artifact fixes require actual
+owner authorization and the documented concrete escalation procedure. Pure
+projection evidence preserves this count. Fresh review/CI remains PR evidence.

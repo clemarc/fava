@@ -23,5 +23,5 @@ Existing replacement assertions in RunIngestionTests.swift and RunLibraryUITests
 must adopt the approved controlled supersession; preserve all other regression
 assertions. FoundationUITests launch helpers must support both contextual launch
 and setup fixtures. No new package, HealthKit permission, background query, detail
-screen or service is required. Research unknowns are resolved by DEC-001–008;
+screen or service is required. Research unknowns are resolved by DEC-001–009;
 performance and physical-device results remain measurements for implementation.

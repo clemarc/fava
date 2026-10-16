@@ -86,3 +86,20 @@ and app wiring needed for their launch/recovery, provenance and clear UI tests.
 Every behavior-changing task integrates its acceptance/failure baseline together;
 T009/T010 expand those already passing fixture/test baselines. The coordinator
 serializes shared fixture/app/UI writes. Task IDs and product scope are unchanged.
+
+## DEC-009 — Activate retention and truthful provenance together
+
+Codex finding https://github.com/clemarc/fava/pull/14#discussion_r4297362107
+shows T002 cannot activate union while the old view implies all rows came from
+the latest read. T002 therefore includes minimum saved-history/latest-saved-read
+notices, returned/unobserved/unknown row membership and known/unknown last-observed
+times, separate source/save outcomes, and controlled subset/empty/save-failure UI
+fixtures/assertions. Its existing view/presentation/fixture/app/test ownership
+covers the change. T006 expands a truthful passing baseline with layout, guidance,
+accessibility and the full presentation matrix; it does not delay those semantics.
+The activation baseline includes repeated empty, all prior-history saving-failure
+cases, exact unchanged provenance on failure/relaunch and actionable local recovery
+feedback. Contextual launch preserves deliberate access until Settings replaces
+that path; the clear model stays unexposed until confirmed UI integrates. Task
+identities remain stable; expanded T002 mappings cite FR-002/FR-015 for its actual
+wording/accessibility responsibilities. Approved requirements/scope are unchanged.

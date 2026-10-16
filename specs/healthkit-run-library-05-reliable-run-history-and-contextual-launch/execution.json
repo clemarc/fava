@@ -8,11 +8,12 @@
   "preparation_prs": {
     "14": {
       "branch": "prepare/r3.5",
-      "correction_cycles": 2,
+      "correction_cycles": 3,
       "heads": [
         "dd13902af5f93f60a0500c2de1486d342c7f4663",
         "117f90abdf557131eea6d9425090dfb525388814",
-        "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882"
+        "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882",
+        "44572793449f8707cf0319be14b4c4e72d0ef045"
       ]
     }
   },
@@ -51,6 +52,7 @@
       ],
       "paths": [
         "Fava/FavaApp.swift",
+        "Fava/RootView.swift",
         "Fava/RunIngestion.swift",
         "Fava/RunLibraryPresentation.swift",
         "Fava/RunLibraryView.swift",
@@ -61,6 +63,7 @@
         "FavaUITests/RunLibraryUITests.swift"
       ],
       "requirements": [
+        "FR-002",
         "FR-004",
         "FR-005",
         "FR-006",
@@ -68,6 +71,7 @@
         "FR-008",
         "FR-009",
         "FR-010",
+        "FR-015",
         "FR-016",
         "FR-018"
       ],
@@ -487,6 +491,20 @@
         "data-model.md"
       ],
       "reviewed_head": "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882",
+      "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31"
+    },
+    {
+      "id": "CODEX-003",
+      "severity": "high",
+      "summary": "Retained union activation must include truthful provenance and immediate UI assertions",
+      "url": "https://github.com/clemarc/fava/pull/14#discussion_r4297362107",
+      "disposition": "fixed",
+      "evidence": [
+        "decision-log.md#dec-009",
+        "tasks.md T002/T006",
+        "contracts/history-and-navigation.md"
+      ],
+      "reviewed_head": "44572793449f8707cf0319be14b4c4e72d0ef045",
       "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31"
     }
   ],

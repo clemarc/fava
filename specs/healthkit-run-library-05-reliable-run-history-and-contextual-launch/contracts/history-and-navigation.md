@@ -4,7 +4,9 @@
 
 T001 introduces an additive typed history store boundary while retaining the old
 RunSnapshotStoring API for unchanged callers. T002 switches all callers/conformers
-and tests together, then removes transitional APIs if unused. The active boundary
+and tests together, including the minimum truthful provenance/current-outcome UI
+and subset/empty/save-failure assertions when union behavior activates. Later UI
+tasks expand that correct baseline. Then remove transitional APIs if unused. The active boundary
 loads typed retained history, commits a whole history
 document, and clears atomically using the same protected path. Its test doubles
 support load/save/clear failure injection and inspection of committed bytes.

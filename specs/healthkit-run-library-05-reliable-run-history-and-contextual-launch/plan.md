@@ -115,7 +115,9 @@ change; reuse locale/timezone-aware formatting if measurement identifies a bottl
 Storage/model foundation → contextual launch/Settings → retained read integration
 → provenance → confirmed clearing → whole-flow UI/performance/regression evidence.
 T001 adds the typed storage boundary without breaking old callers; T002 activates
-it and adapts all model/presentation/fixture/test consumers together. T003 updates
+it and adapts all model/presentation/fixture/test consumers together, including
+minimum truthful saved/returned/unobserved provenance and source/save outcome
+notices with subset/empty/save-failure UI assertions (DEC-009). T003 updates
 launch/back helpers with contextual navigation; T004/T006 maintain affected UI
 expectations immediately. T003/T006/T008 include minimum synthetic fixture/app
 wiring and UI assertions for the behavior each introduces (DEC-008). T005/T009/T010
