@@ -216,5 +216,6 @@ promotion proof verifies the pinned public GitHub owner merge and ancestry;
 local private signing keys are neither installed nor exposed to Cloud.
 
 Use the [owner merge message handoff](ci-and-agent-verification.md#owner-merge-message-handoff)
-to provide a copyable title/body and verify the subsequent main-push run. A
+to provide a copyable title/body and verify the merge for its actual destination
+(including the subsequent main-push run for main-bound PRs). A
 verified PR-head commit does not supply trailers to GitHub's future merge message.

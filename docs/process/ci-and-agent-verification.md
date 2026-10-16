@@ -161,18 +161,52 @@ SDD-Type, or copy this process exception onto application work. Revalidate and
 refresh the handoff if the head or target changes. Agents leave main PRs unmerged
 and auto-merge disabled.
 
-Before publication, stage the intended paths and validate the complete proposed
-merge title/body with the existing `sdd.py --message-file` command below. This
-checks the message against staged paths; it is not proof of the future merge or
-its signature. PR-head CI still validates the actual published commits.
+Validate each publication's commit message against its staged changes with
+`sdd.py --message-file`. Separately validate the proposed **merge** title/body
+against the complete inspected target-to-PR-head diff, not just the latest
+correction's staged delta. A documentation-only correction does not make an
+otherwise source-bearing PR a process merge.
+
+After publishing/fetching the head, use an isolated temporary worktree whose HEAD
+is the exact target and whose index and files contain the entire PR-head tree:
+
+```sh
+# Set TARGET and PR_HEAD to inspected full SHAs, and MESSAGE to the absolute
+# file containing the proposed merge title, blank line, and complete body.
+set -e
+git merge-base --is-ancestor "$TARGET" "$PR_HEAD" || exit 1
+MERGE_CHECK=$(mktemp -d /tmp/fava-merge-check.XXXXXX)
+git worktree add --detach "$MERGE_CHECK" "$TARGET"
+git -C "$MERGE_CHECK" read-tree --reset -u "$PR_HEAD"
+python3 "$MERGE_CHECK/.github/checks/sdd.py" --root "$MERGE_CHECK" \
+  --message-file "$MESSAGE"
+```
+
+Run this only in the newly created isolated worktree, never the working checkout.
+The staged paths now cover the full merge delta and staged spec/task reads use
+the reviewed head's artifacts. Keep the worktree for inspection; remove it after
+review when no longer needed. If the target is not an ancestor, stop and refresh
+the PR through the normal reviewed integration process, then repeat with fresh
+SHAs. This check validates message/path mappings, not approval, signatures or the
+future merge. PR-head CI still validates the actual published history.
 
 After the owner merges, inspect the actual merge SHA, destination, both parents,
-reviewed tree, full message and GitHub Verified signature. Find the automatic
-**push to main** Fava CI run whose head SHA is that merge. Wait for sdd-quality,
+reviewed tree, full message and GitHub Verified signature. For merges **to main**,
+find the automatic **push to main** Fava CI run whose head SHA is that merge. Wait for sdd-quality,
 tooling-validation, ci-applicability and ci-required to succeed; inspect native
 build/nonzero test results when required, or report the documented native skip.
 Read actual failed logs and stop further delivery on failure. A PR run, manual
-dispatch or older green run is not post-merge evidence.
+dispatch or older green run is not evidence of that main-push lifecycle.
+
+For preparation/task/checkpoint merges **to a registered milestone branch**,
+the workflow has no push trigger for that destination: do not wait for a main
+run or claim one occurred. Retain the exact reviewed PR-head CI/native and review
+evidence, verify the actual merge metadata above, and validate its introduced
+history with `sdd.py --base FIRST_PARENT --head MERGE_SHA` in an isolated checkout
+of MERGE_SHA, using the actual full SHAs. Follow [SDD v2](sdd-v2.md) for owner
+preparation approval, planning registration and gated task/checkpoint evidence;
+this local check grants no integration authority or missing CI evidence. Final
+promotion to main still requires its own automatic main-push verification.
 
 [PR #10](https://github.com/clemarc/fava/pull/10) illustrates the distinction:
 verified merge `70d9c74af0f8448603d7ec818dbbe383649661df` retained the reviewed

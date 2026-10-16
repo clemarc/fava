@@ -68,10 +68,14 @@ invent missing feature artifacts or validation evidence.
    Include separate copyable owner merge title/body with the applicable terminal
    trailers, following the owner merge message handoff in
    `docs/process/ci-and-agent-verification.md`. Validate the proposed message
-   against staged paths before publication. Distinguish maintenance exceptions,
+   against the complete inspected target-to-PR-head diff using the isolated
+   worktree procedure there; the latest staged correction alone is insufficient.
+   Distinguish maintenance exceptions,
    non-source planning merges and source-bearing task/final mappings. Tell the
-   owner to replace GitHub's generated message and verify the actual subsequent
-   main-push run; a green PR head does not establish a green owner merge.
+   owner to replace GitHub's generated message. For main-bound merges verify the
+   actual subsequent main-push run; for milestone-bound merges retain the PR
+   evidence and verify the merge/history as documented there. A green PR head
+   does not establish a green owner merge.
 
 Linear is optional progress projection, never a CI dependency. For authorized
 cloud operations read `.agents/skills/linear-cli/SKILL.md` and
