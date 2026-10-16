@@ -45,6 +45,13 @@ invent missing feature artifacts or validation evidence.
    Create/update the same PR against the inspected destination. Describe relevant
    specs, FRs/tasks,
    local validation, agent findings, decisions and checks unavailable in cloud.
+   Use `docs/pull_request_template.md` for description structure. Explicit API
+   or CLI bodies bypass automatic template population: on every create/edit,
+   end the description with the real lifecycle-specific merge trailer block,
+   plain text outside fences/comments, preceded by a blank line. Insert later
+   evidence above it. Validate the entire raw description (PR title, blank line,
+   body) against the complete target-to-head diff using the procedure in step 9;
+   a copyable example alone does not validate the generated merge message.
    Never enable auto-merge or merge to main. Governance amendments are proposals
    until
    the owner reviews and merges them.
@@ -73,7 +80,8 @@ invent missing feature artifacts or validation evidence.
    worktree procedure there; the latest staged correction alone is insufficient.
    Distinguish maintenance exceptions,
    non-source planning merges and source-bearing task/final mappings. Tell the
-   owner to replace GitHub's generated message and provide the post-merge checks
+   owner to inspect GitHub's generated message and use the copyable handoff if
+   its title/body or terminal trailers differ; provide the post-merge checks
    below as follow-up instructions. The review-ready handoff ends with the PR
    unmerged; a future owner merge or main-push result is not a readiness gate.
 10. **After the owner merges**, in a subsequent verification phase, inspect the

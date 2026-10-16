@@ -138,6 +138,22 @@ exemption rather than inventing Implements. Cross-feature work must be split.
 These messages do not replace signed history, reviewed planning, current CI,
 independent review, owner approval or physical-device acceptance requirements.
 
+GitHub loads [the default PR template](../pull_request_template.md) from `docs/`
+for new PRs after it reaches the default branch. Replace its deliberately invalid
+trailer placeholder with the applicable block above. API-created PRs and CLI
+commands with an explicit body bypass template population: generated descriptions
+must follow this rule themselves. End **every created or edited PR description**
+with the actual merge trailers as plain text, outside code fences/comments, with
+a blank line before the block and nothing after it. Insert later CI/review
+evidence above that block. Validate the **entire raw description**, prefixed with
+the PR title and a blank line, using the full-diff procedure below, as well as any
+short copyable handoff. A fenced example elsewhere in the body is insufficient.
+
+With repository merge-message settings `PR_TITLE` / `PR_BODY`, this makes the
+generated merge message carry the required terminal block. Inspect the actual
+settings and final merge dialog; a template cannot force a lifecycle choice,
+retrofit existing PRs, populate an explicit API body or prevent later edits.
+
 For this process-documentation maintenance, copy this title:
 
 ```text
@@ -153,8 +169,9 @@ Preserve the historical PR #10 merge and failed run without rewriting history.
 SDD-Type: process
 ```
 
-The owner selects **Create a merge commit**, replaces the generated title/body
-with the reviewed handoff, and checks the final dialog before confirming. Keep a
+The owner selects **Create a merge commit** and checks the generated title/body
+and terminal trailers against the reviewed handoff before confirming. If they
+are incorrect, replace them with the copyable handoff. Keep a
 blank line before the terminal trailer block; use literal `Key: value` lines,
 without bullets or code fences. Do not put prose after the block, duplicate
 SDD-Type, or copy this process exception onto application work. Revalidate and
