@@ -141,3 +141,16 @@ baseline. Correction 3 retains all task identities and prior heads. This exhaust
 the default automatic publication budget; later artifact fixes require actual
 owner authorization and the documented concrete escalation procedure. Pure
 projection evidence preserves this count. Fresh review/CI remains PR evidence.
+
+## Owner-authorized story traceability amendment
+
+Codex finding https://github.com/clemarc/fava/pull/14#discussion_r4297459975
+identifies missing story markers for T002's expanded user-visible responsibilities.
+The owner-authorized amendment maps US2/US3/US1 in both task and ledger, preserving every
+other task field. After an authorized signed publication, reproject FAV-42 under
+US2/FAV-38 and verify exact content, hierarchy and Todo state. Owner authorization is the unedited
+[comment 6222134675](https://github.com/clemarc/fava/pull/14#issuecomment-6222134675),
+which sets an absolute cap of five correction rounds. This publication is round
+four, retains the actual prior head and records that actual comment ID. It clears
+the mapping blocker without claiming owner preparation approval or future merge
+evidence. Current CI/review/projection results are refreshed in the PR and ledger.

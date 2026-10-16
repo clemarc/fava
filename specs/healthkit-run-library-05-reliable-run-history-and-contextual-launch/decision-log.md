@@ -103,3 +103,12 @@ feedback. Contextual launch preserves deliberate access until Settings replaces
 that path; the clear model stays unexposed until confirmed UI integrates. Task
 identities remain stable; expanded T002 mappings cite FR-002/FR-015 for its actual
 wording/accessibility responsibilities. Approved requirements/scope are unchanged.
+
+## DEC-010 — Map the expanded retention task to its user stories
+
+T002's expanded UI behavior directly implements US2 retention/saving failure,
+US3 provenance/current outcomes and US1 local recovery. Retention is primary,
+so its markers and ledger story list are US2, US3, US1 in that order. The same
+stable repository key must project under US2 after authorized publication. This
+corrects Codex finding https://github.com/clemarc/fava/pull/14#discussion_r4297459975
+without changing task identity, scope, FRs, paths, dependencies or completion.

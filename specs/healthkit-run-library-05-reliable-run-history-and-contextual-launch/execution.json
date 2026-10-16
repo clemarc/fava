@@ -8,14 +8,18 @@
   "preparation_prs": {
     "14": {
       "branch": "prepare/r3.5",
-      "correction_cycles": 3,
+      "correction_cycles": 4,
       "heads": [
         "dd13902af5f93f60a0500c2de1486d342c7f4663",
         "117f90abdf557131eea6d9425090dfb525388814",
         "afc577c2f2cd65399cb99b60f7f0a0d0d97c5882",
-        "44572793449f8707cf0319be14b4c4e72d0ef045"
+        "44572793449f8707cf0319be14b4c4e72d0ef045",
+        "e1b7e81890ef8aee77b006aa1931c345ed439aa3"
       ],
-      "state": "blocked"
+      "state": "review",
+      "owner_extra_cycles": {
+        "comment_id": 6222134675
+      }
     }
   },
   "planning_revision": null,
@@ -76,7 +80,11 @@
         "FR-016",
         "FR-018"
       ],
-      "stories": [],
+      "stories": [
+        "US2",
+        "US3",
+        "US1"
+      ],
       "pr": null,
       "merge_sha": null,
       "evidence": []
@@ -513,11 +521,15 @@
       "severity": "medium",
       "summary": "Expanded T002 omits implemented US2/US3/US1 story mappings and projects without a story parent",
       "url": "https://github.com/clemarc/fava/pull/14#discussion_r4297459975",
-      "disposition": "unresolved-owner-authorization-required",
+      "disposition": "fixed",
       "reviewed_head": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
       "reviewed_target": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
       "evidence": [
-        "https://github.com/clemarc/fava/pull/14#issuecomment-6221203857"
+        "https://github.com/clemarc/fava/pull/14#issuecomment-6221203857",
+        "https://github.com/clemarc/fava/pull/14#issuecomment-6222134675",
+        "decision-log.md#dec-010",
+        "tasks.md T002",
+        "execution.json tasks.T002.stories"
       ],
       "proposal": "Add [US2] [US3] [US1] to T002, set identical ordered ledger stories, append DEC/report rationale, reproject existing FAV-42 under US2/FAV-38; no behavior/identity/FR/path/dependency changes. Patch validated with SDD/tooling/ledger and desired parent preview.",
       "required_owner_decision": "One extra preparation correction round, absolute cap 4, through actual new unedited owner JSON comment on PR14."
