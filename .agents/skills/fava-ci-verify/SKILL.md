@@ -72,10 +72,16 @@ invent missing feature artifacts or validation evidence.
    worktree procedure there; the latest staged correction alone is insufficient.
    Distinguish maintenance exceptions,
    non-source planning merges and source-bearing task/final mappings. Tell the
-   owner to replace GitHub's generated message. For main-bound merges verify the
-   actual subsequent main-push run; for milestone-bound merges retain the PR
-   evidence and verify the merge/history as documented there. A green PR head
-   does not establish a green owner merge.
+   owner to replace GitHub's generated message and provide the post-merge checks
+   below as follow-up instructions. The review-ready handoff ends with the PR
+   unmerged; a future owner merge or main-push result is not a readiness gate.
+10. **After the owner merges**, in a subsequent verification phase, inspect the
+    actual merge/history as documented in the owner merge message handoff. For
+    main-bound merges verify the automatic subsequent main-push run; for
+    milestone-bound merges retain the PR evidence and verify the merge/history
+    for that destination. Until those checks run, report post-merge verification
+    as pending. A green PR head does not establish a green owner merge. This
+    phase grants no authority to merge main or preparation PRs.
 
 Linear is optional progress projection, never a CI dependency. For authorized
 cloud operations read `.agents/skills/linear-cli/SKILL.md` and
