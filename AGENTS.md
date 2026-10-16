@@ -3,6 +3,9 @@
 - Follow `.specify/memory/constitution.md` and `docs/process/sdd-playbook.md`.
   Work only within approved scope and the correct active Spec Kit directory.
   Use small task batches; preserve requirements and completed feature history.
+- Apply `docs/process/writing.md` when writing or reviewing specs, documentation
+  and PR descriptions. Cut filler and repeated material; preserve precise,
+  testable requirements, references and evidence.
 - Run relevant Spec Kit checklist/analyze/converge checks when their lifecycle
   prerequisites exist. Mandatory tests override optional-test core templates.
   Record durable decisions and mark tasks complete only with verification.

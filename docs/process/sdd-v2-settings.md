@@ -54,7 +54,7 @@ task-coordinator identity checks, followed by end-to-end signing/gate validation
 owner roadmap/specification/preparation/main approval checks remain owner-only.
 Provisioning the App alone does not make this alternate identity path operational.
 
-Before any task publication, separately protect `refs/heads/task/*` with required
+Before any task publication, separately protect `refs/heads/task/**/*` with required
 signatures, no force pushes, no deletion and no bypass. Direct signed publication
 remains necessary; PR-only rules belong on its milestone destination. The task
 resume/integration helpers check these effective rules and verify retained
@@ -63,6 +63,11 @@ registration/reservation signatures. This is a new adoption prerequisite; the
 status checks or conversation resolution. No settings were changed. Current
 protections cannot reconstruct work deleted before protection was installed;
 ambiguous old history needs explicit owner reconciliation, never a guessed count.
+
+Use the recursive task pattern: GitHub's [fnmatch rules](https://github.com/github/docs/blob/main/data/reusables/repositories/about-fnmatch.md)
+do not let `*` match `/`, so `task/*` misses `task/r3.5/t003`. After activation,
+verify effective rules for that exact branch and for `prepare/r3.5`; a saved
+ruleset with enforcement disabled provides no protection.
 
 Work-branch protection must cover the initial publication, not merely exist at
 resume. Task/preparation inspection traces each effective signature/no-force/

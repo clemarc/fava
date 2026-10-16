@@ -7,6 +7,8 @@ merges remains effective until that adoption.
 
 ## Sources and artifact ownership
 
+Use the [writing standard](writing.md) when drafting or reviewing these artifacts.
+
 | Artifact | Role | Ownership |
 | --- | --- | --- |
 | Constitution | Principles, gates, pins and authority | Owner-approved governance PR |

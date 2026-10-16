@@ -20,6 +20,7 @@ invent missing feature artifacts or validation evidence.
    These agent checks supplement deterministic CI. Do not call analyze/converge
    against nonexistent spec/plan/tasks. Governance work uses a documented review
    against the constitution and mission instead.
+   Review changed prose against `docs/process/writing.md` before publication.
 3. Run available component tests. In Linux cloud, native Xcode validation awaits
    macOS Actions. Record durable decisions before regenerating derived artifacts.
    Tick tasks only with verification evidence; identify pending physical-device
