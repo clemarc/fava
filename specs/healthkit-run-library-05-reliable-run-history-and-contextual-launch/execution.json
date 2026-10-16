@@ -4,8 +4,16 @@
   "feature": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch",
   "specification_base": "922b9c9ab0c25559bfd327fff1b74127e1952f31",
   "milestone_branch": "milestone/r3.5",
-  "preparation_pr": null,
-  "preparation_prs": {},
+  "preparation_pr": "https://github.com/clemarc/fava/pull/14",
+  "preparation_prs": {
+    "14": {
+      "branch": "prepare/r3.5",
+      "correction_cycles": 0,
+      "heads": [
+        "dd13902af5f93f60a0500c2de1486d342c7f4663"
+      ]
+    }
+  },
   "planning_revision": null,
   "state": "preparing",
   "retired_task_ids": [],
