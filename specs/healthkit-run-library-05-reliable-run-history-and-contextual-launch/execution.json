@@ -540,9 +540,9 @@
     "iPad": null
   },
   "linear": {
-    "state": "verified-with-pending-amendment",
-    "verified_at": "2026-10-16T17:36:38.126321+00:00",
-    "source_revision": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+    "state": "verified",
+    "verified_at": "2026-10-16T18:38:03.382244+00:00",
+    "source_revision": "33a5df48ea80e8379b76220918289ef8a1a31bad",
     "project_id": "f823cc39-b818-460f-8682-bb4ec831885a",
     "milestone_id": "5f470b82-5ad7-40d8-a36d-eea3b2bf7dd3",
     "evidence": [
@@ -551,7 +551,7 @@
       "https://linear.app/clemarc/issue/FAV-39/r35-us3",
       "https://linear.app/clemarc/issue/FAV-40/r35-us4",
       "https://linear.app/clemarc/issue/FAV-41/r35-t001-implement-schema-2-history-validation-and-schema-1-read-only",
-      "https://linear.app/clemarc/issue/FAV-42/r35-t002-implement-retained-uuid-union-independent-sourcesave-attempt",
+      "https://linear.app/clemarc/issue/FAV-42/r35-t002-us2-us3-us1-implement-retained-uuid-union-independent",
       "https://linear.app/clemarc/issue/FAV-43/r35-t003-us1-add-explicit-launchentry-coordination-in",
       "https://linear.app/clemarc/issue/FAV-44/r35-t004-us1-extractexpand-settings-in-favasettingsviewswift-and",
       "https://linear.app/clemarc/issue/FAV-45/r35-t005-us2-expand-favatestsruningestiontestsswift-and",
@@ -591,7 +591,7 @@
       },
       {
         "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002",
-        "url": "https://linear.app/clemarc/issue/FAV-42/r35-t002-implement-retained-uuid-union-independent-sourcesave-attempt",
+        "url": "https://linear.app/clemarc/issue/FAV-42/r35-t002-us2-us3-us1-implement-retained-uuid-union-independent",
         "identifier": "FAV-42"
       },
       {
@@ -645,11 +645,9 @@
         "identifier": "FAV-52"
       }
     ],
-    "pending_keys": [
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002"
-    ],
+    "pending_keys": [],
     "actual_states": "All four stories and 12 implementation tasks verified Todo; none implemented.",
-    "hierarchy": "T001/T002 directly in milestone; all other tasks use their first mapped story as parent, preserving every story mapping in their descriptions.",
+    "hierarchy": "T001 directly in milestone. T002 under US2/FAV-38, preserving US2/US3/US1 in its description. Other tasks use their first mapped story as parent, preserving every story mapping in descriptions.",
     "cli": "@schpet/linear-cli 3.0.0 through tools/sdd/linear_projection.py project()",
     "rendering": {
       "reason": "Linear exports canonical Markdown; original raw-string descriptions failed exact verification after successful creates.",
@@ -661,14 +659,33 @@
         "Trim trailing whitespace in the already length-limited desired title",
         "Remove trailing whitespace/newlines from the desired description"
       ],
-      "scope": "Representation only; approved Git wording, identities, source links and requirements unchanged. No second API client or committed tooling change."
+      "scope": "Representation only; approved Git wording, identities, source links and requirements unchanged. No second API client or committed tooling change.",
+      "stable_sources": "For unchanged definitions, preserve the previously verified signed ancestor source only after comparing generated wording/title/state/parent exactly (excluding the source URL). Changed T002 uses the newly signed mapping revision; all 16 actual Linear items still pass the pinned helper exact verification. No comparison/identity/hierarchy/status gate is changed."
     },
     "attempts": [
       "Original helper created FAV-37/US1 then stopped on source-link/bullet/trailing-newline formatting; keyed item was reinspected before retry.",
       "Canonical rendering verified stories and T001/T002, created FAV-43/T003 then stopped on escaped literal story-marker brackets; exact description and correct parent FAV-37 were reinspected.",
       "The next pass verified T003 and created FAV-44/T004, then stopped because the 200-character desired title ended in a space trimmed by Linear; keyed title/description/parent/state were reinspected.",
-      "Final canonical dry-run retained existing keyed items with no definition changes; final apply verified all 16, without duplicates or pending keys."
+      "Final canonical dry-run retained existing keyed items with no definition changes; final apply verified all 16, without duplicates or pending keys.",
+      "Owner-authorized round 4 changed only T002 definition/story parent. Dry-run found exactly T002 title/description/parent changes; apply verified all 16 current items, reparented FAV-42 to US2/FAV-38, retained stable keys, and confirmed all Todo with no pending keys."
     ],
-    "pending_reason": "All 16 items match published Git definitions. Actual Codex finding https://github.com/clemarc/fava/pull/14#discussion_r4297459975 requires owner-authorized T002 story markers and then reprojection of the same key under US2; current T002 is directly under the milestone."
+    "source_revisions": {
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US1": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US2": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US3": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US4": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T001": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002": "33a5df48ea80e8379b76220918289ef8a1a31bad",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T003": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T004": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T005": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T006": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T007": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T008": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T009": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T010": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T011": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T012": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a"
+    }
   }
 }
