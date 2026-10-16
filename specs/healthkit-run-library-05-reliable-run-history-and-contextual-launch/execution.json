@@ -513,26 +513,135 @@
     "iPad": null
   },
   "linear": {
-    "state": "pending",
-    "verified_at": null,
-    "evidence": [],
+    "state": "verified-with-pending-amendment",
+    "verified_at": "2026-10-16T17:36:38.126321+00:00",
+    "source_revision": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
+    "project_id": "f823cc39-b818-460f-8682-bb4ec831885a",
+    "milestone_id": "5f470b82-5ad7-40d8-a36d-eea3b2bf7dd3",
+    "evidence": [
+      "https://linear.app/clemarc/issue/FAV-37/r35-us1",
+      "https://linear.app/clemarc/issue/FAV-38/r35-us2",
+      "https://linear.app/clemarc/issue/FAV-39/r35-us3",
+      "https://linear.app/clemarc/issue/FAV-40/r35-us4",
+      "https://linear.app/clemarc/issue/FAV-41/r35-t001-implement-schema-2-history-validation-and-schema-1-read-only",
+      "https://linear.app/clemarc/issue/FAV-42/r35-t002-implement-retained-uuid-union-independent-sourcesave-attempt",
+      "https://linear.app/clemarc/issue/FAV-43/r35-t003-us1-add-explicit-launchentry-coordination-in",
+      "https://linear.app/clemarc/issue/FAV-44/r35-t004-us1-extractexpand-settings-in-favasettingsviewswift-and",
+      "https://linear.app/clemarc/issue/FAV-45/r35-t005-us2-expand-favatestsruningestiontestsswift-and",
+      "https://linear.app/clemarc/issue/FAV-46/r35-t006-us3-expand-the-already-truthful-saved",
+      "https://linear.app/clemarc/issue/FAV-47/r35-t007-us4-implement-confirmed-durable-clear-in",
+      "https://linear.app/clemarc/issue/FAV-48/r35-t008-us4-add-settings-destructive-confirmationcancelfailure-retry",
+      "https://linear.app/clemarc/issue/FAV-49/r35-t009-us1-us2-us3-us4-expand-the-already-integrated-minimal",
+      "https://linear.app/clemarc/issue/FAV-50/r35-t010-us1-us2-us3-us4-extend-favauitestsrunlibraryuitestsswift-and",
+      "https://linear.app/clemarc/issue/FAV-51/r35-t011-us1-us3-add-favauitestshistoryperformanceuitestsswift-and",
+      "https://linear.app/clemarc/issue/FAV-52/r35-t012-us1-us2-us3-us4-validate-complete-regression-semantic-drift"
+    ],
+    "verified_items": [
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US1",
+        "url": "https://linear.app/clemarc/issue/FAV-37/r35-us1",
+        "identifier": "FAV-37"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US2",
+        "url": "https://linear.app/clemarc/issue/FAV-38/r35-us2",
+        "identifier": "FAV-38"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US3",
+        "url": "https://linear.app/clemarc/issue/FAV-39/r35-us3",
+        "identifier": "FAV-39"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US4",
+        "url": "https://linear.app/clemarc/issue/FAV-40/r35-us4",
+        "identifier": "FAV-40"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T001",
+        "url": "https://linear.app/clemarc/issue/FAV-41/r35-t001-implement-schema-2-history-validation-and-schema-1-read-only",
+        "identifier": "FAV-41"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002",
+        "url": "https://linear.app/clemarc/issue/FAV-42/r35-t002-implement-retained-uuid-union-independent-sourcesave-attempt",
+        "identifier": "FAV-42"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T003",
+        "url": "https://linear.app/clemarc/issue/FAV-43/r35-t003-us1-add-explicit-launchentry-coordination-in",
+        "identifier": "FAV-43"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T004",
+        "url": "https://linear.app/clemarc/issue/FAV-44/r35-t004-us1-extractexpand-settings-in-favasettingsviewswift-and",
+        "identifier": "FAV-44"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T005",
+        "url": "https://linear.app/clemarc/issue/FAV-45/r35-t005-us2-expand-favatestsruningestiontestsswift-and",
+        "identifier": "FAV-45"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T006",
+        "url": "https://linear.app/clemarc/issue/FAV-46/r35-t006-us3-expand-the-already-truthful-saved",
+        "identifier": "FAV-46"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T007",
+        "url": "https://linear.app/clemarc/issue/FAV-47/r35-t007-us4-implement-confirmed-durable-clear-in",
+        "identifier": "FAV-47"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T008",
+        "url": "https://linear.app/clemarc/issue/FAV-48/r35-t008-us4-add-settings-destructive-confirmationcancelfailure-retry",
+        "identifier": "FAV-48"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T009",
+        "url": "https://linear.app/clemarc/issue/FAV-49/r35-t009-us1-us2-us3-us4-expand-the-already-integrated-minimal",
+        "identifier": "FAV-49"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T010",
+        "url": "https://linear.app/clemarc/issue/FAV-50/r35-t010-us1-us2-us3-us4-extend-favauitestsrunlibraryuitestsswift-and",
+        "identifier": "FAV-50"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T011",
+        "url": "https://linear.app/clemarc/issue/FAV-51/r35-t011-us1-us3-add-favauitestshistoryperformanceuitestsswift-and",
+        "identifier": "FAV-51"
+      },
+      {
+        "key": "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T012",
+        "url": "https://linear.app/clemarc/issue/FAV-52/r35-t012-us1-us2-us3-us4-validate-complete-regression-semantic-drift",
+        "identifier": "FAV-52"
+      }
+    ],
     "pending_keys": [
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US1",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US2",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US3",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US4",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T001",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T003",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T004",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T005",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T006",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T007",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T008",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T009",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T010",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T011",
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T012"
-    ]
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002"
+    ],
+    "actual_states": "All four stories and 12 implementation tasks verified Todo; none implemented.",
+    "hierarchy": "T001/T002 directly in milestone; all other tasks use their first mapped story as parent, preserving every story mapping in their descriptions.",
+    "cli": "@schpet/linear-cli 3.0.0 through tools/sdd/linear_projection.py project()",
+    "rendering": {
+      "reason": "Linear exports canonical Markdown; original raw-string descriptions failed exact verification after successful creates.",
+      "method": "Render desired descriptions before calling the existing helper; leave its exact field/key/project/milestone/parent/state verification unchanged.",
+      "rules": [
+        "Source URL line becomes Source: [URL](<URL>)",
+        "Markdown bullet line prefix - space becomes * space",
+        "Literal story markers [USn] become escaped Markdown brackets in descriptions only",
+        "Trim trailing whitespace in the already length-limited desired title",
+        "Remove trailing whitespace/newlines from the desired description"
+      ],
+      "scope": "Representation only; approved Git wording, identities, source links and requirements unchanged. No second API client or committed tooling change."
+    },
+    "attempts": [
+      "Original helper created FAV-37/US1 then stopped on source-link/bullet/trailing-newline formatting; keyed item was reinspected before retry.",
+      "Canonical rendering verified stories and T001/T002, created FAV-43/T003 then stopped on escaped literal story-marker brackets; exact description and correct parent FAV-37 were reinspected.",
+      "The next pass verified T003 and created FAV-44/T004, then stopped because the 200-character desired title ended in a space trimmed by Linear; keyed title/description/parent/state were reinspected.",
+      "Final canonical dry-run retained existing keyed items with no definition changes; final apply verified all 16, without duplicates or pending keys."
+    ],
+    "pending_reason": "All 16 items match published Git definitions. Actual Codex finding https://github.com/clemarc/fava/pull/14#discussion_r4297459975 requires owner-authorized T002 story markers and then reprojection of the same key under US2; current T002 is directly under the milestone."
   }
 }
