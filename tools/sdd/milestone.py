@@ -80,12 +80,23 @@ def github(*args):
 
 
 def merged_pr(repository, sha, target):
+    def matches_merge(pr):
+        return (pr.get('merged_at') and pr.get('merge_commit_sha') == sha
+                and pr.get('base', {}).get('ref') == target)
+
     prs = github('api', f'repos/{repository}/commits/{sha}/pulls')
-    matches = [p for p in prs if p.get('merged_at') and p['merge_commit_sha'] == sha
-               and p['base']['ref'] == target]
+    matches = [pr for pr in prs if matches_merge(pr)]
+    if not matches:
+        # Commit association can omit merges into non-default branches.
+        # Inspect all closed PR pages; titles and ledger claims are not proof.
+        pages = github('api', '--paginate', '--slurp',
+                       f'repos/{repository}/pulls?state=closed&per_page=100')
+        matches = [pr for page in pages for pr in page if matches_merge(pr)]
     if len(matches) != 1:
         raise ValueError(f'{sha}: expected one merged PR into {target}')
     pr = github('api', f'repos/{repository}/pulls/{matches[0]["number"]}')
+    if not matches_merge(pr) or pr.get('merged') is not True:
+        raise ValueError(f'{sha}: merged PR identity changed during inspection')
     if not pr.get('merged_by') or pr['merged_by']['login'] != 'clemarc':
         raise ValueError(f'{sha}: missing owner merge evidence')
     return pr['html_url']
@@ -234,6 +245,30 @@ def preparation_revision_progress(root, result, pr, record, cutoff=None, verific
         raise ValueError('preparation correction limit exhausted without verified owner authorization')
     return dict(pr=pr['number'], head=pr['sha'], correction_cycles=count, maximum_cycles=cap,
                 next_round_authorized=count < cap, blocked=record.get('state') == 'blocked')
+
+
+def preparation_trailers(root, result):
+    """An amendment cannot hide a missing trailer on earlier retained planning."""
+    from reconciliation import commit_message, adoption_merge
+    from sdd import validate_commit
+    reconciliations = []
+    for pr in result['prs']:
+        if pr['head'] != result['preparation_branch'] or not pr.get('merged'):
+            continue
+        merge = pr['merge_sha']
+        actual_message = git(root, 'show', '-s', '--format=%B', merge)
+        message = commit_message(root, result['main_sha'], result['target_sha'], merge, git)
+        paths = git(root, 'diff', '--name-only', merge + '^1', merge).splitlines()
+        issues = validate_commit(message, paths, lambda p: read(root, merge, p))
+        if issues:
+            raise ValueError(f'retained preparation PR #{pr["number"]} merge trailer validation failed: '
+                             + '; '.join(issues)
+                             + '; owner-reviewed reconciliation must be adopted on main and imported into milestone before implementation')
+        if message != actual_message:
+            adoption = adoption_merge(root, result['main_sha'], result['target_sha'], git)
+            reconciliations.append({
+                'sha': adoption, 'pr': merged_pr('clemarc/fava', adoption, 'main'), 'historical_merge': merge})
+    return reconciliations
 
 
 def retained_preparation_progress(root, result):
@@ -438,6 +473,8 @@ def inspect(root, identifier, phase):
         if not target or not ancestor(root, merge, target) or not owner_merge(root, merge, git):
             raise ValueError('reviewed preparation merge is absent from target or lacks signed owner proof')
         result['preparation_approval'] = {'sha': merge, 'pr': merged_pr(repository, merge, result['milestone_branch'])}
+        result['preparation_reconciliations'] = preparation_trailers(root, result)
+
     if result['execution']:
         from ledger import validate as validate_ledger
         execution_ref = target
