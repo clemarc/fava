@@ -305,6 +305,12 @@ stronger identity separation is a settings prerequisite below.
 
 ## Final owner handoff and completion
 
+The one-time [R3.5 preparation reconciliation](../decisions/003-r35-preparation-merge-reconciliation.md)
+may accept only PR #14's fixed historical missing planning trailer after signed
+owner adoption on main and import into the milestone. The record must remain
+unchanged at the validation base and head. It does not excuse any other commit
+or supply planning registration, task completion or product approval.
+
 Use `.specify/templates/milestone-handoff-template.md`. Include exact tested
 revision, CI/macOS/simulator evidence and counts, task/FR/acceptance coverage,
 migration, saving failures and read/clear race evidence, manual physical iPhone

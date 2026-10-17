@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "milestone": "R3.5",
+  "preparation_pr": "https://github.com/clemarc/fava/pull/14",
+  "destination": "milestone/r3.5",
+  "merge": "9a2d3272a0e3d88952946459d7864b72affdc62f",
+  "parents": [
+    "922b9c9ab0c25559bfd327fff1b74127e1952f31",
+    "2817c07c11ba5ba718b53cb267786c0123922137"
+  ],
+  "tree": "b2661ee7a90e06057e01e49a9105e3d53de0bdcd",
+  "message": "docs: prepare R3.5 retained history and contextual launch (#14)\n",
+  "accepted_trailer": "SDD-Type: planning",
+  "activation": "Signed owner governance merge into main; unchanged record in validation base and head."
+}
