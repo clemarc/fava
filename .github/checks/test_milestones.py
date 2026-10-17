@@ -27,6 +27,48 @@ class ResolverTests(unittest.TestCase):
         result.update(execution=None, prs=[])
         return result
 
+    def test_merged_pr_falls_back_to_all_closed_pages_for_exact_merge(self):
+        sha, target = 'a' * 40, 'milestone/r3.5'
+        candidate = dict(number=14, merged_at='2026-10-16T20:36:14Z',
+                         merge_commit_sha=sha, base={'ref': target})
+        details = dict(candidate, merged=True, merged_by={'login': 'clemarc'},
+                       html_url='https://github.com/clemarc/fava/pull/14')
+        responses = [[], [[dict(candidate, number=13, base={'ref': 'main'})], [candidate]], details]
+        with patch.object(milestone, 'github', side_effect=responses) as api:
+            self.assertEqual(milestone.merged_pr('clemarc/fava', sha, target), details['html_url'])
+            self.assertEqual(api.call_args_list[1].args,
+                             ('api', '--paginate', '--slurp', 'repos/clemarc/fava/pulls?state=closed&per_page=100'))
+
+    def test_merged_pr_fallback_rejects_missing_ambiguous_or_wrong_identity(self):
+        sha, target = 'a' * 40, 'milestone/r3.5'
+        candidate = dict(number=14, merged_at='2026-10-16T20:36:14Z',
+                         merge_commit_sha=sha, base={'ref': target})
+        for pages in [[], [[]], [[dict(candidate, base={'ref': 'main'})]],
+                      [[dict(candidate, merge_commit_sha='b' * 40)]],
+                      [[dict(candidate, merged_at=None)]],
+                      [[candidate], [dict(candidate, number=15)]]]:
+            with self.subTest(pages=pages), patch.object(milestone, 'github', side_effect=[[], pages]):
+                with self.assertRaisesRegex(ValueError, 'expected one merged PR'):
+                    milestone.merged_pr('clemarc/fava', sha, target)
+
+    def test_merged_pr_rechecks_live_details_and_owner_for_both_lookup_paths(self):
+        sha, target = 'a' * 40, 'milestone/r3.5'
+        candidate = dict(number=14, merged_at='2026-10-16T20:36:14Z',
+                         merge_commit_sha=sha, base={'ref': target})
+        details = dict(candidate, merged=True, merged_by={'login': 'clemarc'},
+                       html_url='https://github.com/clemarc/fava/pull/14')
+        for fallback in [False, True]:
+            for change in [dict(merged=False), dict(merged_at=None), dict(base={'ref': 'main'}),
+                           dict(merge_commit_sha='b' * 40), dict(merged_by={'login': 'other'})]:
+                responses = [[], [[candidate]]] if fallback else [[candidate]]
+                responses.append(dict(details, **change))
+                with self.subTest(fallback=fallback, change=change), patch.object(milestone, 'github', side_effect=responses):
+                    with self.assertRaises(ValueError):
+                        milestone.merged_pr('clemarc/fava', sha, target)
+        with patch.object(milestone, 'github', side_effect=[[candidate], details]) as api:
+            self.assertEqual(milestone.merged_pr('clemarc/fava', sha, target), details['html_url'])
+            self.assertEqual(api.call_count, 2)
+
     def test_decimal_normalization_does_not_infer_numbering(self):
         result = self.context()
         self.assertEqual(result['id'], 'R3.5')

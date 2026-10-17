@@ -366,7 +366,9 @@ def validate_repo(root, base=None, head='HEAD', message=None, preparation_pr=Non
                         try: git(root, 'cat-file', '-e', f'{planning_ref}:{feature}/{artifact}')
                         except subprocess.CalledProcessError: errors.append(f'{feature}/{artifact}: merge planning PR before implementation')
             read = lambda p: git(root, 'show', f'{sha}:{p}')
-            errors += [f'commit {sha[:12]}: {e}' for e in validate_commit(git(root, 'show', '-s', '--format=%B', sha), paths, read)]
+            from reconciliation import commit_message
+            message_text = commit_message(root, base, head, sha, git)
+            errors += [f'commit {sha[:12]}: {e}' for e in validate_commit(message_text, paths, read)]
     if message:
         paths = git(root, 'diff', '--cached', '--name-only').splitlines()
         errors += validate_commit(message.read_text(), paths, lambda p: git(root, 'show', ':' + p))
