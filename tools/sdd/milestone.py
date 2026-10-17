@@ -247,6 +247,30 @@ def preparation_revision_progress(root, result, pr, record, cutoff=None, verific
                 next_round_authorized=count < cap, blocked=record.get('state') == 'blocked')
 
 
+def preparation_trailers(root, result):
+    """An amendment cannot hide a missing trailer on earlier retained planning."""
+    from reconciliation import commit_message, adoption_merge
+    from sdd import validate_commit
+    reconciliations = []
+    for pr in result['prs']:
+        if pr['head'] != result['preparation_branch'] or not pr.get('merged'):
+            continue
+        merge = pr['merge_sha']
+        actual_message = git(root, 'show', '-s', '--format=%B', merge)
+        message = commit_message(root, result['main_sha'], result['target_sha'], merge, git)
+        paths = git(root, 'diff', '--name-only', merge + '^1', merge).splitlines()
+        issues = validate_commit(message, paths, lambda p: read(root, merge, p))
+        if issues:
+            raise ValueError(f'retained preparation PR #{pr["number"]} merge trailer validation failed: '
+                             + '; '.join(issues)
+                             + '; owner-reviewed reconciliation must be adopted on main and imported into milestone before implementation')
+        if message != actual_message:
+            adoption = adoption_merge(root, result['main_sha'], result['target_sha'], git)
+            reconciliations.append({
+                'sha': adoption, 'pr': merged_pr('clemarc/fava', adoption, 'main'), 'historical_merge': merge})
+    return reconciliations
+
+
 def retained_preparation_progress(root, result):
     """Revalidate every merged preparation and freeze its budget record at source."""
     from integration import timestamp
@@ -449,19 +473,7 @@ def inspect(root, identifier, phase):
         if not target or not ancestor(root, merge, target) or not owner_merge(root, merge, git):
             raise ValueError('reviewed preparation merge is absent from target or lacks signed owner proof')
         result['preparation_approval'] = {'sha': merge, 'pr': merged_pr(repository, merge, result['milestone_branch'])}
-        from reconciliation import commit_message, adoption_merge
-        from sdd import validate_commit
-        actual_message = git(root, 'show', '-s', '--format=%B', merge)
-        message = commit_message(root, main, target, merge, git)
-        paths = git(root, 'diff', '--name-only', merge + '^1', merge).splitlines()
-        issues = validate_commit(message, paths, lambda p: read(root, merge, p))
-        if issues:
-            raise ValueError('preparation merge trailer validation failed: ' + '; '.join(issues)
-                             + '; owner-reviewed reconciliation must be adopted on main and imported into milestone before implementation')
-        if message != actual_message:
-            adoption = adoption_merge(root, main, target, git)
-            result['preparation_reconciliation'] = {
-                'sha': adoption, 'pr': merged_pr(repository, adoption, 'main'), 'historical_merge': merge}
+        result['preparation_reconciliations'] = preparation_trailers(root, result)
 
     if result['execution']:
         from ledger import validate as validate_ledger

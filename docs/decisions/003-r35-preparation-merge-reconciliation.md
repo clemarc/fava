@@ -27,7 +27,8 @@ history use normal validation. Proposal-only, unsigned, changed or ambiguous
 evidence cannot activate the exception.
 
 The live resolver additionally verifies that adoption belongs to an actual
-owner-merged PR targeting main, and rechecks #14's real merge/destination. When
+owner-merged PR targeting main, and rechecks every retained preparation merge
+and its trailers, including #14 after a later planning amendment. When
 GitHub's commit-to-PR association omits a milestone merge, the resolver searches
 all closed PR pages for one exact merge SHA/destination match and rechecks the
 selected PR's actual merged status, SHA, destination and owner. No title,

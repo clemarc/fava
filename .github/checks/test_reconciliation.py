@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools/sdd'))
 import reconciliation
+import milestone
 import sdd
 import signatures
 from test_checks import ROADMAP, SPEC
@@ -132,6 +133,36 @@ class SignedReconciliationTests(unittest.TestCase):
         errors = sdd.validate_repo(self.root, self.adoption, future)
         self.assertTrue(any('commit ' + future[:12] + ':' in error and 'SDD-Type' in error for error in errors))
         self.assertFalse(any('commit ' + self.historical[:12] + ':' in error for error in errors))
+
+    def test_runtime_rechecks_historical_preparation_after_valid_planning_amendment(self):
+        self.git('switch', '--detach', self.historical)
+        self.put('specs/demo-01-read/plan.md', 'Synthetic amended preparation\n')
+        amended_source = self.commit('planning amendment\n\nSDD-Type: planning')
+        amendment = self.merge(amended_source, [self.historical, amended_source],
+                               'owner planning amendment\n\nSDD-Type: planning')
+        old = dict(number=14, head='prepare/r3.5', merged='2026-10-16T20:36:14Z', merge_sha=self.historical)
+        new = dict(number=15, head='prepare/r3.5', merged='2026-10-17T20:36:14Z', merge_sha=amendment)
+        context = dict(prs=[new, old], preparation_branch='prepare/r3.5',
+                       main_sha=self.adoption, target_sha=amendment)
+        self.assertEqual(milestone.latest_preparation(context), new)
+        # A good latest amendment does not excuse the old unadopted omission.
+        with self.assertRaisesRegex(ValueError, 'retained preparation PR #14'):
+            milestone.preparation_trailers(self.root, context)
+        self.git('switch', '--detach', amendment)
+        self.git('merge', '--no-ff', '-S', '-m', 'import governance\n\nSDD-Type: process', self.adoption)
+        context['target_sha'] = self.git('rev-parse', 'HEAD')
+        with patch.object(milestone, 'merged_pr', return_value='https://example.invalid/owner-main-adoption') as live:
+            self.assertEqual(milestone.preparation_trailers(self.root, context), [
+                dict(sha=self.adoption, pr='https://example.invalid/owner-main-adoption', historical_merge=self.historical)])
+            live.assert_called_once_with('clemarc/fava', self.adoption, 'main')
+        # Live approval on another destination/owner must still stop startup.
+        with patch.object(milestone, 'merged_pr', side_effect=ValueError('wrong live adoption destination')):
+            with self.assertRaisesRegex(ValueError, 'wrong live adoption destination'):
+                milestone.preparation_trailers(self.root, context)
+        bad = self.merge(amended_source, [self.historical, amended_source], 'future untrailered amendment')
+        context['prs'] = [dict(new, merge_sha=bad), old]
+        with self.assertRaisesRegex(ValueError, 'retained preparation PR #15'):
+            milestone.preparation_trailers(self.root, context)
 
     def test_proposal_or_pending_adoption_does_not_activate_exception(self):
         for base, head in [(self.baseline, self.proposal), (self.baseline, self.adoption),
