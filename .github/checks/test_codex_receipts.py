@@ -1,5 +1,6 @@
 """Immutable Codex completion receipts, exact SHA binding and retained gates."""
 import copy
+from datetime import timedelta
 import json
 from pathlib import Path
 import subprocess
@@ -265,6 +266,62 @@ class ReceiptAssessmentTests(unittest.TestCase):
                                 self.assertTrue(any('findings_disposed' in e for e in errors), errors)
                             else:
                                 self.assertEqual(errors, [])
+
+    def assert_actual_finding_cutoff_boundary(self, retained):
+        published_clock = self.case.clock
+        receipt_dispositions = copy.deepcopy(self.case.review['findings'])
+        if retained:
+            self.case.complete()
+        cutoff = integration.timestamp(self.case.pr['merged_at'] if retained else self.case.cutoff)
+        for proof_index, proof in enumerate(['receipt', 'review', 'reaction']):
+            for kind_index, kind in enumerate(['inline', 'issue', 'review']):
+                for delta in [-1, 0, 1]:
+                    with self.subTest(retained=retained, proof=proof, kind=kind, cutoff_delta=delta):
+                        self.case.bot = []
+                        self.reactions = []
+                        self.case.comments = []
+                        self.issue_comments = []
+                        self.case.report.pop('codex_receipt_comment', None)
+                        if proof == 'receipt':
+                            self.case.report['codex_receipt_comment'] = 126
+                        elif proof == 'review':
+                            self.case.bot = [dict(user={'login': BOT}, commit_id=self.case.head,
+                                                  state='COMMENTED', submitted_at=self.case.at(published_clock + 3),
+                                                  body='', html_url='https://github.com/clemarc/fava/pull/10#pullrequestreview-1')]
+                        else:
+                            self.reactions = [dict(content='+1', user={'login': BOT},
+                                                   created_at=self.case.at(published_clock + 3))]
+                        event_time = (cutoff + timedelta(seconds=delta)).isoformat()
+                        url = f'https://github.com/clemarc/fava/pull/10#{proof}-{kind}-{delta}-finding'
+                        body = '[P1] Synthetic finding at the integration cutoff boundary.'
+                        if kind == 'review':
+                            self.case.bot.append(dict(user={'login': 'synthetic-finding-reviewer'}, commit_id=self.case.head,
+                                                      state='CHANGES_REQUESTED', submitted_at=event_time,
+                                                      body=body, html_url=url))
+                        else:
+                            comment = dict(user={'login': BOT}, created_at=event_time, html_url=url, body=body)
+                            if kind == 'inline':
+                                self.case.comments = [comment]
+                            else:
+                                self.issue_comments = [comment]
+                        self.case.review['findings'] = copy.deepcopy(receipt_dispositions) if proof == 'receipt' else []
+                        self.case.review['findings'].append(dict(url=url, head=self.case.head, target=self.case.target,
+                                                                disposition='not-actionable', rationale='Prelisted synthetic '
+                                                                'finding URL cannot establish prior inspection.',
+                                                                evidence=[url]))
+                        ident = 200 + proof_index * 9 + kind_index * 3 + delta + 1
+                        self.retain_independent_report(ident, published_clock + 4)
+                        errors = self.case.reconcile_completion() if retained else self.case.assess()
+                        if delta <= 0:
+                            self.assertTrue(any('findings_disposed' in e for e in errors), errors)
+                        else:
+                            self.assertEqual(errors, [])
+
+    def test_direct_actual_findings_include_cutoff_second_for_every_proof(self):
+        self.assert_actual_finding_cutoff_boundary(retained=False)
+
+    def test_retained_actual_findings_include_merge_second_but_ignore_later_events(self):
+        self.assert_actual_finding_cutoff_boundary(retained=True)
 
     def test_full_signed_assessment_accepts_receipt_and_reconciles_retained_history(self):
         self.assertEqual(self.case.assess(), [])

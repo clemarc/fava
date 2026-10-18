@@ -456,6 +456,8 @@ Completion proof never asserts that the receipt contains no findings.
 Every comment creation and Review submission included in finding coverage must
 strictly precede the immutable independent report. A pre-listed URL cannot
 dispose content created at or after that report; refresh independent review.
+Findings timestamped exactly at a retained integration cutoff are ambiguous and
+remain included; only strictly later events are excluded from historical proof.
 Bot issue comments require finding dispositions for every proof route, including
 ordinary Reviews and request reactions; selecting or omitting a receipt cannot
 hide another finding. These checks add a supported evidence format without

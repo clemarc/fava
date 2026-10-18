@@ -423,10 +423,9 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
             request = github('api', f'repos/clemarc/fava/issues/comments/{request_id}')
             if fresh_bot_receipt(root, request, receipt, head, number, head_time, report_time):
                 evidence['codex_review_head'], evidence['codex_review_complete'] = head, True
-    # Include actual review findings known before integration; disposition cannot
-    # be supplied by a favorable aggregate boolean. Later reviews are not a
-    # retroactive authorization or invalidation of a historical checkpoint.
-    comments = [c for c in comments if timestamp(c['created_at']) < cutoff]
+    # Include findings at the integration cutoff too: same-second ordering is
+    # ambiguous. Strictly later findings do not change a historical checkpoint.
+    comments = [c for c in comments if timestamp(c['created_at']) <= cutoff]
     evidence['review_comments'] = [{'url': c['html_url'], 'body': c['body']} for c in comments]
     reviewed = {}
     reviewed_at = None
@@ -450,7 +449,7 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
     dispositions = reviewed.get('findings')
     actual_findings = [(c['html_url'], timestamp(c['created_at'])) for c in comments]
     actual_findings += [(r['html_url'], timestamp(r['submitted_at'])) for r in reviews if r.get('body', '').strip()
-                        and r.get('state') not in {'PENDING'} and timestamp(r['submitted_at']) < cutoff]
+                        and r.get('state') not in {'PENDING'} and timestamp(r['submitted_at']) <= cutoff]
     known = {url for url, _ in actual_findings}
     # Covering a predictable URL does not prove its content was inspected.
     # Use the same complete finding set for coverage and strict chronology,
