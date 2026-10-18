@@ -156,11 +156,12 @@ def fresh_bot_receipt(root, request, receipt, head, number, head_time, report_ti
                 or receipt.get('html_url') != f'https://github.com/clemarc/fava/pull/{number}#issuecomment-{receipt["id"]}'):
             return False
         body = receipt.get('body', '')
-        # Keep the stable positive verdict exact. Only observed positive suffixes
-        # are decoration; arbitrary trailing prose could contradict the verdict.
+        # The exact stable verdict proves completion, not absence of findings.
+        # Same-line closing content remains part of the independently reviewed
+        # receipt; the finding-disposition gate still covers the whole body.
         match = re.fullmatch(
             r"<!-- codex-review-receipt:v1 -->\n\n"
-            r"Codex Review: Didn't find any major issues\. (?:Nice work!|Delightful!|Swish!)\n\n"
+            r"Codex Review: Didn't find any major issues\.(?: [^\r\n]*)?\n\n"
             r'\*\*Reviewed commit:\*\* `([0-9a-f]{10,40})`'
             r'(?:\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n.*\n</details>)?\s*',
             body, re.S)

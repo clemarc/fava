@@ -75,10 +75,13 @@ class ReceiptBindingTests(unittest.TestCase):
 
     def test_observed_v1_completion_binds_real_git_prefix_and_full_head(self):
         original = self.receipt['body']
-        for suffix in ['Nice work!', 'Delightful!', 'Swish!']:
+        for suffix in ['Nice work!', 'Delightful!', 'Swish!', 'Excellent progress!',
+                       '[P1] A correctness issue still needs a disposition.']:
             with self.subTest(suffix=suffix):
                 self.receipt['body'] = original.replace('Nice work!', suffix)
                 self.assertTrue(self.proof())
+        self.receipt['body'] = original.replace(' Nice work!', '')
+        self.assertTrue(self.proof())
         self.receipt['body'] = self.receipt['body'].replace(self.head[:10], self.head)
         self.assertTrue(self.proof())
         self.receipt['body'] = self.receipt['body'].split('\n\n<details>')[0]
@@ -111,16 +114,16 @@ class ReceiptBindingTests(unittest.TestCase):
             with self.subTest(changes=changes):
                 self.assertFalse(self.proof(receipt=dict(self.receipt, **changes)))
 
-    def test_only_exact_positive_completed_versioned_verdict_is_proof(self):
+    def test_only_exact_stable_completed_versioned_verdict_is_proof(self):
         body = self.receipt['body']
         for invalid in [body.replace('v1', 'v2'), body.replace('<!-- codex-review-receipt:v1 -->\n\n', ''),
-                        body.replace('Nice work!', 'Some other decoration.'),
-                        body.replace('Nice work!', 'Swish! However, [P1] a correctness issue remains.'),
-                        body.replace('Nice work!', 'Delightful! Found a minor issue.'),
-                        body.replace('Nice work!', 'Nice work! Review is still pending.'),
-                        body.replace('Nice work!', 'Broken!'),
                         body.replace("Didn't find any major issues. Nice work!", 'Review requested.'),
+                        body.replace("Didn't find any major issues. Nice work!", 'Review is still pending.'),
                         body.replace("Didn't find any major issues. Nice work!", 'Found issues: [P1] fix this.'),
+                        body.replace("Didn't find any major issues.", "Didn't finish reviewing."),
+                        body.replace('Nice work!', 'A closing phrase\nA separate line'),
+                        body.replace('Nice work!', 'A closing phrase\rA separate line'),
+                        body.replace('Nice work!', 'A closing phrase\r\nA separate line'),
                         body.replace('**Reviewed commit:**', '**Reviewing commit:**'),
                         body.replace(self.head[:10], self.head[:9]),
                         body.replace(self.head[:10], 'f' * 10),
@@ -201,6 +204,31 @@ class ReceiptAssessmentTests(unittest.TestCase):
         self.assertEqual(self.case.assess(), [])
         self.case.complete()
         self.assertEqual(self.case.reconcile_completion(), [])
+
+    def test_novel_closing_phrase_proves_current_and_retained_completion(self):
+        self.receipt['body'] = self.receipt['body'].replace('Nice work!', 'Excellent progress!')
+        self.assertEqual(self.case.assess(), [])
+        self.case.complete()
+        self.assertEqual(self.case.reconcile_completion(), [])
+
+    def test_receipt_suffix_or_body_findings_require_current_independent_disposition(self):
+        original = self.receipt['body']
+        for body in [original.replace('Nice work!', '[P1] A correctness issue requires a fix.'),
+                     original.replace('<br/>', '<br/>\n\n[P1] A correctness issue requires a fix.')]:
+            with self.subTest(body=body):
+                self.receipt['body'] = body
+                self.case.review['findings'] = []
+                errors = self.case.assess()
+                self.assertTrue(any('findings_disposed' in e for e in errors), errors)
+                self.assertFalse(any('pending/stale' in e for e in errors), errors)
+                finding = dict(url=self.receipt['html_url'], head=self.case.head, target=self.case.target,
+                               disposition='not-actionable', rationale='Independent inspection found this synthetic '
+                               'finding refers to deferred behavior, not a contract violation.',
+                               evidence=[self.receipt['html_url']])
+                self.case.review['findings'] = [dict(finding, head='f' * 40)]
+                self.assertTrue(any('findings_disposed' in e for e in self.case.assess()))
+                self.case.review['findings'] = [finding]
+                self.assertEqual(self.case.assess(), [])
 
     def test_root_reaction_summary_or_report_boolean_cannot_replace_receipt(self):
         self.case.report.pop('codex_receipt_comment')

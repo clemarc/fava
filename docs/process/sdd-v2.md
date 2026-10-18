@@ -450,6 +450,9 @@ and GitHub App identity, same PR, unchanged comments, recognized positive verdic
 and strict head → request → receipt → coordinator-report chronology. The receipt's
 10–40 digit reviewed prefix must resolve uniquely to the full inspected head in
 Git. Mutable activity summaries and PR-root reactions cannot prove completion.
+The exact stable completion sentence supplies the verdict; any same-line closing
+phrase and footer remain review content requiring independent disposition.
+Completion proof never asserts that the receipt contains no findings.
 Bot issue comments require finding dispositions for every proof route, including
 ordinary Reviews and request reactions; selecting or omitting a receipt cannot
 hide another finding. These checks add a supported evidence format without
