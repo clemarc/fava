@@ -429,11 +429,13 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
     comments = [c for c in comments if timestamp(c['created_at']) < cutoff]
     evidence['review_comments'] = [{'url': c['html_url'], 'body': c['body']} for c in comments]
     reviewed = {}
+    reviewed_at = None
     evidence['independent_review'] = False
     if evidence.get('independent_review_comment'):
         independent = github('api', f'repos/clemarc/fava/issues/comments/{evidence["independent_review_comment"]}')
         if immutable_comment(independent, number, report_time, head_time) and independent['html_url'] == review:
             reviewed = json.loads(independent['body'])
+            reviewed_at = timestamp(independent['created_at'])
     elif evidence.get('independent_review_id'):
         independent = github('api', f'repos/clemarc/fava/pulls/{number}/reviews/{evidence["independent_review_id"]}')
         # GitHub review bodies are editable without an exposed edit timestamp.
@@ -446,9 +448,14 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
                                          and reviewed.get('head') == head and reviewed.get('target') == target)
     evidence['semantic_drift'] = evidence.get('semantic_drift') is True and reviewed.get('semantic_drift') is True
     dispositions = reviewed.get('findings')
-    known = {c['html_url'] for c in comments}
-    known |= {r['html_url'] for r in reviews if r.get('body', '').strip()
-              and r.get('state') not in {'PENDING'} and timestamp(r['submitted_at']) < cutoff}
+    actual_findings = [(c['html_url'], timestamp(c['created_at'])) for c in comments]
+    actual_findings += [(r['html_url'], timestamp(r['submitted_at'])) for r in reviews if r.get('body', '').strip()
+                        and r.get('state') not in {'PENDING'} and timestamp(r['submitted_at']) < cutoff]
+    known = {url for url, _ in actual_findings}
+    # Covering a predictable URL does not prove its content was inspected.
+    # Use the same complete finding set for coverage and strict chronology,
+    # including selected receipts and findings under every completion route.
+    findings_precede_review = reviewed_at is not None and all(created < reviewed_at for _, created in actual_findings)
     valid_dispositions = isinstance(dispositions, list)
     covered = set()
     for finding in dispositions if valid_dispositions else []:
@@ -460,7 +467,7 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
         covered.add(finding['url'])
     evidence['findings_disposed'] = (evidence.get('findings_disposed') is True
                                      and reviewed.get('findings_disposed') is True
-                                     and valid_dispositions and known <= covered)
+                                     and valid_dispositions and known <= covered and findings_precede_review)
     if evidence['native_required']:
         native = reviewed.get('native', {})
         families = ['ios-build-test / ios-build-test (iPhone)', 'ios-build-test / ios-build-test (iPad)']

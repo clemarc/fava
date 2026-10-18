@@ -453,6 +453,9 @@ Git. Mutable activity summaries and PR-root reactions cannot prove completion.
 The exact stable completion sentence supplies the verdict; any same-line closing
 phrase and footer remain review content requiring independent disposition.
 Completion proof never asserts that the receipt contains no findings.
+Every comment creation and Review submission included in finding coverage must
+strictly precede the immutable independent report. A pre-listed URL cannot
+dispose content created at or after that report; refresh independent review.
 Bot issue comments require finding dispositions for every proof route, including
 ordinary Reviews and request reactions; selecting or omitting a receipt cannot
 hide another finding. These checks add a supported evidence format without

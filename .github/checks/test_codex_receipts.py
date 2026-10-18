@@ -1,5 +1,6 @@
 """Immutable Codex completion receipts, exact SHA binding and retained gates."""
 import copy
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -179,10 +180,14 @@ class ReceiptAssessmentTests(unittest.TestCase):
                                             head=self.case.head, target=self.case.target)]
         self.reactions = []
         self.issue_comments = []
+        self.independent_comments = {}
         original = self.case.api
 
         def api(*args):
             endpoint = args[-1]
+            for ident, comment in self.independent_comments.items():
+                if endpoint.endswith(f'/comments/{ident}'):
+                    return comment
             if endpoint.endswith('/issues/10/comments?per_page=100'):
                 return [self.issue_comments]
             if endpoint.endswith('/comments/125/reactions'):
@@ -193,6 +198,73 @@ class ReceiptAssessmentTests(unittest.TestCase):
                 return self.receipt
             return original(*args)
         self.case.api = api
+
+    def retain_independent_report(self, ident, seconds):
+        url = f'https://github.com/clemarc/fava/pull/10#issuecomment-{ident}'
+        self.independent_comments[ident] = dict(self.case.review_comment, id=ident,
+                                                html_url=url, created_at=self.case.at(seconds),
+                                                updated_at=self.case.at(seconds),
+                                                body=json.dumps(self.case.review))
+        self.case.report.update(independent_review_comment=ident, independent_review_url=url)
+
+    def assert_prelisted_finding_requires_later_independent_report(self):
+        published_clock = self.case.clock
+        self.case.complete()
+        for offset in [2, 3, 4]:
+            with self.subTest(independent_offset=offset):
+                # Each alternative retains a separate immutable JSON comment.
+                # Its prelisted URL cannot establish inspection of future content.
+                self.retain_independent_report(130 + offset, published_clock + offset)
+                for errors in [self.case.assess(), self.case.reconcile_completion()]:
+                    if offset <= 3:
+                        self.assertTrue(any('findings_disposed' in e for e in errors), errors)
+                    else:
+                        self.assertEqual(errors, [])
+
+    def test_prelisted_receipt_url_requires_strictly_later_independent_report(self):
+        self.assert_prelisted_finding_requires_later_independent_report()
+
+    def test_prelisted_inline_issue_and_review_findings_require_later_report_for_each_proof(self):
+        self.case.report.pop('codex_receipt_comment')
+        published_clock = self.case.clock
+        event_time = self.case.at(published_clock + 3)
+        self.case.complete()
+        for proof in ['review', 'reaction']:
+            for kind in ['inline', 'issue', 'review']:
+                with self.subTest(proof=proof, kind=kind):
+                    self.case.bot = []
+                    self.case.comments = []
+                    self.issue_comments = []
+                    self.reactions = []
+                    if proof == 'review':
+                        self.case.bot = [dict(user={'login': BOT}, commit_id=self.case.head,
+                                              state='COMMENTED', submitted_at=event_time, body='',
+                                              html_url='https://github.com/clemarc/fava/pull/10#pullrequestreview-1')]
+                    else:
+                        self.reactions = [dict(content='+1', user={'login': BOT}, created_at=event_time)]
+                    url = 'https://github.com/clemarc/fava/pull/10#' + kind + '-finding'
+                    body = '[P1] Synthetic correctness finding requiring independent inspection.'
+                    if kind == 'review':
+                        self.case.bot.append(dict(user={'login': 'independent-finding-reviewer'}, commit_id=self.case.head,
+                                                  state='CHANGES_REQUESTED', submitted_at=event_time,
+                                                  body=body, html_url=url))
+                    else:
+                        comment = dict(user={'login': BOT}, created_at=event_time, html_url=url, body=body)
+                        if kind == 'inline':
+                            self.case.comments = [comment]
+                        else:
+                            self.issue_comments = [comment]
+                    self.case.review['findings'] = [dict(url=url, head=self.case.head, target=self.case.target,
+                                                        disposition='not-actionable', rationale='Independent inspection '
+                                                        'found this synthetic finding concerns deferred scope.',
+                                                        evidence=[url])]
+                    for offset in [2, 3, 4]:
+                        self.retain_independent_report(140 + offset, published_clock + offset)
+                        for errors in [self.case.assess(), self.case.reconcile_completion()]:
+                            if offset <= 3:
+                                self.assertTrue(any('findings_disposed' in e for e in errors), errors)
+                            else:
+                                self.assertEqual(errors, [])
 
     def test_full_signed_assessment_accepts_receipt_and_reconciles_retained_history(self):
         self.assertEqual(self.case.assess(), [])
