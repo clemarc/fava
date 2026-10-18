@@ -135,6 +135,44 @@ def fresh_bot_reaction(request, reactions, head, number):
         return False
 
 
+def fresh_bot_receipt(root, request, receipt, head, number, head_time, report_time):
+    """Recognize only the immutable v1 completed-review receipt for this head.
+
+    An abbreviated reviewed SHA must resolve uniquely among local Git objects.
+    The caller has fetched the actual PR head; a copied prefix, stale receipt,
+    mutable summary or reaction on the PR root cannot supply this proof.
+    """
+    try:
+        if (not re.fullmatch(r'[0-9a-f]{40}', head)
+                or not immutable_comment(request, number, report_time, head_time)
+                or not re.search(r'(?m)^@codex review(?:\s|$)', request.get('body', ''))
+                or re.findall(r'\b[0-9a-f]{40}\b', request.get('body', '')) != [head]
+                or not immutable_comment(receipt, number, report_time, timestamp(request['created_at']),
+                                         actor='chatgpt-codex-connector[bot]')
+                or receipt.get('user', {}).get('type') != 'Bot'
+                or receipt.get('performed_via_github_app', {}).get('slug') != 'chatgpt-codex-connector'
+                or receipt.get('performed_via_github_app', {}).get('id') != 1144995
+                or type(receipt.get('id')) is not int or receipt['id'] <= 0
+                or receipt.get('html_url') != f'https://github.com/clemarc/fava/pull/{number}#issuecomment-{receipt["id"]}'):
+            return False
+        body = receipt.get('body', '')
+        # Keep the stable positive verdict exact. Only observed positive suffixes
+        # are decoration; arbitrary trailing prose could contradict the verdict.
+        match = re.fullmatch(
+            r"<!-- codex-review-receipt:v1 -->\n\n"
+            r"Codex Review: Didn't find any major issues\. (?:Nice work!|Delightful!|Swish!)\n\n"
+            r'\*\*Reviewed commit:\*\* `([0-9a-f]{10,40})`'
+            r'(?:\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n.*\n</details>)?\s*',
+            body, re.S)
+        if not match or body.count('codex-review-receipt:') != 1 or body.count('**Reviewed commit:**') != 1:
+            return False
+        prefix = match[1]
+        return (head.startswith(prefix)
+                and sdd.git(root, 'rev-parse', '--disambiguate=' + prefix).splitlines() == [head])
+    except (KeyError, ValueError, TypeError, AttributeError, subprocess.CalledProcessError):
+        return False
+
+
 def evaluate(evidence):
     errors = []
     head, target = evidence.get('head'), evidence.get('target')
@@ -346,6 +384,13 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
     comments = [c for page in threads for c in page]
     reviews = github('api', '--paginate', '--slurp', f'repos/clemarc/fava/pulls/{number}/reviews?per_page=100')
     reviews = [r for page in reviews for r in page]
+    # Bot findings also use issue comments. Enumerate them independently of the
+    # chosen completion proof; omitting a receipt key cannot hide actual findings.
+    # Mutable summaries remain review content, never completion proof.
+    issue_pages = github('api', '--paginate', '--slurp',
+                         f'repos/clemarc/fava/issues/{number}/comments?per_page=100')
+    comments += [c for page in issue_pages for c in page
+                 if c.get('user', {}).get('login') == 'chatgpt-codex-connector[bot]']
     evidence['codex_configured'] = True  # Current repository configuration; do not silently bypass.
     report_time = timestamp(report['created_at'])
     bot = [r for r in reviews if r['user']['login'] == 'chatgpt-codex-connector[bot]' and r['commit_id'] == head
@@ -363,6 +408,20 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
         reactions = [r for r in reactions if head_time < timestamp(r['created_at']) < report_time]
         if immutable_comment(request, number, report_time, head_time) and fresh_bot_reaction(request, reactions, head, number):
             evidence['codex_review_head'], evidence['codex_review_complete'] = head, True
+    # New bot completions can be immutable issue-comment receipts rather than
+    # Review objects or request reactions. Retain their numeric comment key;
+    # validate actual API identity, exact head binding and fresh chronology.
+    receipt_id = evidence.get('codex_receipt_comment')
+    if type(receipt_id) is int and receipt_id > 0:
+        receipt = github('api', f'repos/clemarc/fava/issues/comments/{receipt_id}')
+        # A selected receipt is also actual review content. Existing independent
+        # finding dispositions still cover it, even when it cannot prove review.
+        if receipt.get('id') == receipt_id:
+            comments.append(receipt)
+        if request_id and receipt.get('id') == receipt_id:
+            request = github('api', f'repos/clemarc/fava/issues/comments/{request_id}')
+            if fresh_bot_receipt(root, request, receipt, head, number, head_time, report_time):
+                evidence['codex_review_head'], evidence['codex_review_complete'] = head, True
     # Include actual review findings known before integration; disposition cannot
     # be supplied by a favorable aggregate boolean. Later reviews are not a
     # retroactive authorization or invalidation of a historical checkpoint.
