@@ -20,6 +20,15 @@ struct RunRecord: Identifiable, Codable, Equatable {
     let startDate: Date
     let duration: TimeInterval
     let distance: WorkoutDistance?
+
+    func validateForHistory() throws {
+        guard startDate.timeIntervalSinceReferenceDate.isFinite, duration.isFinite, duration >= 0 else {
+            throw RunHistoryError.invalidRecord(id)
+        }
+        if let distance, !distance.value.isFinite || distance.value < 0 {
+            throw RunHistoryError.invalidRecord(id)
+        }
+    }
 }
 
 struct RunSnapshot: Codable, Equatable {

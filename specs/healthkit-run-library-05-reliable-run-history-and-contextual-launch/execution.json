@@ -27,7 +27,7 @@
   "retired_task_ids": [],
   "tasks": {
     "T001": {
-      "state": "pending",
+      "state": "working",
       "correction_cycles": 0,
       "dependencies": [],
       "paths": [
