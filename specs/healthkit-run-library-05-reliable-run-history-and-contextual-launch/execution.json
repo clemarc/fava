@@ -27,7 +27,7 @@
   "retired_task_ids": [],
   "tasks": {
     "T001": {
-      "state": "pending",
+      "state": "working",
       "correction_cycles": 0,
       "dependencies": [],
       "paths": [
@@ -45,7 +45,7 @@
         "FR-019"
       ],
       "stories": [],
-      "pr": null,
+      "pr": "https://github.com/clemarc/fava/pull/20",
       "merge_sha": null,
       "evidence": []
     },
@@ -418,7 +418,18 @@
       "evidence": []
     }
   },
-  "task_prs": {},
+  "task_prs": {
+    "20": {
+      "branch": "task/r3.5/t001",
+      "tasks": [
+        "T001"
+      ],
+      "correction_cycles": 0,
+      "heads": [
+        "60daec1f358483dcac0e35b959fb3ecd7b47c22c"
+      ]
+    }
+  },
   "parallel_groups": [],
   "shared_file_owners": {
     "Fava.xcodeproj/project.pbxproj": "coordinator; serialize task writers in dependency order",
@@ -458,6 +469,21 @@
         "https://github.com/clemarc/fava/pull/14",
         "https://github.com/clemarc/fava/pull/15",
         "https://github.com/clemarc/fava/pull/16"
+      ]
+    },
+    {
+      "id": "C002",
+      "kind": "task-registration",
+      "branch": "checkpoint/r3.5/c002",
+      "tasks": [
+        "T001"
+      ],
+      "task_pr": "https://github.com/clemarc/fava/pull/20",
+      "initial_head": "60daec1f358483dcac0e35b959fb3ecd7b47c22c",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/20",
+        "https://github.com/clemarc/fava/commit/60daec1f358483dcac0e35b959fb3ecd7b47c22c",
+        "https://github.com/clemarc/fava/pull/17#issuecomment-6268356336"
       ]
     }
   ],
