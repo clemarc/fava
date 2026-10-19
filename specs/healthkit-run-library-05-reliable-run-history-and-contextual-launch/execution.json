@@ -22,8 +22,8 @@
       }
     }
   },
-  "planning_revision": null,
-  "state": "preparing",
+  "planning_revision": "9a2d3272a0e3d88952946459d7864b72affdc62f",
+  "state": "implementing",
   "retired_task_ids": [],
   "tasks": {
     "T001": {
@@ -444,7 +444,23 @@
     "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/quickstart.md": "coordinator; serialize task writers in dependency order",
     "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/verification.md": "coordinator; serialize task writers in dependency order"
   },
-  "checkpoints": [],
+  "checkpoints": [
+    {
+      "id": "C001",
+      "kind": "planning-registration",
+      "branch": "checkpoint/r3.5/c001",
+      "planning_revision": "9a2d3272a0e3d88952946459d7864b72affdc62f",
+      "preparation_pr": "https://github.com/clemarc/fava/pull/14",
+      "governance_adoption": "48fb3cf0823d079025b5b24243ecad9dce4c0c99",
+      "synchronization_pr": "https://github.com/clemarc/fava/pull/16",
+      "synchronization_merge": "f6ae3e553ea13b1cdc991b8a999939fdc7531465",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/14",
+        "https://github.com/clemarc/fava/pull/15",
+        "https://github.com/clemarc/fava/pull/16"
+      ]
+    }
+  ],
   "findings": [
     {
       "id": "PREP-001",
