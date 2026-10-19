@@ -443,6 +443,26 @@ dispositions are rechecked using actual GitHub reviews/comments. Current rules
 are checked at resume; GitHub does not supply a historical rules snapshot here.
 Shared owner login still cannot technically distinguish human and agent actions.
 
+Codex can also complete review with an immutable `codex-review-receipt:v1`
+issue comment. Retain its numeric `codex_receipt_comment` alongside the fresh
+single-full-SHA `codex_request_comment`. The assessor verifies the actual bot
+and GitHub App identity, same PR, unchanged comments, recognized positive verdict
+and strict head → request → receipt → coordinator-report chronology. The receipt's
+10–40 digit reviewed prefix must resolve uniquely to the full inspected head in
+Git. Mutable activity summaries and PR-root reactions cannot prove completion.
+The exact stable completion sentence supplies the verdict; any same-line closing
+phrase and footer remain review content requiring independent disposition.
+Completion proof never asserts that the receipt contains no findings.
+Every comment creation and Review submission included in finding coverage must
+strictly precede the immutable independent report. A pre-listed URL cannot
+dispose content created at or after that report; refresh independent review.
+Findings timestamped exactly at a retained integration cutoff are ambiguous and
+remain included; only strictly later events are excluded from historical proof.
+Bot issue comments require finding dispositions for every proof route, including
+ordinary Reviews and request reactions; selecting or omitting a receipt cannot
+hide another finding. These checks add a supported evidence format without
+waiving independent review, current CI/native results or finding resolution.
+
 ### Protection provenance and aggregate history
 
 Before returning registration-required, task resume verifies signatures and
