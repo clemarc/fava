@@ -93,6 +93,7 @@ class RetainedGateTests(fixtures.SignedLifecycleTests):
         self.bot = [dict(user={'login': 'chatgpt-codex-connector[bot]'}, commit_id=self.head,
                          state='COMMENTED', submitted_at=self.at(now + 3), body='', html_url='https://github.com/review/1')]
         self.comments = []
+        self.issue_comments = []
         self.pr = dict(number=10, created_at=self.opened, head={'sha':self.head, 'ref':'task/r3.5/t003'},
                        base={'ref':'milestone/r3.5'}, merged_at=None)
         self.context = dict(id='R3.5', feature=self.feature, ledger=self.feature + '/execution.json',
@@ -121,6 +122,7 @@ class RetainedGateTests(fixtures.SignedLifecycleTests):
             return {'commit': {'verification': {'verified':valid, 'reason':'valid' if valid else 'unsigned'}}}
         if endpoint.endswith('/pulls/10'): return self.pr
         if '/pulls/10/comments?' in endpoint: return [self.comments]
+        if '/issues/10/comments?' in endpoint: return [self.issue_comments]
         if '/pulls/10/reviews?' in endpoint: return [self.bot]
         if endpoint.endswith('/comments/123'): return dict(self.report_comment, body=json.dumps(self.report))
         if endpoint.endswith('/comments/321'): return self.authorization
