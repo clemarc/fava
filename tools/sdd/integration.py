@@ -135,6 +135,45 @@ def fresh_bot_reaction(request, reactions, head, number):
         return False
 
 
+def fresh_bot_receipt(root, request, receipt, head, number, head_time, report_time):
+    """Recognize only the immutable v1 completed-review receipt for this head.
+
+    An abbreviated reviewed SHA must resolve uniquely among local Git objects.
+    The caller has fetched the actual PR head; a copied prefix, stale receipt,
+    mutable summary or reaction on the PR root cannot supply this proof.
+    """
+    try:
+        if (not re.fullmatch(r'[0-9a-f]{40}', head)
+                or not immutable_comment(request, number, report_time, head_time)
+                or not re.search(r'(?m)^@codex review(?:\s|$)', request.get('body', ''))
+                or re.findall(r'\b[0-9a-f]{40}\b', request.get('body', '')) != [head]
+                or not immutable_comment(receipt, number, report_time, timestamp(request['created_at']),
+                                         actor='chatgpt-codex-connector[bot]')
+                or receipt.get('user', {}).get('type') != 'Bot'
+                or receipt.get('performed_via_github_app', {}).get('slug') != 'chatgpt-codex-connector'
+                or receipt.get('performed_via_github_app', {}).get('id') != 1144995
+                or type(receipt.get('id')) is not int or receipt['id'] <= 0
+                or receipt.get('html_url') != f'https://github.com/clemarc/fava/pull/{number}#issuecomment-{receipt["id"]}'):
+            return False
+        body = receipt.get('body', '')
+        # The exact stable verdict proves completion, not absence of findings.
+        # Same-line closing content remains part of the independently reviewed
+        # receipt; the finding-disposition gate still covers the whole body.
+        match = re.fullmatch(
+            r"<!-- codex-review-receipt:v1 -->\n\n"
+            r"Codex Review: Didn't find any major issues\.(?: [^\r\n]*)?\n\n"
+            r'\*\*Reviewed commit:\*\* `([0-9a-f]{10,40})`'
+            r'(?:\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n.*\n</details>)?\s*',
+            body, re.S)
+        if not match or body.count('codex-review-receipt:') != 1 or body.count('**Reviewed commit:**') != 1:
+            return False
+        prefix = match[1]
+        return (head.startswith(prefix)
+                and sdd.git(root, 'rev-parse', '--disambiguate=' + prefix).splitlines() == [head])
+    except (KeyError, ValueError, TypeError, AttributeError, subprocess.CalledProcessError):
+        return False
+
+
 def evaluate(evidence):
     errors = []
     head, target = evidence.get('head'), evidence.get('target')
@@ -346,6 +385,13 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
     comments = [c for page in threads for c in page]
     reviews = github('api', '--paginate', '--slurp', f'repos/clemarc/fava/pulls/{number}/reviews?per_page=100')
     reviews = [r for page in reviews for r in page]
+    # Bot findings also use issue comments. Enumerate them independently of the
+    # chosen completion proof; omitting a receipt key cannot hide actual findings.
+    # Mutable summaries remain review content, never completion proof.
+    issue_pages = github('api', '--paginate', '--slurp',
+                         f'repos/clemarc/fava/issues/{number}/comments?per_page=100')
+    comments += [c for page in issue_pages for c in page
+                 if c.get('user', {}).get('login') == 'chatgpt-codex-connector[bot]']
     evidence['codex_configured'] = True  # Current repository configuration; do not silently bypass.
     report_time = timestamp(report['created_at'])
     bot = [r for r in reviews if r['user']['login'] == 'chatgpt-codex-connector[bot]' and r['commit_id'] == head
@@ -363,17 +409,32 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
         reactions = [r for r in reactions if head_time < timestamp(r['created_at']) < report_time]
         if immutable_comment(request, number, report_time, head_time) and fresh_bot_reaction(request, reactions, head, number):
             evidence['codex_review_head'], evidence['codex_review_complete'] = head, True
-    # Include actual review findings known before integration; disposition cannot
-    # be supplied by a favorable aggregate boolean. Later reviews are not a
-    # retroactive authorization or invalidation of a historical checkpoint.
-    comments = [c for c in comments if timestamp(c['created_at']) < cutoff]
+    # New bot completions can be immutable issue-comment receipts rather than
+    # Review objects or request reactions. Retain their numeric comment key;
+    # validate actual API identity, exact head binding and fresh chronology.
+    receipt_id = evidence.get('codex_receipt_comment')
+    if type(receipt_id) is int and receipt_id > 0:
+        receipt = github('api', f'repos/clemarc/fava/issues/comments/{receipt_id}')
+        # A selected receipt is also actual review content. Existing independent
+        # finding dispositions still cover it, even when it cannot prove review.
+        if receipt.get('id') == receipt_id:
+            comments.append(receipt)
+        if request_id and receipt.get('id') == receipt_id:
+            request = github('api', f'repos/clemarc/fava/issues/comments/{request_id}')
+            if fresh_bot_receipt(root, request, receipt, head, number, head_time, report_time):
+                evidence['codex_review_head'], evidence['codex_review_complete'] = head, True
+    # Include findings at the integration cutoff too: same-second ordering is
+    # ambiguous. Strictly later findings do not change a historical checkpoint.
+    comments = [c for c in comments if timestamp(c['created_at']) <= cutoff]
     evidence['review_comments'] = [{'url': c['html_url'], 'body': c['body']} for c in comments]
     reviewed = {}
+    reviewed_at = None
     evidence['independent_review'] = False
     if evidence.get('independent_review_comment'):
         independent = github('api', f'repos/clemarc/fava/issues/comments/{evidence["independent_review_comment"]}')
         if immutable_comment(independent, number, report_time, head_time) and independent['html_url'] == review:
             reviewed = json.loads(independent['body'])
+            reviewed_at = timestamp(independent['created_at'])
     elif evidence.get('independent_review_id'):
         independent = github('api', f'repos/clemarc/fava/pulls/{number}/reviews/{evidence["independent_review_id"]}')
         # GitHub review bodies are editable without an exposed edit timestamp.
@@ -386,9 +447,14 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
                                          and reviewed.get('head') == head and reviewed.get('target') == target)
     evidence['semantic_drift'] = evidence.get('semantic_drift') is True and reviewed.get('semantic_drift') is True
     dispositions = reviewed.get('findings')
-    known = {c['html_url'] for c in comments}
-    known |= {r['html_url'] for r in reviews if r.get('body', '').strip()
-              and r.get('state') not in {'PENDING'} and timestamp(r['submitted_at']) < cutoff}
+    actual_findings = [(c['html_url'], timestamp(c['created_at'])) for c in comments]
+    actual_findings += [(r['html_url'], timestamp(r['submitted_at'])) for r in reviews if r.get('body', '').strip()
+                        and r.get('state') not in {'PENDING'} and timestamp(r['submitted_at']) <= cutoff]
+    known = {url for url, _ in actual_findings}
+    # Covering a predictable URL does not prove its content was inspected.
+    # Use the same complete finding set for coverage and strict chronology,
+    # including selected receipts and findings under every completion route.
+    findings_precede_review = reviewed_at is not None and all(created < reviewed_at for _, created in actual_findings)
     valid_dispositions = isinstance(dispositions, list)
     covered = set()
     for finding in dispositions if valid_dispositions else []:
@@ -400,7 +466,7 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
         covered.add(finding['url'])
     evidence['findings_disposed'] = (evidence.get('findings_disposed') is True
                                      and reviewed.get('findings_disposed') is True
-                                     and valid_dispositions and known <= covered)
+                                     and valid_dispositions and known <= covered and findings_precede_review)
     if evidence['native_required']:
         native = reviewed.get('native', {})
         families = ['ios-build-test / ios-build-test (iPhone)', 'ios-build-test / ios-build-test (iPad)']
