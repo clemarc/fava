@@ -7,15 +7,45 @@ enum RunLibraryPresentation {
             a.startDate == b.startDate ? a.id.uuidString < b.id.uuidString : a.startDate > b.startDate
         }
     }
-    static func notice(_ state: IngestionState) -> String {
+    static func notice(_ state: IngestionState, hasSavedRows: Bool) -> String {
         switch state {
-        case .notRequested: return "No read requested yet."
+        case .notRequested: return "No read requested in this session."
         case .loading: return "Loading running workouts…"
-        case .successfulNonempty: return "Runs loaded from the latest read."
-        case .successfulEmpty: return "No running workouts were returned by this read."
         case .failed: return "Running workouts could not be loaded. You can try again."
         case .unavailable: return "HealthKit is unavailable on this device."
+        case .sourceSuccess(let count, savingFailed: true):
+            return "This read returned \(count) \(count == 1 ? "run" : "runs"), but they could not be saved locally. Saved history is unchanged. Retry performs a new read."
+        case .sourceSuccess(0, savingFailed: false):
+            return "This read returned no accessible runs." + (hasSavedRows ? " Displayed runs were saved earlier." : "")
+        case .sourceSuccess(let count, savingFailed: false):
+            return "This read returned \(count) \(count == 1 ? "run" : "runs"). The observation was saved."
         }
+    }
+
+    static func savedHistoryCount(_ history: RetainedRunHistory?) -> String {
+        let count = history?.runs.count ?? 0
+        return "Saved history: \(count) \(count == 1 ? "run" : "runs")."
+    }
+
+    static func savedObservation(_ history: RetainedRunHistory?, isPrior: Bool, locale: Locale, timeZone: TimeZone) -> String {
+        guard let observation = history?.latestSavedObservation else { return "No saved read observation." }
+        let count = observation.returnedIDs.count
+        let prefix = isPrior ? "Prior saved read" : "Latest saved read"
+        let time = observation.observedAt.map { "Saved observation: " + RunFormatting.start($0, locale: locale, timeZone: timeZone) + "." }
+            ?? "Saved observation time unknown."
+        return "\(prefix) returned \(count) \(count == 1 ? "run" : "runs"). \(time)"
+    }
+
+    static func rowProvenance(_ id: UUID, history: RetainedRunHistory?, locale: Locale, timeZone: TimeZone) -> String {
+        let membership: String
+        if let observation = history?.latestSavedObservation {
+            membership = observation.returnedIDs.contains(id) ? "Returned by latest saved read." : "Unobserved in latest saved read."
+        } else {
+            membership = "Latest saved read membership unknown."
+        }
+        let date = history?.lastObservedAtByID[id]
+        let time = date.map { RunFormatting.start($0, locale: locale, timeZone: timeZone) } ?? "unknown"
+        return "\(membership) Last observed: \(time)."
     }
 }
 

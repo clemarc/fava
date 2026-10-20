@@ -14,27 +14,37 @@ struct RunLibraryView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(RunLibraryPresentation.notice(ingestion.state))
+                    Text(RunLibraryPresentation.notice(ingestion.state, hasSavedRows: !(ingestion.savedHistory?.runs.isEmpty ?? true)))
                         .accessibilityIdentifier("library-status")
                     if ingestion.state == .loading { ProgressView("Reading running workouts") }
-                    if ingestion.isPreviouslyLoaded, let saved = ingestion.savedSnapshot {
-                        Text(saved.runs.isEmpty ? "Previously loaded empty collection." : "Previously loaded runs.")
-                            .foregroundStyle(.secondary)
+                    if let message = ingestion.localRecoveryMessage {
+                        Text(message).accessibilityIdentifier("local-recovery")
+                        Button("Retry saved history", action: ingestion.retryLocalLoad)
+                            .disabled(ingestion.isTransportActive)
+                            .accessibilityIdentifier("retry-saved-history")
+                    } else {
+                        Text(RunLibraryPresentation.savedHistoryCount(ingestion.savedHistory))
+                            .accessibilityIdentifier("saved-history-count")
+                        Text(RunLibraryPresentation.savedObservation(ingestion.savedHistory, isPrior: ingestion.isPriorSavedObservation,
+                                                                   locale: locale, timeZone: timeZone))
                             .accessibilityIdentifier("saved-provenance")
                     }
-                    if let notice = ingestion.cacheNotice { Text(notice).foregroundStyle(.secondary) }
-                    Button(ingestion.state == .failed ? "Retry loading runs" : "Refresh runs", action: ingestion.requestRead)
+                    if ingestion.isTransportActive, ingestion.state != .loading {
+                        Text("The previous read is finishing. Wait before starting another read.")
+                    }
+                    Button(ingestion.state.offersRetry ? "Retry loading runs" : "Refresh runs", action: ingestion.requestRead)
                         .disabled(!ingestion.canRead)
                         .accessibilityIdentifier("refresh-runs")
-                        .accessibilityHint(ingestion.state == .loading ? "A read is already in progress." : "Read currently accessible running workouts without requesting authorization.")
-                    if ingestion.state == .successfulEmpty {
-                        Text("You can return to Fava to deliberately request workout access.").foregroundStyle(.secondary)
+                        .accessibilityHint(ingestion.isTransportActive ? "A read is already in progress." : (ingestion.localRecoveryMessage != nil ? "Retry saved history first." : "Read currently accessible running workouts without requesting authorization."))
+                    if case .sourceSuccess(0, savingFailed: false) = ingestion.state {
+                        Text("If earlier access choices need changing, use Health or system Settings, then return and Refresh. You can also return to Fava to deliberately request workout access.")
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .padding(.vertical, 8)
             }
             Section {
-                ForEach(RunLibraryPresentation.rows(ingestion.savedSnapshot?.runs ?? [])) { run in
+                ForEach(RunLibraryPresentation.rows(ingestion.savedHistory?.runs ?? [])) { run in
                     Button {
                         selection.select(run.id)
                         UIAccessibility.post(notification: .announcement, argument: "Run selected.")
@@ -43,6 +53,8 @@ struct RunLibraryView: View {
                             Text(RunFormatting.start(run.startDate, locale: locale, timeZone: timeZone)).font(.headline)
                             Text("Duration: " + RunFormatting.duration(run.duration))
                             Text(RunFormatting.distance(run.distance, unit: settings.resolvedUnit(locale: locale), locale: locale))
+                            Text(RunLibraryPresentation.rowProvenance(run.id, history: ingestion.savedHistory, locale: locale, timeZone: timeZone))
+                                .font(.subheadline)
                             if selection.selectedID == run.id {
                                 Label("Selected", systemImage: "checkmark").foregroundStyle(.tint)
                             }
@@ -50,6 +62,7 @@ struct RunLibraryView: View {
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 8)
+                        .contentShape(Rectangle())
                         .accessibilityElement(children: .combine)
                     }
                     .buttonStyle(.plain)
@@ -69,7 +82,10 @@ struct RunLibraryView: View {
         }
         .sheet(isPresented: $showingSettings) { DistanceSettingsView(settings: settings) }
         .onChange(of: ingestion.state) { _, state in
-            UIAccessibility.post(notification: .announcement, argument: RunLibraryPresentation.notice(state))
+            UIAccessibility.post(notification: .announcement, argument: RunLibraryPresentation.notice(state, hasSavedRows: !(ingestion.savedHistory?.runs.isEmpty ?? true)))
+        }
+        .onChange(of: ingestion.localRecoveryMessage) { _, message in
+            if let message { UIAccessibility.post(notification: .announcement, argument: message) }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { ingestion.updateAvailability() }

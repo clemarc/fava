@@ -1,5 +1,6 @@
 import Foundation
 
+// Retained for schema-1 caller compatibility; production ingestion uses RunHistoryStoring.
 protocol RunSnapshotStoring {
     func load() throws -> RunSnapshot?
     func save(_ snapshot: RunSnapshot) throws

@@ -10,7 +10,8 @@ struct FavaApp: App {
     init() {
         var provider: HealthAccessProviding = HealthKitAccess()
         var reader: WorkoutReading = HealthKitWorkoutReader()
-        var cache: RunSnapshotStoring = FileRunSnapshotStore()
+        var cache: RunHistoryStoring = FileRunSnapshotStore()
+        var clock: () -> Date = Date.init
         var defaults = UserDefaults.standard
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
@@ -22,13 +23,15 @@ struct FavaApp: App {
         if let index = arguments.firstIndex(of: "--run-fixture"), arguments.indices.contains(index + 1) {
             let fixture = arguments[index + 1]
             let session = arguments.firstIndex(of: "--test-session").flatMap { arguments.indices.contains($0 + 1) ? arguments[$0 + 1] : nil } ?? UUID().uuidString
-            reader = SyntheticWorkoutReader(fixture: fixture)
+            let fixtureReader = SyntheticWorkoutReader(fixture: fixture)
+            reader = fixtureReader
+            clock = { fixtureReader.observationTime }
             cache = SyntheticWorkoutReader.snapshotStore(fixture: fixture, session: session)
             defaults = UserDefaults(suiteName: "Fava-UITests-" + session) ?? .standard
         }
         #endif
         _access = StateObject(wrappedValue: HealthAccessModel(provider: provider))
-        _ingestion = StateObject(wrappedValue: RunIngestionModel(reader: reader, snapshotStore: cache))
+        _ingestion = StateObject(wrappedValue: RunIngestionModel(reader: reader, historyStore: cache, clock: clock))
         _settings = StateObject(wrappedValue: DistanceSettings(defaults: defaults))
     }
 

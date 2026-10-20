@@ -6,6 +6,8 @@ struct RootView: View {
     @EnvironmentObject private var ingestion: RunIngestionModel
     @State private var libraryVisible = false
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.locale) private var locale
+    @Environment(\.timeZone) private var timeZone
 
     var body: some View {
         NavigationStack {
@@ -14,6 +16,16 @@ struct RootView: View {
                     Text("Your running workouts, together.").font(.title).bold()
                     Text("Fava helps you browse running workouts from Apple Health on your iPhone and iPad.")
                     Text("Workout-record read access lets Fava use your running workouts. You choose when to request access. Fava does not write health data.")
+                    if let message = ingestion.localRecoveryMessage {
+                        Text(message).accessibilityIdentifier("setup-local-recovery")
+                        Button("Retry saved history", action: ingestion.retryLocalLoad)
+                            .disabled(ingestion.isTransportActive)
+                            .accessibilityIdentifier("setup-retry-saved-history")
+                    } else {
+                        Text(RunLibraryPresentation.savedObservation(ingestion.savedHistory, isPrior: ingestion.isPriorSavedObservation,
+                                                                   locale: locale, timeZone: timeZone))
+                            .accessibilityIdentifier("setup-saved-provenance")
+                    }
                     Text(access.state.message)
                         .accessibilityIdentifier("access-status")
                     if access.state == .requesting {
