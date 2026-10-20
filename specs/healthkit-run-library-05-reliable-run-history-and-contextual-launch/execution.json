@@ -58,7 +58,7 @@
       "integration_comment": 6285413011
     },
     "T002": {
-      "state": "pending",
+      "state": "working",
       "correction_cycles": 0,
       "dependencies": [
         "T001"

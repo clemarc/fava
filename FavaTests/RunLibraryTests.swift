@@ -69,19 +69,19 @@ final class RunLibraryTests: XCTestCase {
         XCTAssertEqual(settings.resolvedUnit(locale: english), .kilometres)
     }
 
-    func testPreferenceRelaunchDoesNotReadOrMutateSnapshot() {
+    func testPreferenceRelaunchDoesNotReadOrMutateHistory() throws {
         let suite = "FavaTests-" + UUID().uuidString
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let reader = RunIngestionTests.Reader(); let cache = RunIngestionTests.MemoryStore()
-        let record = fixtureRun(distance: WorkoutDistance(value: 1, unit: .miles)); cache.snapshot = RunSnapshot(runs: [record])
-        let ingestion = RunIngestionModel(reader: reader, snapshotStore: cache)
+        let record = fixtureRun(distance: WorkoutDistance(value: 1, unit: .miles)); cache.history = try RetainedRunHistory.adoptingLegacy(runs: [record], capturedAt: nil)
+        let ingestion = RunIngestionModel(reader: reader, historyStore: cache)
         let settings = DistanceSettings(defaults: defaults)
         settings.mode = .miles
         XCTAssertEqual(DistanceSettings(defaults: defaults).mode, .miles)
         settings.mode = .kilometres
         _ = RunFormatting.distance(record.distance, unit: settings.resolvedUnit(locale: english), locale: english)
-        XCTAssertEqual(ingestion.savedSnapshot?.runs, [record])
+        XCTAssertEqual(ingestion.savedHistory?.runs, [record])
         XCTAssertEqual(reader.reads, 0)
     }
 
@@ -93,8 +93,10 @@ final class RunLibraryTests: XCTestCase {
         XCTAssertEqual(handedOff, [a.id, b.id])
     }
 
-    func testSixAttemptNoticesAreDistinctAndNeutral() {
-        let states: [IngestionState] = [.notRequested, .loading, .successfulNonempty, .successfulEmpty, .failed, .unavailable]
+    func testSourceSaveAndPendingNoticesAreDistinctAndNeutral() {
+        let states: [IngestionState] = [.notRequested, .loading, .sourceSuccess(returnedCount: 2, savingFailed: false),
+            .sourceSuccess(returnedCount: 0, savingFailed: false), .failed, .unavailable,
+            .sourceSuccess(returnedCount: 2, savingFailed: true), .sourceSuccess(returnedCount: 0, savingFailed: true)]
         let messages = states.map(RunLibraryPresentation.notice)
         XCTAssertEqual(Set(messages).count, states.count)
         for message in messages {
@@ -102,23 +104,50 @@ final class RunLibraryTests: XCTestCase {
             XCTAssertFalse(message.lowercased().contains("granted"))
             XCTAssertFalse(message.lowercased().contains("never recorded"))
         }
+        let failedSave = RunLibraryPresentation.notice(.sourceSuccess(returnedCount: 0, savingFailed: true))
+        XCTAssertTrue(failedSave.contains("could not be saved"))
+        XCTAssertFalse(failedSave.contains("no accessible runs"))
     }
 
-    func testSavedRowsAndEmptyProvenanceSurviveLoadingFailureAndUnavailability() {
+    func testSavedRowsAndProvenanceSurviveLoadingFailureAndUnavailability() throws {
         for runs in [[fixtureRun()], []] {
-            let cache = RunIngestionTests.MemoryStore(); cache.snapshot = RunSnapshot(runs: runs)
-            let reader = RunIngestionTests.Reader();let ingestion = RunIngestionModel(reader: reader, snapshotStore: cache)
+            let cache = RunIngestionTests.MemoryStore()
+            cache.history = try RetainedRunHistory.adoptingLegacy(runs: runs, capturedAt: nil)
+            let reader = RunIngestionTests.Reader(); let ingestion = RunIngestionModel(reader: reader, historyStore: cache)
+            let prior = ingestion.savedHistory
             ingestion.requestRead()
             XCTAssertEqual(ingestion.state, .loading)
-            XCTAssertTrue(ingestion.isPreviouslyLoaded)
-            XCTAssertEqual(RunLibraryPresentation.rows(ingestion.savedSnapshot?.runs ?? []), runs)
-            reader.completion?(.failure(RunIngestionTests.Failure.synthetic))
+            XCTAssertTrue(ingestion.isPriorSavedObservation)
+            XCTAssertEqual(RunLibraryPresentation.rows(ingestion.savedHistory?.runs ?? []), runs)
+            reader.complete(.failure(RunIngestionTests.Failure.synthetic))
             XCTAssertEqual(ingestion.state, .failed)
-            XCTAssertEqual(ingestion.savedSnapshot?.runs, runs)
-            reader.isAvailable = false;ingestion.requestRead()
+            XCTAssertEqual(ingestion.savedHistory, prior)
+            reader.isAvailable = false; ingestion.requestRead()
             XCTAssertEqual(ingestion.state, .unavailable)
-            XCTAssertEqual(ingestion.savedSnapshot?.runs, runs)
-            XCTAssertTrue(ingestion.isPreviouslyLoaded)
+            XCTAssertEqual(ingestion.savedHistory, prior)
+            XCTAssertTrue(ingestion.isPriorSavedObservation)
         }
+    }
+
+    func testSavedCountsMembershipAndUnknownTimeAreIndependent() throws {
+        let a = fixtureRun(); let b = fixtureRun(); let c = fixtureRun()
+        let date = Date(timeIntervalSinceReferenceDate: 123_456)
+        let saved = try RetainedRunHistory(runs: [a, b, c], lastObservedAtByID: [b.id: date],
+            latestSavedObservation: SavedReadObservation(observedAt: date, returnedIDs: [b.id]))
+        let utc = TimeZone(secondsFromGMT: 0)!
+        let observation = RunLibraryPresentation.savedObservation(saved, isPrior: true, locale: english, timeZone: utc)
+        XCTAssertTrue(observation.contains("Prior saved read returned 1 run"))
+        XCTAssertEqual(RunLibraryPresentation.savedHistoryCount(saved), "Saved history: 3 runs.")
+        XCTAssertTrue(RunLibraryPresentation.rowProvenance(a.id, history: saved, locale: english, timeZone: utc).contains("Unobserved"))
+        XCTAssertTrue(RunLibraryPresentation.rowProvenance(a.id, history: saved, locale: english, timeZone: utc).contains("Last observed: unknown"))
+        XCTAssertTrue(RunLibraryPresentation.rowProvenance(b.id, history: saved, locale: english, timeZone: utc).contains("Returned by latest saved read"))
+        let untimed = try RetainedRunHistory.adoptingLegacy(runs: [a], capturedAt: nil)
+        XCTAssertTrue(RunLibraryPresentation.rowProvenance(a.id, history: untimed, locale: english, timeZone: utc).contains("Returned by latest saved read"))
+        XCTAssertTrue(RunLibraryPresentation.savedObservation(untimed, isPrior: true, locale: english, timeZone: utc).contains("time unknown"))
+        let unknown = try RetainedRunHistory(runs: [a])
+        XCTAssertTrue(RunLibraryPresentation.rowProvenance(a.id, history: unknown, locale: english, timeZone: utc).contains("membership unknown"))
+        XCTAssertEqual(RunLibraryPresentation.savedObservation(nil, isPrior: false, locale: english, timeZone: utc), "No saved read observation.")
+        let empty = try RetainedRunHistory.adoptingLegacy(runs: [], capturedAt: nil)
+        XCTAssertTrue(RunLibraryPresentation.savedObservation(empty, isPrior: true, locale: english, timeZone: utc).contains("Prior saved read returned 0 runs"))
     }
 }
