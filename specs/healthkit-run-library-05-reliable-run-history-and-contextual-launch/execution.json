@@ -58,7 +58,7 @@
       "integration_comment": 6285413011
     },
     "T002": {
-      "state": "pending",
+      "state": "working",
       "correction_cycles": 0,
       "dependencies": [
         "T001"
@@ -93,7 +93,7 @@
         "US3",
         "US1"
       ],
-      "pr": null,
+      "pr": "https://github.com/clemarc/fava/pull/24",
       "merge_sha": null,
       "evidence": []
     },
@@ -437,6 +437,16 @@
         "60daec1f358483dcac0e35b959fb3ecd7b47c22c",
         "0776f8a7333fb23692fa37ad24ae95802b9e8b83"
       ]
+    },
+    "24": {
+      "branch": "task/r3.5/t002",
+      "tasks": [
+        "T002"
+      ],
+      "correction_cycles": 0,
+      "heads": [
+        "e5e647f5b5ec9e64f4a4df799e0a2dce75456351"
+      ]
     }
   },
   "parallel_groups": [],
@@ -528,6 +538,21 @@
         "https://github.com/clemarc/fava/pull/20#issuecomment-6285366974",
         "https://github.com/clemarc/fava/actions/runs/39382174066/job/118494403535",
         "https://github.com/clemarc/fava/actions/runs/39382174066/job/118494403585"
+      ]
+    },
+    {
+      "id": "C005",
+      "kind": "task-registration",
+      "branch": "checkpoint/r3.5/c005",
+      "tasks": [
+        "T002"
+      ],
+      "task_pr": "https://github.com/clemarc/fava/pull/24",
+      "initial_head": "e5e647f5b5ec9e64f4a4df799e0a2dce75456351",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/24",
+        "https://github.com/clemarc/fava/commit/e5e647f5b5ec9e64f4a4df799e0a2dce75456351",
+        "https://github.com/clemarc/fava/pull/23#issuecomment-6285741640"
       ]
     }
   ],
@@ -650,8 +675,8 @@
   },
   "linear": {
     "state": "pending",
-    "verified_at": "2026-10-20T06:39:02.816175+00:00",
-    "source_revision": "c554a2ce91f6b5dba4203b7ea870adddf9ad33ad",
+    "verified_at": "2026-10-20T14:11:12.769693+00:00",
+    "source_revision": "9c8b5c18805ecc2263179c650ff9099d1a783b59",
     "project_id": "f823cc39-b818-460f-8682-bb4ec831885a",
     "milestone_id": "5f470b82-5ad7-40d8-a36d-eea3b2bf7dd3",
     "evidence": [
@@ -671,7 +696,9 @@
       "https://linear.app/clemarc/issue/FAV-50/r35-t010-us1-us2-us3-us4-extend-favauitestsrunlibraryuitestsswift-and",
       "https://linear.app/clemarc/issue/FAV-51/r35-t011-us1-us3-add-favauitestshistoryperformanceuitestsswift-and",
       "https://linear.app/clemarc/issue/FAV-52/r35-t012-us1-us2-us3-us4-validate-complete-regression-semantic-drift",
-      "https://github.com/clemarc/fava/pull/20#issuecomment-6285115195"
+      "https://github.com/clemarc/fava/pull/20#issuecomment-6285115195",
+      "https://github.com/clemarc/fava/pull/23#issuecomment-6285811407",
+      "https://github.com/clemarc/fava/pull/24#issuecomment-6292875556"
     ],
     "verified_items": [
       {
@@ -756,9 +783,9 @@
       }
     ],
     "pending_keys": [
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T001"
+      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002"
     ],
-    "actual_states": "Verified all 16 existing items: T001/FAV-41 In Progress; four stories and T002-T012 Todo. T001 Done projection awaits this canonical completion checkpoint integration.",
+    "actual_states": "All 16 existing items reverified: T001/FAV-41 Done; four stories and T002-T012 Todo. T002/FAV-42 In Progress projection awaits this canonical initial registration checkpoint integration.",
     "hierarchy": "T001 directly in milestone. T002 under US2/FAV-38, preserving US2/US3/US1 in its description. Other tasks use their first mapped story as parent, preserving every story mapping in descriptions.",
     "cli": "@schpet/linear-cli 3.0.0 through tools/sdd/linear_projection.py project()",
     "rendering": {
@@ -780,7 +807,8 @@
       "The next pass verified T003 and created FAV-44/T004, then stopped because the 200-character desired title ended in a space trimmed by Linear; keyed title/description/parent/state were reinspected.",
       "Final canonical dry-run retained existing keyed items with no definition changes; final apply verified all 16, without duplicates or pending keys.",
       "Owner-authorized round 4 changed only T002 definition/story parent. Dry-run found exactly T002 title/description/parent changes; apply verified all 16 current items, reparented FAV-42 to US2/FAV-38, retained stable keys, and confirmed all Todo with no pending keys.",
-      "Implementation dry-run found only T001 state drift; authorized apply verified all 16 existing keys/definitions/project/milestone/hierarchy, updated FAV-41 to In Progress and had no pending items or duplicates. After this completion checkpoint integrates, project T001 Done and retain the actual result in a later serialized checkpoint."
+      "Implementation dry-run found only T001 state drift; authorized apply verified all 16 existing keys/definitions/project/milestone/hierarchy, updated FAV-41 to In Progress and had no pending items or duplicates. After this completion checkpoint integrates, project T001 Done and retain the actual result in a later serialized checkpoint.",
+      "After canonical C004 integration, projected FAV-41/T001 Done with all 16 verified and no pending items. At T002 registration, fresh dry-run found no field drift and the pinned helper reverified all 16 existing keys/definitions/project/milestone/hierarchy without updates. T002 remains actually Todo until this registration integrates; its In Progress projection remains pending."
     ],
     "source_revisions": {
       "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US1": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
