@@ -28,7 +28,7 @@
   "tasks": {
     "T001": {
       "state": "working",
-      "correction_cycles": 0,
+      "correction_cycles": 1,
       "dependencies": [],
       "paths": [
         "Fava.xcodeproj/project.pbxproj",
@@ -424,9 +424,10 @@
       "tasks": [
         "T001"
       ],
-      "correction_cycles": 0,
+      "correction_cycles": 1,
       "heads": [
-        "60daec1f358483dcac0e35b959fb3ecd7b47c22c"
+        "60daec1f358483dcac0e35b959fb3ecd7b47c22c",
+        "0776f8a7333fb23692fa37ad24ae95802b9e8b83"
       ]
     }
   },
@@ -484,6 +485,21 @@
         "https://github.com/clemarc/fava/pull/20",
         "https://github.com/clemarc/fava/commit/60daec1f358483dcac0e35b959fb3ecd7b47c22c",
         "https://github.com/clemarc/fava/pull/17#issuecomment-6268356336"
+      ]
+    },
+    {
+      "id": "C003",
+      "kind": "correction-reservation",
+      "branch": "checkpoint/r3.5/c003",
+      "tasks": [
+        "T001"
+      ],
+      "task_pr": "https://github.com/clemarc/fava/pull/20",
+      "correction_cycles": 1,
+      "prior_head": "0776f8a7333fb23692fa37ad24ae95802b9e8b83",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/20#discussion_r4318249798",
+        "https://github.com/clemarc/fava/pull/20#pullrequestreview-5577019394"
       ]
     }
   ],
@@ -575,6 +591,17 @@
       ],
       "proposal": "Add [US2] [US3] [US1] to T002, set identical ordered ledger stories, append DEC/report rationale, reproject existing FAV-42 under US2/FAV-38; no behavior/identity/FR/path/dependency changes. Patch validated with SDD/tooling/ledger and desired parent preview.",
       "required_owner_decision": "One extra preparation correction round, absolute cap 4, through actual new unedited owner JSON comment on PR14."
+    },
+    {
+      "task": "T001",
+      "pr": "https://github.com/clemarc/fava/pull/20",
+      "url": "https://github.com/clemarc/fava/pull/20#discussion_r4318249798",
+      "severity": "P2",
+      "head": "0776f8a7333fb23692fa37ad24ae95802b9e8b83",
+      "state": "open",
+      "assessment": "Valid complete-read consistency gap: returned identities with a known latest observation time must carry exactly that per-row time.",
+      "proposed_fix": "Validate matching per-row timestamps for every returned ID when observedAt is known; reject missing or mismatched values while preserving untimed legacy membership, unreturned-row times and successful empty observations.",
+      "validation_plan": "Add constructor and raw decoder/load rejection tests with original-byte preservation, exact-match acceptance and untimed legacy migration roundtrip coverage. Rerun both current-head simulator families; prior iPhone passed 61 tests but iPad was canceled."
     }
   ],
   "physical_acceptance": {
