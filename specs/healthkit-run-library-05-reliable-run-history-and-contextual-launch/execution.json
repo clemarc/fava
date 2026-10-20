@@ -59,7 +59,7 @@
     },
     "T002": {
       "state": "working",
-      "correction_cycles": 0,
+      "correction_cycles": 1,
       "dependencies": [
         "T001"
       ],
@@ -443,9 +443,10 @@
       "tasks": [
         "T002"
       ],
-      "correction_cycles": 0,
+      "correction_cycles": 1,
       "heads": [
-        "e5e647f5b5ec9e64f4a4df799e0a2dce75456351"
+        "e5e647f5b5ec9e64f4a4df799e0a2dce75456351",
+        "11b64ed33400d75b137687689f23b533388df62a"
       ]
     }
   },
@@ -553,6 +554,22 @@
         "https://github.com/clemarc/fava/pull/24",
         "https://github.com/clemarc/fava/commit/e5e647f5b5ec9e64f4a4df799e0a2dce75456351",
         "https://github.com/clemarc/fava/pull/23#issuecomment-6285741640"
+      ]
+    },
+    {
+      "id": "C006",
+      "kind": "correction-reservation",
+      "branch": "checkpoint/r3.5/c006",
+      "tasks": [
+        "T002"
+      ],
+      "task_pr": "https://github.com/clemarc/fava/pull/24",
+      "correction_cycles": 1,
+      "prior_head": "11b64ed33400d75b137687689f23b533388df62a",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/24#discussion_r4325982208",
+        "https://github.com/clemarc/fava/pull/24#issuecomment-6293040980",
+        "https://github.com/clemarc/fava/pull/25#issuecomment-6293220535"
       ]
     }
   ],
@@ -667,6 +684,34 @@
         "https://github.com/clemarc/fava/actions/runs/39382174066/job/118494403585"
       ],
       "resolution": "Exact known-time returned-row timestamp validation is integrated. Constructor, decoder/load byte-preservation and timed/untimed legacy roundtrip tests pass on both exact-head simulator families: 63 passed, zero failed, including all 22 storage methods. Discussion resolved after verification."
+    },
+    {
+      "task": "T002",
+      "pr": "https://github.com/clemarc/fava/pull/24",
+      "url": "https://github.com/clemarc/fava/pull/24#discussion_r4325982208",
+      "severity": "P2",
+      "head": "e5e647f5b5ec9e64f4a4df799e0a2dce75456351",
+      "state": "open",
+      "assessment": "Valid FR-002 truthfulness gap: the successful-empty notice claims displayed runs were saved earlier even when committed history has no rows.",
+      "proposed_fix": "Condition the retained-row sentence on committed row presence in visible text and VoiceOver announcements; retain the neutral successful-empty sentence when no saved rows exist.",
+      "validation_plan": "Add model-backed absent, saved-empty and populated history coverage with failed-empty save rollback; expand existing UI assertions for first empty, prior empty, retained rows and save failure. Run both exact-corrective-head simulator families and fresh independent and Codex review before disposition.",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/24#issuecomment-6293040980"
+      ]
+    },
+    {
+      "task": "T002",
+      "pr": "https://github.com/clemarc/fava/pull/24",
+      "url": "https://github.com/clemarc/fava/actions/runs/39436356265/job/118674351318",
+      "severity": "P2",
+      "head": "e5e647f5b5ec9e64f4a4df799e0a2dce75456351",
+      "state": "open",
+      "assessment": "Initial iPhone native log records selection assertions failing in chronological-row and large Dynamic Type UI tests before superseded-run cancellation. All 58 unit tests and six Foundation UI methods passed; no complete native-family pass is claimed.",
+      "proposed_fix": "Diagnose the actual selection/tap failure and prepare a minimal scoped app or test correction for the same reserved round before publication.",
+      "validation_plan": "Inspect complete iPhone and available iPad failure timelines; independently review the concrete proposed patch, then require both complete simulator families on the consolidated corrective head before disposition.",
+      "evidence": [
+        "https://github.com/clemarc/fava/actions/runs/39436356265/job/118674351318"
+      ]
     }
   ],
   "physical_acceptance": {
@@ -674,9 +719,9 @@
     "iPad": null
   },
   "linear": {
-    "state": "pending",
-    "verified_at": "2026-10-20T14:11:12.769693+00:00",
-    "source_revision": "9c8b5c18805ecc2263179c650ff9099d1a783b59",
+    "state": "verified",
+    "verified_at": "2026-10-20T14:30:15.451412+00:00",
+    "source_revision": "72619bc676019939b2ecf81b1d9831a9407d9e30",
     "project_id": "f823cc39-b818-460f-8682-bb4ec831885a",
     "milestone_id": "5f470b82-5ad7-40d8-a36d-eea3b2bf7dd3",
     "evidence": [
@@ -698,7 +743,8 @@
       "https://linear.app/clemarc/issue/FAV-52/r35-t012-us1-us2-us3-us4-validate-complete-regression-semantic-drift",
       "https://github.com/clemarc/fava/pull/20#issuecomment-6285115195",
       "https://github.com/clemarc/fava/pull/23#issuecomment-6285811407",
-      "https://github.com/clemarc/fava/pull/24#issuecomment-6292875556"
+      "https://github.com/clemarc/fava/pull/24#issuecomment-6292875556",
+      "https://github.com/clemarc/fava/pull/24#issuecomment-6293277376"
     ],
     "verified_items": [
       {
@@ -782,10 +828,8 @@
         "identifier": "FAV-52"
       }
     ],
-    "pending_keys": [
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T002"
-    ],
-    "actual_states": "All 16 existing items reverified: T001/FAV-41 Done; four stories and T002-T012 Todo. T002/FAV-42 In Progress projection awaits this canonical initial registration checkpoint integration.",
+    "pending_keys": [],
+    "actual_states": "All 16 existing items reverified after canonical C005: T001/FAV-41 Done; T002/FAV-42 In Progress; four stories and T003-T012 Todo. No pending keys or duplicates.",
     "hierarchy": "T001 directly in milestone. T002 under US2/FAV-38, preserving US2/US3/US1 in its description. Other tasks use their first mapped story as parent, preserving every story mapping in descriptions.",
     "cli": "@schpet/linear-cli 3.0.0 through tools/sdd/linear_projection.py project()",
     "rendering": {
@@ -808,7 +852,8 @@
       "Final canonical dry-run retained existing keyed items with no definition changes; final apply verified all 16, without duplicates or pending keys.",
       "Owner-authorized round 4 changed only T002 definition/story parent. Dry-run found exactly T002 title/description/parent changes; apply verified all 16 current items, reparented FAV-42 to US2/FAV-38, retained stable keys, and confirmed all Todo with no pending keys.",
       "Implementation dry-run found only T001 state drift; authorized apply verified all 16 existing keys/definitions/project/milestone/hierarchy, updated FAV-41 to In Progress and had no pending items or duplicates. After this completion checkpoint integrates, project T001 Done and retain the actual result in a later serialized checkpoint.",
-      "After canonical C004 integration, projected FAV-41/T001 Done with all 16 verified and no pending items. At T002 registration, fresh dry-run found no field drift and the pinned helper reverified all 16 existing keys/definitions/project/milestone/hierarchy without updates. T002 remains actually Todo until this registration integrates; its In Progress projection remains pending."
+      "After canonical C004 integration, projected FAV-41/T001 Done with all 16 verified and no pending items. At T002 registration, fresh dry-run found no field drift and the pinned helper reverified all 16 existing keys/definitions/project/milestone/hierarchy without updates. T002 remains actually Todo until this registration integrates; its In Progress projection remains pending.",
+      "After actual canonical C005 integration, dry-run found only T002 state drift. Authorized apply updated existing FAV-42 to In Progress and verified all 16 keys, definitions, project, milestone, hierarchy and states with no pending items or duplicates."
     ],
     "source_revisions": {
       "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US1": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
