@@ -7,6 +7,7 @@ enum RunHistoryError: Error, Equatable {
     case invalidObservationDate
     case orphanProvenance(UUID)
     case orphanReturnedID(UUID)
+    case inconsistentObservation(UUID)
 }
 
 struct SavedReadObservation: Codable, Equatable {
@@ -49,8 +50,11 @@ struct RetainedRunHistory: Codable, Equatable {
             if let date = observation.observedAt, !date.timeIntervalSinceReferenceDate.isFinite {
                 throw RunHistoryError.invalidObservationDate
             }
-            for id in observation.returnedIDs where !identities.contains(id) {
-                throw RunHistoryError.orphanReturnedID(id)
+            for id in observation.returnedIDs {
+                guard identities.contains(id) else { throw RunHistoryError.orphanReturnedID(id) }
+                if let observedAt = observation.observedAt, lastObservedAtByID[id] != observedAt {
+                    throw RunHistoryError.inconsistentObservation(id)
+                }
             }
         }
     }

@@ -191,6 +191,62 @@ final class RunSnapshotStoreTests: XCTestCase {
         }
     }
 
+    func testKnownLatestObservationRequiresExactReturnedRowTimes() throws {
+        let observation = SavedReadObservation(observedAt: observedAt, returnedIDs: [firstID])
+        let invalidMaps: [[UUID: Date]] = [
+            [:],
+            [firstID: observedAt.addingTimeInterval(-0.001)],
+            [firstID: observedAt.addingTimeInterval(0.001)]
+        ]
+        for times in invalidMaps {
+            XCTAssertThrowsError(try RetainedRunHistory(runs: [run(firstID)], lastObservedAtByID: times,
+                                                       latestSavedObservation: observation)) { error in
+                XCTAssertEqual(error as? RunHistoryError, .inconsistentObservation(self.firstID))
+            }
+        }
+        // Only returned rows must match; other retained rows may have old, future or unknown times.
+        for otherTime in [nil, observedAt.addingTimeInterval(-60), observedAt.addingTimeInterval(60)] as [Date?] {
+            var times = [firstID: observedAt]
+            times[secondID] = otherTime
+            let valid = try RetainedRunHistory(runs: [run(firstID), run(secondID)], lastObservedAtByID: times,
+                                               latestSavedObservation: observation)
+            XCTAssertEqual(valid.lastObservedAtByID[firstID], observedAt)
+            XCTAssertEqual(valid.lastObservedAtByID[secondID], otherTime)
+            XCTAssertEqual(try JSONDecoder().decode(RetainedRunHistory.self, from: JSONEncoder().encode(valid)), valid)
+        }
+        let savedEmpty = try RetainedRunHistory(runs: [run(firstID)], latestSavedObservation:
+                                                SavedReadObservation(observedAt: observedAt, returnedIDs: []))
+        XCTAssertEqual(savedEmpty.lastObservedAtByID, [:])
+        XCTAssertEqual(try JSONDecoder().decode(RetainedRunHistory.self, from: JSONEncoder().encode(savedEmpty)), savedEmpty)
+    }
+
+    func testInconsistentLatestObservationCannotDecodeOrChangeStoredBytes() throws {
+        let store = FileRunSnapshotStore(directory: directory)
+        let valid = try JSONEncoder().encode(history())
+        let invalidMaps: [[UUID: Date]] = [
+            [:],
+            [secondID: observedAt],
+            [firstID: observedAt.addingTimeInterval(-0.001)],
+            [firstID: observedAt.addingTimeInterval(0.001)]
+        ]
+        var variants = [try changing(valid) { $0.removeValue(forKey: "lastObservedAtByID") }]
+        for times in invalidMaps {
+            variants.append(try changing(valid) { $0["lastObservedAtByID"] = try jsonValue(times) })
+        }
+        for invalid in variants {
+            XCTAssertThrowsError(try JSONDecoder().decode(RetainedRunHistory.self, from: invalid)) { error in
+                XCTAssertEqual(error as? RunHistoryError, .inconsistentObservation(self.firstID))
+            }
+            try write(invalid, to: store)
+            XCTAssertThrowsError(try store.loadHistory()) { error in
+                XCTAssertEqual(error as? RunHistoryError, .inconsistentObservation(self.firstID))
+            }
+            XCTAssertEqual(try Data(contentsOf: store.fileURL), invalid)
+            XCTAssertThrowsError(try FileRunSnapshotStore(directory: directory).loadHistory())
+            XCTAssertEqual(try Data(contentsOf: store.fileURL), invalid)
+        }
+    }
+
     func testSchemaTwoDecoderCannotBypassVersionOrHistoryValidation() throws {
         let bytes = try JSONEncoder().encode(history())
         let variants = [
@@ -273,17 +329,24 @@ final class RunSnapshotStoreTests: XCTestCase {
 
     func testFirstExplicitSaveMigratesSamePathAndPreservesUntimedPriorObservation() throws {
         let store = FileRunSnapshotStore(directory: directory)
-        for time in [observedAt.timeIntervalSinceReferenceDate, nil, NSNull()] as [Any?] {
-            let legacy = try legacyData([run(firstID)], capturedAt: time)
-            try write(legacy, to: store)
-            let adopted = try XCTUnwrap(try store.loadHistory())
-            XCTAssertEqual(try Data(contentsOf: store.fileURL), legacy)
-            try store.saveHistory(adopted)
-            let object = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: store.fileURL)) as? [String: Any])
-            XCTAssertEqual(object["schemaVersion"] as? Int, 2)
-            XCTAssertNil(object["capturedAt"])
-            XCTAssertEqual(store.fileURL.lastPathComponent, "runs-v1.json")
-            XCTAssertEqual(try FileRunSnapshotStore(directory: directory).loadHistory(), adopted)
+        for runs in [[RunRecord](), [run(firstID)]] {
+            for time in [observedAt.timeIntervalSinceReferenceDate, nil, NSNull()] as [Any?] {
+                let legacy = try legacyData(runs, capturedAt: time)
+                try write(legacy, to: store)
+                let adopted = try XCTUnwrap(try store.loadHistory())
+                let expectedTime: Date? = time is Double ? observedAt : nil
+                XCTAssertEqual(adopted.latestSavedObservation,
+                               SavedReadObservation(observedAt: expectedTime, returnedIDs: Set(runs.map(\.id))))
+                XCTAssertEqual(adopted.lastObservedAtByID,
+                               expectedTime == nil ? [:] : Dictionary(uniqueKeysWithValues: runs.map { ($0.id, observedAt) }))
+                XCTAssertEqual(try Data(contentsOf: store.fileURL), legacy)
+                try store.saveHistory(adopted)
+                let object = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: store.fileURL)) as? [String: Any])
+                XCTAssertEqual(object["schemaVersion"] as? Int, 2)
+                XCTAssertNil(object["capturedAt"])
+                XCTAssertEqual(store.fileURL.lastPathComponent, "runs-v1.json")
+                XCTAssertEqual(try FileRunSnapshotStore(directory: directory).loadHistory(), adopted)
+            }
         }
     }
 
