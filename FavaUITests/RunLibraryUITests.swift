@@ -65,6 +65,13 @@ final class RunLibraryUITests: XCTestCase {
         notices(in: app); reveal(first, in: app); first.tap()
         XCTAssertEqual(first.value as? String, "Selected")
         XCTAssertEqual(second.value as? String, "Not selected")
+        // Selection must also work in the label's full-width trailing whitespace.
+        notices(in: app); reveal(second, in: app); second.tap()
+        XCTAssertEqual(second.value as? String, "Selected")
+        notices(in: app); reveal(first, in: app)
+        first.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertEqual(first.value as? String, "Selected")
+        XCTAssertEqual(second.value as? String, "Not selected")
     }
 
     func testSavedRowsStaySelectableDuringPendingFailedAndUnavailableReads() {
@@ -92,6 +99,9 @@ final class RunLibraryUITests: XCTestCase {
     func testEmptyFailureRetryAndUnavailableAreDistinct() {
         var app = launch("empty")
         awaitMessage("no accessible runs", in: app)
+        XCTAssertEqual(app.staticTexts["library-status"].label, "This read returned no accessible runs.")
+        XCTAssertEqual(app.staticTexts["saved-history-count"].label, "Saved history: 0 runs.")
+        XCTAssertFalse(app.buttons["run-" + firstID].exists)
         XCTAssertTrue(app.buttons["refresh-runs"].isEnabled)
         app.terminate();session = UUID().uuidString
         app = launch("failure-then-success")
@@ -111,6 +121,13 @@ final class RunLibraryUITests: XCTestCase {
         var app = launch("saved-empty-pending")
         XCTAssertTrue(app.staticTexts["saved-provenance"].label.contains("Prior saved read returned 0 runs"))
         awaitMessage("Loading", in: app)
+        app.terminate()
+        app = launch("empty")
+        awaitMessage("no accessible runs", in: app)
+        XCTAssertEqual(app.staticTexts["library-status"].label, "This read returned no accessible runs.")
+        XCTAssertEqual(app.staticTexts["saved-history-count"].label, "Saved history: 0 runs.")
+        XCTAssertTrue(app.staticTexts["saved-provenance"].label.contains("Latest saved read returned 0 runs"))
+        XCTAssertFalse(app.buttons["run-" + firstID].exists)
         app.terminate();session = UUID().uuidString
         app = launch("runs")
         XCTAssertTrue(app.buttons["run-" + firstID].waitForExistence(timeout: 5))
@@ -159,6 +176,8 @@ final class RunLibraryUITests: XCTestCase {
         XCTAssertTrue(app.buttons["run-" + firstID].waitForExistence(timeout: 5))
         app.buttons["refresh-runs"].tap()
         awaitMessage("no accessible runs", in: app)
+        XCTAssertEqual(app.staticTexts["library-status"].label,
+                       "This read returned no accessible runs. Displayed runs were saved earlier.")
         XCTAssertTrue(app.buttons["run-" + firstID].exists)
         XCTAssertTrue(app.buttons["run-" + firstID].label.contains("Unobserved in latest saved read"))
         app.terminate();session = UUID().uuidString
@@ -235,6 +254,7 @@ final class RunLibraryUITests: XCTestCase {
             awaitMessage("returned 0 runs", in: app)
             XCTAssertTrue(app.staticTexts["library-status"].label.contains("could not be saved"))
             XCTAssertFalse(app.staticTexts["library-status"].label.contains("no accessible runs"))
+            XCTAssertFalse(app.staticTexts["library-status"].label.contains("Displayed runs were saved earlier"))
             XCTAssertEqual(app.staticTexts["saved-provenance"].label, savedNotice)
             XCTAssertEqual(app.staticTexts["saved-history-count"].label, countNotice)
             XCTAssertEqual(rowLabels(ids, in: app), labels)

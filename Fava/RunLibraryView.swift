@@ -14,7 +14,7 @@ struct RunLibraryView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(RunLibraryPresentation.notice(ingestion.state))
+                    Text(RunLibraryPresentation.notice(ingestion.state, hasSavedRows: !(ingestion.savedHistory?.runs.isEmpty ?? true)))
                         .accessibilityIdentifier("library-status")
                     if ingestion.state == .loading { ProgressView("Reading running workouts") }
                     if let message = ingestion.localRecoveryMessage {
@@ -62,6 +62,7 @@ struct RunLibraryView: View {
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 8)
+                        .contentShape(Rectangle())
                         .accessibilityElement(children: .combine)
                     }
                     .buttonStyle(.plain)
@@ -81,7 +82,7 @@ struct RunLibraryView: View {
         }
         .sheet(isPresented: $showingSettings) { DistanceSettingsView(settings: settings) }
         .onChange(of: ingestion.state) { _, state in
-            UIAccessibility.post(notification: .announcement, argument: RunLibraryPresentation.notice(state))
+            UIAccessibility.post(notification: .announcement, argument: RunLibraryPresentation.notice(state, hasSavedRows: !(ingestion.savedHistory?.runs.isEmpty ?? true)))
         }
         .onChange(of: ingestion.localRecoveryMessage) { _, message in
             if let message { UIAccessibility.post(notification: .announcement, argument: message) }

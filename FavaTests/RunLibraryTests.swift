@@ -97,16 +97,41 @@ final class RunLibraryTests: XCTestCase {
         let states: [IngestionState] = [.notRequested, .loading, .sourceSuccess(returnedCount: 2, savingFailed: false),
             .sourceSuccess(returnedCount: 0, savingFailed: false), .failed, .unavailable,
             .sourceSuccess(returnedCount: 2, savingFailed: true), .sourceSuccess(returnedCount: 0, savingFailed: true)]
-        let messages = states.map(RunLibraryPresentation.notice)
+        let messages = states.map { RunLibraryPresentation.notice($0, hasSavedRows: false) }
         XCTAssertEqual(Set(messages).count, states.count)
         for message in messages {
             XCTAssertFalse(message.lowercased().contains("denied"))
             XCTAssertFalse(message.lowercased().contains("granted"))
             XCTAssertFalse(message.lowercased().contains("never recorded"))
         }
-        let failedSave = RunLibraryPresentation.notice(.sourceSuccess(returnedCount: 0, savingFailed: true))
+        let failedSave = RunLibraryPresentation.notice(.sourceSuccess(returnedCount: 0, savingFailed: true), hasSavedRows: false)
         XCTAssertTrue(failedSave.contains("could not be saved"))
         XCTAssertFalse(failedSave.contains("no accessible runs"))
+    }
+
+    func testEmptyNoticeDescribesDisplayedRowsOnlyWhenHistoryContainsThem() throws {
+        let priors: [RetainedRunHistory?] = [nil,
+            try RetainedRunHistory.adoptingLegacy(runs: [], capturedAt: nil),
+            try RetainedRunHistory.adoptingLegacy(runs: [fixtureRun()], capturedAt: nil)]
+        for prior in priors {
+            let cache = RunIngestionTests.MemoryStore(); cache.history = prior
+            let reader = RunIngestionTests.Reader()
+            let model = RunIngestionModel(reader: reader, historyStore: cache)
+            model.requestRead(); reader.complete(.success([]))
+            let hasSavedRows = !(model.savedHistory?.runs.isEmpty ?? true)
+            let notice = RunLibraryPresentation.notice(model.state, hasSavedRows: hasSavedRows)
+            XCTAssertEqual(notice, hasSavedRows
+                ? "This read returned no accessible runs. Displayed runs were saved earlier."
+                : "This read returned no accessible runs.")
+            let committed = model.savedHistory
+            cache.failSave = true
+            model.requestRead(); reader.complete(.success([]))
+            let failedSave = RunLibraryPresentation.notice(model.state, hasSavedRows: hasSavedRows)
+            XCTAssertTrue(failedSave.contains("could not be saved locally"))
+            XCTAssertFalse(failedSave.contains("no accessible runs"))
+            XCTAssertFalse(failedSave.contains("Displayed runs were saved earlier"))
+            XCTAssertEqual(model.savedHistory, committed)
+        }
     }
 
     func testSavedRowsAndProvenanceSurviveLoadingFailureAndUnavailability() throws {

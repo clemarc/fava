@@ -7,7 +7,7 @@ enum RunLibraryPresentation {
             a.startDate == b.startDate ? a.id.uuidString < b.id.uuidString : a.startDate > b.startDate
         }
     }
-    static func notice(_ state: IngestionState) -> String {
+    static func notice(_ state: IngestionState, hasSavedRows: Bool) -> String {
         switch state {
         case .notRequested: return "No read requested in this session."
         case .loading: return "Loading running workouts…"
@@ -16,7 +16,7 @@ enum RunLibraryPresentation {
         case .sourceSuccess(let count, savingFailed: true):
             return "This read returned \(count) \(count == 1 ? "run" : "runs"), but they could not be saved locally. Saved history is unchanged. Retry performs a new read."
         case .sourceSuccess(0, savingFailed: false):
-            return "This read returned no accessible runs. Displayed runs were saved earlier."
+            return "This read returned no accessible runs." + (hasSavedRows ? " Displayed runs were saved earlier." : "")
         case .sourceSuccess(let count, savingFailed: false):
             return "This read returned \(count) \(count == 1 ? "run" : "runs"). The observation was saved."
         }
