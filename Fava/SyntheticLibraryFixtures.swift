@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import SwiftUI
 
 @MainActor
 final class SyntheticWorkoutReader: WorkoutReading {
@@ -26,6 +27,7 @@ final class SyntheticWorkoutReader: WorkoutReading {
 
     func read(completion: @escaping (Result<[RunRecord], Error>) -> Void) {
         reads += 1
+        SyntheticLaunchProbe.shared.reads += 1
         guard !fixture.contains("pending") else { return }
         let result: Result<[RunRecord], Error>
         if fixture.hasPrefix("save-failure-") {
@@ -34,7 +36,7 @@ final class SyntheticWorkoutReader: WorkoutReading {
             result = .success(reads == 1 ? Self.initialRuns : (reads == 2 ? Self.subsetRuns : []))
         } else if fixture.contains("failed") || (fixture == "failure-then-success" && reads == 1) {
             result = .failure(SyntheticError.failed)
-        } else if fixture == "empty" || (fixture == "entry-switches" && reads > 1) {
+        } else if fixture == "empty" || fixture == "saved-empty-result" || (fixture == "entry-switches" && reads > 1) {
             result = .success([])
         } else { result = .success(Self.runs) }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { completion(result) }
@@ -45,8 +47,10 @@ final class SyntheticWorkoutReader: WorkoutReading {
         let cache = FileRunSnapshotStore(directory: directory)
         // Fixture seeding never overwrites a prior session's committed bytes.
         if !FileManager.default.fileExists(atPath: cache.fileURL.path) {
-            if fixture == "save-failure-populated" || fixture == "recovery-read-once" {
-                try? cache.save(RunSnapshot(runs: initialRuns, capturedAt: priorTime))
+            if fixture == "save-failure-populated" || fixture == "recovery-read-error" || fixture == "recovery-read-once" || fixture == "recovery-empty-once" || fixture == "recovery-absent-once" {
+                if fixture != "recovery-absent-once" {
+                    try? cache.save(RunSnapshot(runs: fixture == "recovery-empty-once" ? [] : initialRuns, capturedAt: priorTime))
+                }
             } else if fixture == "save-failure-empty" {
                 try? cache.save(RunSnapshot(runs: [], capturedAt: priorTime))
             } else if fixture == "save-failure-untimed" || fixture == "saved-untimed-pending" {
@@ -65,16 +69,52 @@ final class SyntheticWorkoutReader: WorkoutReading {
             return FileRunSnapshotStore(directory: directory, historyIO: RunHistoryFileIO(
                 read: RunHistoryFileIO.live.read, writeAtomically: { _, _ in throw SyntheticError.failed }))
         }
-        if fixture == "recovery-read-once" {
+        if fixture == "recovery-read-once" || fixture == "recovery-empty-once" || fixture == "recovery-absent-once" || fixture == "recovery-read-error" {
             var loads = 0
             return FileRunSnapshotStore(directory: directory, historyIO: RunHistoryFileIO(
                 read: { url in
                     loads += 1
-                    if loads == 1 { throw CocoaError(.fileReadNoPermission) }
+                    if loads == 1 || fixture == "recovery-read-error" { throw CocoaError(.fileReadNoPermission) }
                     return try RunHistoryFileIO.live.read(url)
                 }, writeAtomically: RunHistoryFileIO.live.writeAtomically))
         }
         return cache
+    }
+}
+
+// Observable, DEBUG-only evidence for synthetic UI tests. No production data.
+@MainActor
+final class SyntheticLaunchProbe: ObservableObject {
+    static let shared = SyntheticLaunchProbe()
+    @Published var reads = 0
+    @Published var requests = 0
+}
+
+@MainActor
+final class SyntheticAccessProbe: HealthAccessProviding {
+    private let provider: HealthAccessProviding
+    init(provider: HealthAccessProviding) { self.provider = provider }
+    var isAvailable: Bool { provider.isAvailable }
+    func request(completion: @escaping (HealthAccessOutcome) -> Void) {
+        SyntheticLaunchProbe.shared.requests += 1
+        provider.request(completion: completion)
+    }
+}
+
+@MainActor
+struct SyntheticLaunchEvidence: View {
+    let route: LaunchRoute
+    @ObservedObject private var probe = SyntheticLaunchProbe.shared
+    var body: some View {
+        VStack {
+            Text("Launch route: \(String(describing: route))").accessibilityIdentifier("launch-route")
+            Text("Source reads: \(probe.reads)").accessibilityIdentifier("source-read-count")
+            Text("Access requests: \(probe.requests)").accessibilityIdentifier("access-request-count")
+        }
+        .font(.caption)
+        // Test instrumentation keeps a constant footprint; app content still
+        // exercises the requested Dynamic Type category.
+        .dynamicTypeSize(.medium)
     }
 }
 #endif

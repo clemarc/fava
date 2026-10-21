@@ -6,6 +6,8 @@ final class FoundationUITests: XCTestCase {
         app.launchArguments = ["--health-fixture", fixture]
         if let category { app.launchArguments += ["-UIPreferredContentSizeCategoryName", category] }
         app.launch()
+        XCTAssertEqual(app.staticTexts["access-request-count"].label, "Access requests: 0")
+        XCTAssertEqual(app.staticTexts["source-read-count"].label, "Source reads: 0")
         return app
     }
 
@@ -74,6 +76,8 @@ final class FoundationUITests: XCTestCase {
         XCUIDevice.shared.press(.home)
         app.activate()
         XCTAssertTrue(app.staticTexts["access-status"].label.contains("in progress"))
+        XCTAssertEqual(app.staticTexts["access-request-count"].label, "Access requests: 1")
+        XCTAssertEqual(app.staticTexts["source-read-count"].label, "Source reads: 0")
         app.buttons["open-library"].tap()
         XCTAssertTrue(app.navigationBars["Run library"].exists)
     }

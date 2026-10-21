@@ -10,13 +10,33 @@ final class RunLibraryUITests: XCTestCase {
         app.launchArguments = ["--health-fixture", "completed", "--run-fixture", fixture, "--test-session", session]
         if let category { app.launchArguments += ["-UIPreferredContentSizeCategoryName", category] }
         app.launch()
+        let route = app.staticTexts["launch-route"]
+        XCTAssertTrue(route.waitForExistence(timeout: 5))
         if enterLibrary {
-            let library = app.buttons["open-library"]
-            reveal(library, in: app)
-            library.tap()
-            XCTAssertTrue(app.navigationBars["Run library"].waitForExistence(timeout: 5))
+            if route.label == "Launch route: library" {
+                XCTAssertTrue(app.navigationBars["Run library"].waitForExistence(timeout: 5))
+            } else {
+                enterLibraryDeliberately(app)
+            }
         }
         return app
+    }
+    private func launchRaw(_ fixture: String) -> XCUIApplication {
+        launch(fixture, enterLibrary: false)
+    }
+    private func enterLibraryDeliberately(_ app: XCUIApplication) {
+        let library = app.buttons["open-library"]
+        reveal(library, in: app)
+        library.tap()
+        XCTAssertTrue(app.navigationBars["Run library"].waitForExistence(timeout: 5))
+    }
+    private func assertCounts(_ reads: Int, requests: Int = 0, in app: XCUIApplication) {
+        let source = app.staticTexts["source-read-count"]
+        let access = app.staticTexts["access-request-count"]
+        XCTAssertTrue(source.waitForExistence(timeout: 5))
+        let count = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "Source reads: \(reads)"), object: source)
+        XCTAssertEqual(XCTWaiter.wait(for: [count], timeout: 5), .completed)
+        XCTAssertEqual(access.label, "Access requests: \(requests)")
     }
     private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
         for _ in 0..<10 { if element.isHittable { return }; app.swipeUp() }
@@ -49,6 +69,106 @@ final class RunLibraryUITests: XCTestCase {
     }
     private func lastObserved(_ label: String) -> String {
         label.components(separatedBy: "Last observed:").last ?? label
+    }
+
+
+    func testRawPopulatedAndLegacyLaunchShowsRowsDuringSingleHeldRead() {
+        for fixture in ["saved-pending", "saved-untimed-pending"] {
+            session = UUID().uuidString
+            let app = launchRaw(fixture)
+            XCTAssertTrue(app.navigationBars["Run library"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons["run-" + firstID].exists)
+            awaitMessage("Loading", in: app)
+            assertCounts(1, in: app)
+            app.buttons["open-settings"].tap()
+            app.buttons["unit-miles"].tap()
+            app.buttons["close-settings"].tap()
+            XCUIDevice.shared.press(.home); app.activate()
+            assertCounts(1, in: app)
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(app.staticTexts["access-status"].label.contains("Choose when"))
+            assertCounts(1, in: app)
+            enterLibraryDeliberately(app)
+            assertCounts(1, in: app)
+            app.terminate()
+        }
+    }
+
+    func testRawAbsentAndSavedEmptyLaunchStaySetupUntilDeliberateEntry() {
+        for fixture in ["pending", "saved-empty-pending"] {
+            session = UUID().uuidString
+            let app = launchRaw(fixture)
+            XCTAssertTrue(app.buttons["open-library"].waitForExistence(timeout: 5))
+            XCTAssertFalse(app.navigationBars["Run library"].exists)
+            XCTAssertTrue(app.staticTexts["setup-saved-provenance"].label.contains(
+                fixture == "pending" ? "No saved read observation" : "Prior saved read returned 0 runs"))
+            assertCounts(0, in: app)
+            XCUIDevice.shared.press(.home); app.activate()
+            assertCounts(0, in: app)
+            enterLibraryDeliberately(app)
+            awaitMessage("Loading", in: app)
+            assertCounts(1, in: app)
+            app.terminate()
+        }
+    }
+
+    func testRawRecoveryFailedRetryPreservesErrorAndNeverOverwritesSource() {
+        for fixture in ["recovery-corrupt", "recovery-read-error"] {
+            session = UUID().uuidString
+            var app = launchRaw(fixture)
+            XCTAssertTrue(app.staticTexts["setup-local-recovery"].waitForExistence(timeout: 5))
+            assertCounts(0, in: app)
+            let retry = app.buttons["setup-retry-saved-history"]
+            reveal(retry, in: app); retry.tap()
+            XCTAssertTrue(app.staticTexts["setup-local-recovery"].exists)
+            assertCounts(0, in: app)
+            enterLibraryDeliberately(app)
+            XCTAssertTrue(app.staticTexts["local-recovery"].exists)
+            XCTAssertFalse(app.buttons["refresh-runs"].isEnabled)
+            assertCounts(0, in: app)
+            app.terminate()
+            app = launchRaw(fixture)
+            XCTAssertTrue(app.staticTexts["setup-local-recovery"].waitForExistence(timeout: 5))
+            assertCounts(0, in: app)
+            app.terminate()
+        }
+    }
+
+    func testRootLocalRetryRoutesFromReloadedContextAndOnlyPopulatedEntryReads() {
+        for fixture in ["recovery-read-once", "recovery-empty-once", "recovery-absent-once"] {
+            session = UUID().uuidString
+            let app = launchRaw(fixture)
+            XCTAssertTrue(app.staticTexts["setup-local-recovery"].waitForExistence(timeout: 5))
+            assertCounts(0, in: app)
+            let retry = app.buttons["setup-retry-saved-history"]
+            reveal(retry, in: app); retry.tap()
+            if fixture == "recovery-read-once" {
+                XCTAssertTrue(app.navigationBars["Run library"].waitForExistence(timeout: 5))
+                assertCounts(1, in: app)
+            } else {
+                XCTAssertTrue(app.staticTexts["setup-saved-provenance"].waitForExistence(timeout: 5))
+                XCTAssertFalse(app.navigationBars["Run library"].exists)
+                assertCounts(0, in: app)
+            }
+            app.terminate()
+        }
+    }
+
+    func testDirectLaunchEmptyReadRetainsLibraryAndActualReentryReadsAgain() {
+        let app = launchRaw("saved-empty-result")
+        XCTAssertTrue(app.navigationBars["Run library"].waitForExistence(timeout: 5))
+        awaitMessage("no accessible runs", in: app)
+        XCTAssertTrue(app.buttons["run-" + firstID].exists)
+        assertCounts(1, in: app)
+        app.buttons["open-settings"].tap()
+        app.buttons["unit-miles"].tap()
+        app.buttons["close-settings"].tap()
+        XCUIDevice.shared.press(.home); app.activate()
+        assertCounts(1, in: app)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        enterLibraryDeliberately(app)
+        awaitMessage("no accessible runs", in: app)
+        assertCounts(2, in: app)
     }
 
     func testChronologicalRowsMissingZeroAndExactSelection() {
@@ -229,6 +349,7 @@ final class RunLibraryUITests: XCTestCase {
             session = UUID().uuidString
             var app = launch(fixture)
             awaitMessage("could not be saved", in: app)
+            XCTAssertTrue(app.navigationBars["Run library"].exists)
             XCTAssertTrue(app.staticTexts["library-status"].label.contains("returned 2 runs"))
             let savedNotice = app.staticTexts["saved-provenance"].label
             let countNotice = app.staticTexts["saved-history-count"].label
@@ -287,8 +408,10 @@ final class RunLibraryUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Saved history: 0 runs."].exists)
         XCTAssertFalse(app.buttons["refresh-runs"].isEnabled)
         XCTAssertTrue(app.staticTexts["library-status"].label.contains("No read requested"))
+        assertCounts(0, in: app)
         app.buttons["retry-saved-history"].tap()
         XCTAssertFalse(app.staticTexts["local-recovery"].exists)
+        assertCounts(0, in: app)
         XCTAssertTrue(app.staticTexts["library-status"].label.contains("No read requested"))
         XCTAssertTrue(app.buttons["refresh-runs"].isEnabled)
         XCTAssertEqual(app.staticTexts["saved-history-count"].label, "Saved history: 2 runs.")

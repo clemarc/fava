@@ -4,7 +4,7 @@ import UIKit
 struct RootView: View {
     @ObservedObject var access: HealthAccessModel
     @EnvironmentObject private var ingestion: RunIngestionModel
-    @State private var libraryVisible = false
+    @ObservedObject var launch: LaunchContext
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.locale) private var locale
     @Environment(\.timeZone) private var timeZone
@@ -18,7 +18,7 @@ struct RootView: View {
                     Text("Workout-record read access lets Fava use your running workouts. You choose when to request access. Fava does not write health data.")
                     if let message = ingestion.localRecoveryMessage {
                         Text(message).accessibilityIdentifier("setup-local-recovery")
-                        Button("Retry saved history", action: ingestion.retryLocalLoad)
+                        Button("Retry saved history", action: launch.retryLocalLoad)
                             .disabled(ingestion.isTransportActive)
                             .accessibilityIdentifier("setup-retry-saved-history")
                     } else {
@@ -39,9 +39,7 @@ struct RootView: View {
                     .disabled(!access.canRequest)
                     .accessibilityIdentifier("request-access")
                     Button("Run library") {
-                        guard !libraryVisible else { return }
-                        libraryVisible = true
-                        ingestion.requestRead()
+                        launch.enterLibrary()
                     }
                     .accessibilityIdentifier("open-library")
                 }
@@ -50,8 +48,20 @@ struct RootView: View {
                 .frame(maxWidth: .infinity)
             }
             .navigationTitle("Fava")
-            .navigationDestination(isPresented: $libraryVisible) { RunLibraryView() }
+            .navigationDestination(isPresented: Binding(
+                get: { launch.route == .library },
+                set: { if !$0 { launch.leaveLibrary() } }
+            )) {
+                RunLibraryView().task { launch.startInitialEntry() }
+            }
         }
+        #if DEBUG
+        .safeAreaInset(edge: .bottom) {
+            if ProcessInfo.processInfo.arguments.contains("--health-fixture") || ProcessInfo.processInfo.arguments.contains("--run-fixture") {
+                SyntheticLaunchEvidence(route: launch.route)
+            }
+        }
+        #endif
         .onChange(of: access.state) { _, value in
             UIAccessibility.post(notification: .announcement, argument: value.message)
         }
