@@ -15,7 +15,6 @@ struct RootView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     Text("Your running workouts, together.").font(.title).bold()
                     Text("Fava helps you browse running workouts from Apple Health on your iPhone and iPad.")
-                    Text("Workout-record read access lets Fava use your running workouts. You choose when to request access. Fava does not write health data.")
                     if let message = ingestion.localRecoveryMessage {
                         Text(message).accessibilityIdentifier("setup-local-recovery")
                         Button("Retry saved history", action: launch.retryLocalLoad)
@@ -26,18 +25,7 @@ struct RootView: View {
                                                                    locale: locale, timeZone: timeZone))
                             .accessibilityIdentifier("setup-saved-provenance")
                     }
-                    Text(access.state.message)
-                        .accessibilityIdentifier("access-status")
-                    if access.state == .requesting {
-                        ProgressView("Request in progress")
-                    }
-                    Button(action: access.request) {
-                        Text(access.state == .failed || access.state == .cancelled ? "Retry HealthKit request" : "Request HealthKit access")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!access.canRequest)
-                    .accessibilityIdentifier("request-access")
+                    HealthAccessContent(access: access)
                     Button("Run library") {
                         launch.enterLibrary()
                     }
@@ -52,7 +40,7 @@ struct RootView: View {
                 get: { launch.route == .library },
                 set: { if !$0 { launch.leaveLibrary() } }
             )) {
-                RunLibraryView().task { launch.startInitialEntry() }
+                RunLibraryView(access: access).task { launch.startInitialEntry() }
             }
         }
         #if DEBUG

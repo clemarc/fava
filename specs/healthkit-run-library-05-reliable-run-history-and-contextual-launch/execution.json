@@ -145,7 +145,7 @@
       "integration_comment": 6313842475
     },
     "T004": {
-      "state": "pending",
+      "state": "working",
       "correction_cycles": 0,
       "dependencies": [
         "T003"

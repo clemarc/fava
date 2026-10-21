@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct RunLibraryView: View {
+    @ObservedObject var access: HealthAccessModel
     @EnvironmentObject private var ingestion: RunIngestionModel
     @EnvironmentObject private var settings: DistanceSettings
     @EnvironmentObject private var selection: RunSelection
@@ -80,7 +81,9 @@ struct RunLibraryView: View {
                     .accessibilityIdentifier("open-settings")
             }
         }
-        .sheet(isPresented: $showingSettings) { DistanceSettingsView(settings: settings) }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(settings: settings, access: access, onDone: { showingSettings = false })
+        }
         .onChange(of: ingestion.state) { _, state in
             UIAccessibility.post(notification: .announcement, argument: RunLibraryPresentation.notice(state, hasSavedRows: !(ingestion.savedHistory?.runs.isEmpty ?? true)))
         }
@@ -89,39 +92,6 @@ struct RunLibraryView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { ingestion.updateAvailability() }
-        }
-    }
-}
-
-struct DistanceSettingsView: View {
-    @ObservedObject var settings: DistanceSettings
-    @Environment(\.dismiss) private var dismiss
-    var body: some View {
-        NavigationStack {
-            List {
-                Section("Distance units") {
-                    ForEach(DistanceMode.allCases, id: \.rawValue) { mode in
-                        Button { settings.mode = mode } label: {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(mode.title)
-                                if settings.mode == mode { Label("Selected", systemImage: "checkmark") }
-                            }
-                            .foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .accessibilityElement(children: .combine)
-                        }
-                        .accessibilityIdentifier("unit-" + mode.rawValue)
-                        .accessibilityValue(settings.mode == mode ? "Selected" : "Not selected")
-                        .accessibilityAddTraits(settings.mode == mode ? .isSelected : [])
-                    }
-                }
-            }
-            .navigationTitle("Settings")
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.accessibilityIdentifier("close-settings")
-                }
-            }
         }
     }
 }

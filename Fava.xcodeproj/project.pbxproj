@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D390F9C5750624C607041002 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D390F9C5750624C607041001 /* SettingsView.swift */; };
 		05391A75DC361A9AD3BC7619 /* RunLibraryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BCCC99A9340BAA23229E9 /* RunLibraryUITests.swift */; };
 		0C3A3529BD3F649AF20E46E9 /* RunIngestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DC07F67DF799B428AFDD052 /* RunIngestion.swift */; };
 		D390F9C5750624C607031002 /* LaunchContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = D390F9C5750624C607031001 /* LaunchContext.swift */; };
@@ -48,6 +49,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D390F9C5750624C607041001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		0FD5B09497C41C6082A6E725 /* RunHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunHistory.swift; sourceTree = "<group>"; };
 		1125A87834C3E71B03C157C4 /* RunLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLibraryTests.swift; sourceTree = "<group>"; };
 		142020A2EFF4CFEACEC12A33 /* FavaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FavaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -108,6 +110,7 @@
 				82F92ECDD79BE98E1B4870B7 /* HealthKitAccess.swift */,
 				5B4962F2F741F990F0572FED /* HealthKitWorkoutReader.swift */,
 				C8ACBCE215D73460F2A2CF56 /* RootView.swift */,
+				D390F9C5750624C607041001 /* SettingsView.swift */,
 				0FD5B09497C41C6082A6E725 /* RunHistory.swift */,
 				9DC07F67DF799B428AFDD052 /* RunIngestion.swift */,
 				D390F9C5750624C607031001 /* LaunchContext.swift */,
@@ -290,6 +293,7 @@
 				7F1BCDC40DB71AF5BC23FE41 /* HealthKitAccess.swift in Sources */,
 				5C07F268F8EF5F0D91D70AB8 /* HealthKitWorkoutReader.swift in Sources */,
 				A254FD5DC88F0D42EFAAEDEA /* RootView.swift in Sources */,
+				D390F9C5750624C607041002 /* SettingsView.swift in Sources */,
 				130FB9B1DFB966DA5369E599 /* RunHistory.swift in Sources */,
 				0C3A3529BD3F649AF20E46E9 /* RunIngestion.swift in Sources */,
 				D390F9C5750624C607031002 /* LaunchContext.swift in Sources */,
