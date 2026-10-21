@@ -146,7 +146,7 @@
     },
     "T004": {
       "state": "working",
-      "correction_cycles": 0,
+      "correction_cycles": 1,
       "dependencies": [
         "T003"
       ],
@@ -481,9 +481,10 @@
       "tasks": [
         "T004"
       ],
-      "correction_cycles": 0,
+      "correction_cycles": 1,
       "heads": [
-        "be7c25cb5e2e1bda63247314095896425f212f98"
+        "be7c25cb5e2e1bda63247314095896425f212f98",
+        "d2acf6174584f54b52b8180f69a62e3683227ec8"
       ]
     }
   },
@@ -693,6 +694,21 @@
         "https://github.com/clemarc/fava/commit/be7c25cb5e2e1bda63247314095896425f212f98",
         "https://github.com/clemarc/fava/pull/31#issuecomment-6321153280"
       ]
+    },
+    {
+      "id": "C012",
+      "kind": "correction-reservation",
+      "branch": "checkpoint/r3.5/c012",
+      "tasks": [
+        "T004"
+      ],
+      "task_pr": "https://github.com/clemarc/fava/pull/32",
+      "correction_cycles": 1,
+      "prior_head": "d2acf6174584f54b52b8180f69a62e3683227ec8",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/32#issuecomment-6322002627",
+        "https://github.com/clemarc/fava/pull/33#issuecomment-6321723286"
+      ]
     }
   ],
   "findings": [
@@ -879,6 +895,22 @@
       "reviewed_head": "af93be37fc9f0df2749c37f734eea299d7888d98",
       "reviewed_target": "2f6f8cf145a2bb6f28341259c32dd0cf24e580e3",
       "resolution": "Compute initialRoute in a local constant before assigning route and initialEntryPending. Root and independent reviewer separately verified both exact-head native full logs: builds succeeded and each family passed 88 tests with zero failures or skips (67 unit, 21 UI), including all constructor/entry/recovery/route-stability tests and all 12 Dynamic Type cases. Initial failure and proposed fix evidence remain retained."
+    },
+    {
+      "task": "T004",
+      "pr": "https://github.com/clemarc/fava/pull/32",
+      "url": "https://github.com/clemarc/fava/actions/runs/39637681016/job/119352650254",
+      "severity": "high",
+      "head": "be7c25cb5e2e1bda63247314095896425f212f98",
+      "state": "open",
+      "assessment": "Both initial cancelled native logs contain six genuine FoundationUITests.swift:35 assertion failures: the added Done helper expects zero source reads after deliberate library entry, which correctly starts one. Both builds succeed, but no complete simulator suite passes. Current pure-import head has identical application/test bytes.",
+      "proposed_fix": "Keep original pre-entry zero-read assertions, add exact one-read assertion immediately before opening Settings after deliberate library entry, and assert the same one read after whole-flow Done. Preserve access request counts, every existing test and production/fixture/workflow behavior.",
+      "validation_plan": "After actual canonical round-one reservation and verified pure signed import, publish one consolidated scoped FoundationUITests helper correction. Require fresh exact-head deterministic checks, actual full iPhone/iPad native builds and nonzero complete simulator suites, independent review and current bot review. Cancelled partial logs and declared 89 methods are not passing evidence.",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/32#issuecomment-6322002627",
+        "https://github.com/clemarc/fava/actions/runs/39637681016/job/119352650254",
+        "https://github.com/clemarc/fava/actions/runs/39637681016/job/119352650083"
+      ]
     }
   ],
   "physical_acceptance": {
@@ -886,9 +918,9 @@
     "iPad": null
   },
   "linear": {
-    "state": "pending",
-    "verified_at": "2026-10-21T16:41:53.253275+00:00",
-    "source_revision": "6cf5a93971923df287b097f2ee6456c074396608",
+    "state": "verified",
+    "verified_at": "2026-10-21T17:06:10.207802+00:00",
+    "source_revision": "64d0fe61fc8aebe8180aac5e980d87d636d7f270",
     "project_id": "f823cc39-b818-460f-8682-bb4ec831885a",
     "milestone_id": "5f470b82-5ad7-40d8-a36d-eea3b2bf7dd3",
     "evidence": [
@@ -915,7 +947,8 @@
       "https://github.com/clemarc/fava/pull/24#issuecomment-6303697795",
       "https://github.com/clemarc/fava/pull/27#issuecomment-6307785737",
       "https://github.com/clemarc/fava/pull/29#issuecomment-6312773092",
-      "https://github.com/clemarc/fava/pull/31#issuecomment-6321385161"
+      "https://github.com/clemarc/fava/pull/31#issuecomment-6321385161",
+      "https://github.com/clemarc/fava/pull/33#issuecomment-6321847349"
     ],
     "verified_items": [
       {
@@ -999,10 +1032,8 @@
         "identifier": "FAV-52"
       }
     ],
-    "pending_keys": [
-      "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/T004"
-    ],
-    "actual_states": "All 16 existing items verified after canonical C010: T001/FAV-41, T002/FAV-42 and T003/FAV-43 Done; four stories and T004-T012 Todo. T004 In Progress projection awaits this canonical initial registration checkpoint integration.",
+    "pending_keys": [],
+    "actual_states": "All 16 existing items verified after canonical C011: T001/FAV-41, T002/FAV-42 and T003/FAV-43 Done; T004/FAV-44 In Progress; four stories and T005-T012 Todo. T004 completion remains pending actual source integration and canonical completion checkpoint.",
     "hierarchy": "T001 directly in milestone. T002 under US2/FAV-38, preserving US2/US3/US1 in its description. Other tasks use their first mapped story as parent, preserving every story mapping in descriptions.",
     "cli": "@schpet/linear-cli 3.0.0 through tools/sdd/linear_projection.py project()",
     "rendering": {
@@ -1030,7 +1061,8 @@
       "After actual signed T002 integration, fresh dry-run found no field drift and authorized no-op apply verified all 16 stable items with no pending keys or duplicates. Actual FAV-42 remains In Progress until this completion checkpoint integrates; project Done afterward and retain its actual outcome in a later checkpoint.",
       "After actual C007 integration, dry-run found only T002 state drift; authorized apply updated FAV-42 to Done and verified all 16 existing keyed items, definitions, project/milestone, hierarchy and states with no pending keys or duplicates. T003 remains actually Todo until this initial registration integrates; In Progress projection remains pending.",
       "After actual C008 integration, dry-run found only T003 state drift; authorized apply updated FAV-43 to In Progress and verified all 16 existing stable items, definitions, project/milestone, hierarchy and states with no pending keys or duplicates.",
-      "After actual C010 integration, dry-run found only T003 state drift; authorized apply updated FAV-43 to Done and verified all 16 existing stable items, definitions, project/milestone, hierarchy and states with no pending keys or duplicates. T004 remains actually Todo until this initial registration integrates; In Progress projection remains pending."
+      "After actual C010 integration, dry-run found only T003 state drift; authorized apply updated FAV-43 to Done and verified all 16 existing stable items, definitions, project/milestone, hierarchy and states with no pending keys or duplicates. T004 remains actually Todo until this initial registration integrates; In Progress projection remains pending.",
+      "After actual C011 integration, dry-run found only T004 state drift; authorized apply updated existing FAV-44 to In Progress and verified all 16 stable items, unchanged definitions, project/milestone, hierarchy and states with no pending keys or duplicates."
     ],
     "source_revisions": {
       "specs/healthkit-run-library-05-reliable-run-history-and-contextual-launch/US1": "3d66e8d40dd031f1fc2c4c48acddc4f1bf13c43a",
