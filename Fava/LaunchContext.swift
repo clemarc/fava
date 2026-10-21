@@ -13,8 +13,9 @@ final class LaunchContext: ObservableObject {
 
     init(ingestion: RunIngestionModel) {
         self.ingestion = ingestion
-        route = Self.initialRoute(for: ingestion.localHistory)
-        initialEntryPending = route == .library
+        let initialRoute = Self.initialRoute(for: ingestion.localHistory)
+        route = initialRoute
+        initialEntryPending = initialRoute == .library
     }
 
     private static func initialRoute(for history: LocalHistoryState) -> LaunchRoute {
