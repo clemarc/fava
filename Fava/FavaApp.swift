@@ -4,6 +4,7 @@ import SwiftUI
 struct FavaApp: App {
     @StateObject private var access: HealthAccessModel
     @StateObject private var ingestion: RunIngestionModel
+    @StateObject private var launch: LaunchContext
     @StateObject private var settings: DistanceSettings
     @StateObject private var selection = RunSelection()
 
@@ -29,15 +30,20 @@ struct FavaApp: App {
             cache = SyntheticWorkoutReader.snapshotStore(fixture: fixture, session: session)
             defaults = UserDefaults(suiteName: "Fava-UITests-" + session) ?? .standard
         }
+        if arguments.contains("--health-fixture") || arguments.contains("--run-fixture") {
+            provider = SyntheticAccessProbe(provider: provider)
+        }
         #endif
         _access = StateObject(wrappedValue: HealthAccessModel(provider: provider))
-        _ingestion = StateObject(wrappedValue: RunIngestionModel(reader: reader, historyStore: cache, clock: clock))
+        let ingestionModel = RunIngestionModel(reader: reader, historyStore: cache, clock: clock)
+        _ingestion = StateObject(wrappedValue: ingestionModel)
+        _launch = StateObject(wrappedValue: LaunchContext(ingestion: ingestionModel))
         _settings = StateObject(wrappedValue: DistanceSettings(defaults: defaults))
     }
 
     var body: some Scene {
         WindowGroup {
-            RootView(access: access)
+            RootView(access: access, launch: launch)
                 .environmentObject(ingestion)
                 .environmentObject(settings)
                 .environmentObject(selection)
