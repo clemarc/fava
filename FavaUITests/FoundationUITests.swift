@@ -19,6 +19,7 @@ final class FoundationUITests: XCTestCase {
     }
 
     private func openSettingsAccess(_ app: XCUIApplication) {
+        XCTAssertEqual(app.staticTexts["source-read-count"].label, "Source reads: 1", "Deliberate library entry starts one read")
         app.buttons["open-settings"].tap()
         let access = app.buttons["open-health-access"]
         reveal(access, in: app)
@@ -32,7 +33,7 @@ final class FoundationUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Run library"].waitForExistence(timeout: 3))
         XCTAssertFalse(app.navigationBars["Settings"].exists)
         XCTAssertEqual(app.staticTexts["access-request-count"].label, "Access requests: \(requests)")
-        XCTAssertEqual(app.staticTexts["source-read-count"].label, "Source reads: 0")
+        XCTAssertEqual(app.staticTexts["source-read-count"].label, "Source reads: 1", "Settings, access, Done and foregrounding must not add a read")
     }
 
     func testLaunchNavigateReturnAndRelaunchWithoutAutomaticRequest() {
