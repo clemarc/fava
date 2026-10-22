@@ -12,7 +12,9 @@ feature path or branch argument. Never merge or enable auto-merge into main.
 
 1. Check actual Cloud capabilities. **Explicitly request subagents** using the
    selected runtime's supported delegation tools when available: one isolated
-   implementation worker and a separate independent reviewer. If unavailable,
+   implementation worker and a separate independent reviewer. Instruct the
+   reviewer to use `.agents/skills/fava-independent-review/SKILL.md`, with the
+   actual head/target, lifecycle stage and task IDs. If unavailable,
    implement sequentially and obtain independent review through an available
    separate reviewer/session or owner; do not self-certify independent review.
    Do not invent Goal, worktree, agent or resume commands. Runtime limits mean

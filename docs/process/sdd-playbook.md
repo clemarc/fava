@@ -104,6 +104,17 @@ Quality checklist markers belong to reviewers. Implementation workers cannot
 mark them or manufacture owner approval. GitHub bot review is not an owner's
 approval and pending/stale reviews are not completed review.
 
+Use the [independent review skill](../../.agents/skills/fava-independent-review/SKILL.md)
+as the shared procedure for the separate reviewer and Codex PR review; `AGENTS.md`
+provides the Codex review entry point. This makes scope, valid-workflow and
+evidence checks repeatable while retaining both review gates. Runtime capabilities
+still determine which checks can be executed or inspected; report limitations.
+Adopt review-guidance changes through an owner-reviewed tooling PR to main.
+After owner merge and main-push verification, import the approved governance
+through a separate owner-reviewed synchronization PR to an active milestone;
+ordinary task/checkpoint PRs cannot introduce framework changes. Refresh affected
+head/target review evidence after synchronization; retain task/correction history.
+
 ## Cloud publication, runtime and settings
 
 Use the [verified GraphQL process](github-cloud-commits.md) and

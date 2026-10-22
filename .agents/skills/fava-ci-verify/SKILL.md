@@ -20,6 +20,10 @@ invent missing feature artifacts or validation evidence.
    These agent checks supplement deterministic CI. Do not call analyze/converge
    against nonexistent spec/plan/tasks. Governance work uses a documented review
    against the constitution and mission instead.
+   For independent review, give the separate reviewer
+   `.agents/skills/fava-independent-review/SKILL.md`, the actual head/target and
+   lifecycle scope. This includes governance/tooling changes; preserve the
+   original report and actual evidence limitations.
    Review changed prose against `docs/process/writing.md` before publication.
 3. Run available component tests. In Linux cloud, native Xcode validation awaits
    macOS Actions. Record durable decisions before regenerating derived artifacts.

@@ -50,3 +50,25 @@
   shell tracing, environment dumps or the companion skill's curl client fallback.
   Preserve proxy/CA trust. Never persist/expose credentials or upload real health
   data. Public tests/logs/artifacts must contain synthetic data only.
+
+## Review guidelines
+
+Use `.agents/skills/fava-independent-review/SKILL.md` for independent reviews,
+including Codex PR review. Follow its review procedure within the runtime's
+actual capabilities; report unavailable checks or evidence explicitly.
+
+- Review the complete change against approved scope, requirements and task
+  dependencies, including affected callers and tests.
+- Check that each task can integrate with compatible APIs, truthful UI and the
+  minimum regression coverage needed when its behavior activates.
+- Examine valid workflows as well as rejection cases, especially amendments,
+  target imports, documentation/tooling tasks and interruption/resume.
+- Check lifecycle transitions and retained evidence identity and chronology;
+  favorable report fields cannot replace actual proof.
+- Report concrete defects with triggers, consequences and precise code references.
+  Preserve existing regression assertions and distinguish missing verification
+  from a demonstrated bug.
+
+The shared procedure does not replace the separate reviewer, configured Codex
+review, current CI or owner approval gates. A worker's self-check is not
+independent review.
