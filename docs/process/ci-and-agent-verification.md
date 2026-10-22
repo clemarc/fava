@@ -136,7 +136,7 @@ body**, selected from the actual diff against the inspected target:
 For wholly FR-exempt Setup/Foundational work, retain Spec/Task and the documented
 exemption rather than inventing Implements. Cross-feature work must be split.
 These messages do not replace signed history, reviewed planning, current CI,
-independent review, owner approval or physical-device acceptance requirements.
+target-policy review, owner approval or physical-device acceptance requirements.
 
 GitHub loads [the default PR template](../pull_request_template.md) from `docs/`
 for new PRs after it reaches the default branch. Replace its deliberately invalid
@@ -482,7 +482,8 @@ key with isolated GnuPG; no signing private key or network credential is used.
 Fixtures cover actual signed approval and missing/wrong/late approval, decimal
 resolution, interrupted branches, retired/completed work and integration gates.
 The fixed historical pilot exception is unchanged. Semantic/native/review reports
-still require independent inspection; ledger assertions cannot replace evidence.
+still require actual coordinator inspection and separate reviewer evidence when
+the target policy requires it; ledger assertions cannot replace evidence.
 
 All introduced/integration commits must be GitHub Verified. Use valid union
 Spec/Task/Implements mappings on source-bearing merges, SDD-Type: planning on
