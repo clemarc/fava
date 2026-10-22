@@ -146,7 +146,7 @@
     },
     "T004": {
       "state": "working",
-      "correction_cycles": 1,
+      "correction_cycles": 2,
       "dependencies": [
         "T003"
       ],
@@ -481,10 +481,11 @@
       "tasks": [
         "T004"
       ],
-      "correction_cycles": 1,
+      "correction_cycles": 2,
       "heads": [
         "be7c25cb5e2e1bda63247314095896425f212f98",
-        "d2acf6174584f54b52b8180f69a62e3683227ec8"
+        "d2acf6174584f54b52b8180f69a62e3683227ec8",
+        "c37d7b5171912075ff7f43c78bd26b62f254eb0c"
       ]
     }
   },
@@ -709,6 +710,20 @@
         "https://github.com/clemarc/fava/pull/32#issuecomment-6322002627",
         "https://github.com/clemarc/fava/pull/33#issuecomment-6321723286"
       ]
+    },
+    {
+      "id": "C013",
+      "kind": "correction-reservation",
+      "branch": "checkpoint/r3.5/c013",
+      "tasks": [
+        "T004"
+      ],
+      "task_pr": "https://github.com/clemarc/fava/pull/32",
+      "correction_cycles": 2,
+      "prior_head": "c37d7b5171912075ff7f43c78bd26b62f254eb0c",
+      "evidence": [
+        "https://github.com/clemarc/fava/actions/runs/39689703920/job/119742401645"
+      ]
     }
   ],
   "findings": [
@@ -910,6 +925,20 @@
         "https://github.com/clemarc/fava/pull/32#issuecomment-6322002627",
         "https://github.com/clemarc/fava/actions/runs/39637681016/job/119352650254",
         "https://github.com/clemarc/fava/actions/runs/39637681016/job/119352650083"
+      ]
+    },
+    {
+      "task": "T004",
+      "pr": "https://github.com/clemarc/fava/pull/32",
+      "url": "https://github.com/clemarc/fava/actions/runs/39689703920/job/119742401645",
+      "severity": "high",
+      "head": "c37d7b5171912075ff7f43c78bd26b62f254eb0c",
+      "state": "open",
+      "assessment": "The unchanged-head retry confirms a second native failure. All 68 unit tests and 20 UI tests pass, but the cancelled fixture's second nested Settings request does not reach the synthetic provider: access-request-count remains one and the cancellation outcome never returns. The earlier attempt's complete passing iPhone suite remains retained evidence but cannot satisfy this failed current run.",
+      "proposed_fix": "Reveal and require a hittable nested HealthKit-access button and request button before tapping. Require both the expected failed/cancelled outcome and exact request count after each request, preserving the two-request assertion and all source-read assertions.",
+      "validation_plan": "After this canonical round-two reservation and verified pure signed import, publish one FoundationUITests-only correction. Require fresh current-head deterministic checks, full successful nonzero iPhone and iPad simulator suites, configured current-head bot review, independent review and all finding dispositions before integration.",
+      "evidence": [
+        "https://github.com/clemarc/fava/actions/runs/39689703920/job/119742401645"
       ]
     }
   ],
