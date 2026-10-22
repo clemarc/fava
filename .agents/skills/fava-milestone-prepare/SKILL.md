@@ -84,9 +84,10 @@ nested instructions before writing. This skill prepares planning only.
    and pending keys. Never claim synchronization from CLI availability. Do not
    project this governance task as R3.5 preparation.
 9. Validate SDD, fixtures, semantic analysis, scope and staged diff using
-   `$fava-ci-verify`; instruct the separate preparation reviewer to use
-   `.agents/skills/fava-independent-review/SKILL.md` against the actual
-   preparation head/target and approved contract. Publish verified GraphQL
+   `$fava-ci-verify`; use `.agents/skills/fava-review/SKILL.md` against the actual
+   preparation head/target and approved contract. Under adopted ADR-004 policy,
+   Codex is the only required reviewer; the coordinator retains verification
+   and findings. Owner preparation approval remains mandatory. Publish verified GraphQL
    commits with `SDD-Type: planning`.
    Open/update the same preparation PR **against the returned milestone_branch**. Monitor the
    current SHA, read actual failure logs, fix at most three cycles per PR across

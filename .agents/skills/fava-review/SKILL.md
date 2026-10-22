@@ -1,9 +1,9 @@
 ---
-name: fava-independent-review
-description: Independently review a Fava change against its approved scope, valid workflows, regression coverage and actual validation evidence; return findings bound to the inspected head and target through the invoking review system.
+name: fava-review
+description: Review a Fava change against approved scope, valid workflows, regression coverage and actual evidence; Codex is the required reviewer and the coordinator records verification and finding dispositions.
 ---
 
-# Independently review a change
+# Review a change
 
 Input: PR number or explicit head and target revisions, lifecycle stage and task
 IDs when applicable. Resolve full SHAs from actual Git/GitHub evidence; report
@@ -12,19 +12,23 @@ missing or contradictory inputs rather than infer approval from chat history.
 Read `AGENTS.md`, `.specify/memory/constitution.md`,
 `docs/process/sdd-playbook.md`, `docs/process/sdd-v2.md`,
 `docs/process/ci-and-agent-verification.md` and `docs/process/writing.md`.
-These are the canonical gates and evidence requirements; this skill supplies
-the review procedure without changing merge authority or correction budgets.
+These are the canonical gates and evidence requirements. The codex-only policy
+in `docs/decisions/004-codex-only-review.md` activates only after owner adoption
+and import into the milestone target. Preserve legacy reports and their gates
+when reconciling integrations made before activation.
 
-## Independence and scope
+## Roles and scope
 
-The reviewer must be a separate runtime/session or owner from the implementation
-worker. Record both identities. A worker may use this procedure for self-checks,
-but must label the result as self-review, not independent evidence.
+Codex PR review is the required code review. The coordinator uses this procedure
+to verify scope, actual CI/native results and finding dispositions; a second
+reviewer runtime is not required under the adopted codex-only policy. Record
+the worker/coordinator identity and actual Codex evidence. Optional additional
+reviews never substitute for Codex completion or owner approval. A coordinator's
+self-check must not be labelled an independent review.
 
 Review without editing tracked files, checklist markers or execution records.
-Return findings through the invoking review system: a subagent returns its report
-to the coordinator; GitHub Codex review emits its normal review output. The
-coordinator retains the separate report's unedited wording and identity. Run
+Return findings through the invoking review system; GitHub Codex review emits
+its normal review output. The coordinator retains actual review evidence. Run
 relevant checks in an isolated checkout or temporary workspace when they write
 artifacts. Use synthetic data. Do not make additional external API writes,
 publish commits or integration reports, resolve threads, merge or delegate
@@ -67,9 +71,10 @@ implementation through this skill.
    execution.
 7. Inspect actual current-head CI results and, when native applies, configured
    iPhone/iPad job logs and relevant artifacts. Verify checkout, build result,
-   nonzero executed tests and failures. Distinguish skipped, cancelled, missing
+   nonzero executed tests and failures. The coordinator owns this inspection
+   when GitHub Codex cannot access logs. Distinguish skipped, cancelled, missing
    or inaccessible evidence from success. State access limitations explicitly;
-   do not substitute a coordinator's summary for independent inspection.
+   do not treat an uninspected summary as actual log evidence.
 8. Form an initial findings pass before reading prior reviewer conclusions when
    practical. Then inspect every actual Codex/other review finding and its proposed
    disposition. Confirm fixes against code and tests; identify first-discovered,
@@ -87,14 +92,16 @@ invariant violated, and reproduction/test evidence when available. Distinguish
 demonstrated defects from unresolved questions and verification limitations.
 Avoid speculative issues and preferences without a concrete consequence.
 
-Record full head/target SHAs, worker/reviewer identities, scope, checks actually
+Record full head/target SHAs, worker/coordinator identity, scope, checks actually
 run or inspected, and missing evidence. If no actionable findings remain, say so
 explicitly without implying owner approval or physical-device acceptance.
 
-When integration evidence is requested, use the independent JSON report contract
-in `docs/process/sdd-v2.md`. Supply semantic/finding/native attestations only
-after actual inspection. All included findings must precede the final immutable
-independent report; a newly arriving finding requires refreshed assessment.
+When integration evidence is requested, the coordinator uses the JSON report
+contract in `docs/process/sdd-v2.md`, selecting the adopted target policy.
+Supply semantic/finding/native attestations only after actual inspection. All
+included findings must precede the final immutable coordinator report; a newly
+arriving finding requires refreshed assessment. Under legacy policy, retain
+the separate independent report rather than reinterpret earlier integrations.
 Report unresolved findings or unavailable evidence honestly instead of producing
 a favorable integration report. The coordinator owns publication and disposition
 records; this skill grants no additional external write authority.

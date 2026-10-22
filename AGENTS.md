@@ -32,8 +32,10 @@
   `.specify/templates/escalation-template.md`: findings/evidence, attempted fixes,
   a concrete proposed patch and validation plan, risks and exact owner decision.
   Human owner review remains mandatory for preparation/main/governance. Task
-  review is independent of the worker; head/target changes invalidate evidence.
-  Explicitly request subagents where supported; isolate their checkouts and writes.
+  Codex review is separate from implementation; head/target changes invalidate
+  evidence. Legacy integrations retain their original independent report.
+  Use isolated implementation subagents when useful; a second reviewer runtime
+  is not mandatory after codex-only policy adoption/import. Isolate their writes.
   Coordinator alone writes shared ledger/tasks/decisions; integrate serially.
   Quality checklists are reviewer-owned. Read actual Codex findings; record
   evidence-backed disposition before resolving discussions. Report pending
@@ -53,8 +55,8 @@
 
 ## Review guidelines
 
-Use `.agents/skills/fava-independent-review/SKILL.md` for independent reviews,
-including Codex PR review. Follow its review procedure within the runtime's
+Use `.agents/skills/fava-review/SKILL.md` for Codex PR review and coordinator
+verification. Follow its review procedure within the runtime's
 actual capabilities; report unavailable checks or evidence explicitly.
 
 - Review the complete change against approved scope, requirements and task
@@ -69,6 +71,9 @@ actual capabilities; report unavailable checks or evidence explicitly.
   Preserve existing regression assertions and distinguish missing verification
   from a demonstrated bug.
 
-The shared procedure does not replace the separate reviewer, configured Codex
-review, current CI or owner approval gates. A worker's self-check is not
-independent review.
+After owner adoption and target import of ADR-004, Codex is the only required
+reviewer; the coordinator records scope/native verification and dispositions.
+Current CI, signatures and owner approval remain mandatory. Preserve the legacy
+dual-review gates for earlier integrations. Use `tools/sdd/codex_review.py` and
+`docs/process/codex-review.md` for bounded requests/retries; timeout never waives
+review. A worker's self-check is not independent review.
