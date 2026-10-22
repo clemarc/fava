@@ -53,7 +53,7 @@
   Preserve proxy/CA trust. Never persist/expose credentials or upload real health
   data. Public tests/logs/artifacts must contain synthetic data only.
 
-## Review guidelines
+## Code Review Rules
 
 Use `.agents/skills/fava-review/SKILL.md` for Codex PR review and coordinator
 verification. Follow its review procedure within the runtime's

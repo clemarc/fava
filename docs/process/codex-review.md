@@ -1,5 +1,40 @@
 # Codex review timing and bounded recovery
 
+## Where custom review instructions live
+
+Fava keeps review instructions in Git, using the repository guidance supported
+by [Codex GitHub review](https://developers.openai.com/codex/integrations/github/).
+Codex reads applicable `AGENTS.md` rules: repository-wide rules belong at the
+root; directory-specific rules may live in a nested `AGENTS.md`.
+
+| Place | Purpose |
+| --- | --- |
+| Root `AGENTS.md`, **Code Review Rules** | Automatically discovered repository review guidance and the explicit pointer to the detailed procedure |
+| `.agents/skills/fava-review/SKILL.md` | Detailed review procedure, roles, evidence and reporting; referenced by `AGENTS.md` rather than assumed to load automatically in GitHub |
+| [Codex review settings](https://chatgpt.com/settings/code-review) | Connect/enable the repository and configure automatic reviews, personal preferences and review triggers |
+| `.codex/config.toml` | Local Codex client configuration; Fava currently uses it for MCP setup, not as the GitHub review-instruction entry point |
+
+To change what Codex checks, edit the applicable `AGENTS.md` rules or their linked
+procedure through a reviewed tooling PR. No additional review-instruction TOML
+file or copy of the complete rules in the settings screen is needed. If a UI
+provides an additional custom-instruction field, keep it to a pointer to the
+versioned repository rules to avoid conflicting copies; this is a Fava convention,
+not a separate required setup step.
+
+To enable automatic review, open Codex review settings, select `clemarc/fava`,
+enable Automatic review and choose the repository/personal review triggers.
+Those hosted settings are separate from repository files and are not changed
+by this PR. A manual `@codex review` comment requests review on a connected PR;
+the helper below adds the exact full head SHA for Fava's retained proof.
+
+After owner adoption, verify that the intended branch contains the rules and
+the linked skill, then inspect actual review results. An enablement setting or
+an instruction pointer alone is not proof that review completed or covered
+every rule. See also OpenAI's
+[custom review rules guidance](https://developers.openai.com/blog/custom-code-review-rules-for-codex).
+
+## Observed timing
+
 Snapshot: 2026-10-22, PRs #1–#36. The [request dataset](codex-review-timing.csv)
 contains all 55 observed manual review comments, result links and exclusions.
 
