@@ -180,7 +180,7 @@
       "integration_comment": 6362706067
     },
     "T005": {
-      "state": "pending",
+      "state": "working",
       "correction_cycles": 0,
       "dependencies": [
         "T004"
@@ -203,7 +203,7 @@
       "stories": [
         "US2"
       ],
-      "pr": null,
+      "pr": "https://github.com/clemarc/fava/pull/39",
       "merge_sha": null,
       "evidence": []
     },
@@ -493,6 +493,16 @@
         "d2acf6174584f54b52b8180f69a62e3683227ec8",
         "c37d7b5171912075ff7f43c78bd26b62f254eb0c"
       ]
+    },
+    "39": {
+      "branch": "task/r3.5/t005",
+      "tasks": [
+        "T005"
+      ],
+      "correction_cycles": 0,
+      "heads": [
+        "17e70b93f4eb9aab1c84dd62a87650b8a9767c57"
+      ]
     }
   },
   "parallel_groups": [],
@@ -747,6 +757,20 @@
         "https://github.com/clemarc/fava/pull/32#issuecomment-6361873460",
         "https://github.com/clemarc/fava/actions/runs/39932283671/job/120344072144",
         "https://github.com/clemarc/fava/actions/runs/39932283671/job/120344071945"
+      ]
+    },
+    {
+      "id": "C015",
+      "kind": "task-registration",
+      "branch": "checkpoint/r3.5/c015",
+      "tasks": [
+        "T005"
+      ],
+      "task_pr": "https://github.com/clemarc/fava/pull/39",
+      "initial_head": "17e70b93f4eb9aab1c84dd62a87650b8a9767c57",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/39",
+        "https://github.com/clemarc/fava/commit/17e70b93f4eb9aab1c84dd62a87650b8a9767c57"
       ]
     }
   ],
