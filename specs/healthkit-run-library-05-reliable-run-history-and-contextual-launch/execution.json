@@ -145,7 +145,7 @@
       "integration_comment": 6313842475
     },
     "T004": {
-      "state": "working",
+      "state": "integrated",
       "correction_cycles": 2,
       "dependencies": [
         "T003"
@@ -170,8 +170,14 @@
         "US1"
       ],
       "pr": "https://github.com/clemarc/fava/pull/32",
-      "merge_sha": null,
-      "evidence": []
+      "merge_sha": "fdd5b770a9eebacf9ddbc65d7f4cb488144f3e64",
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/32#issuecomment-6362706067",
+        "https://github.com/clemarc/fava/pull/32#issuecomment-6361873460",
+        "https://github.com/clemarc/fava/actions/runs/39932283671/job/120344072144",
+        "https://github.com/clemarc/fava/actions/runs/39932283671/job/120344071945"
+      ],
+      "integration_comment": 6362706067
     },
     "T005": {
       "state": "pending",
@@ -724,6 +730,24 @@
       "evidence": [
         "https://github.com/clemarc/fava/actions/runs/39689703920/job/119742401645"
       ]
+    },
+    {
+      "id": "C014",
+      "kind": "task-completion",
+      "branch": "checkpoint/r3.5/c014",
+      "tasks": [
+        "T004"
+      ],
+      "task_pr": "https://github.com/clemarc/fava/pull/32",
+      "merge_sha": "fdd5b770a9eebacf9ddbc65d7f4cb488144f3e64",
+      "source_head": "496d9ea58361313cf187066aed35d4ea4bd668de",
+      "integration_comment": 6362706067,
+      "evidence": [
+        "https://github.com/clemarc/fava/pull/32#issuecomment-6362706067",
+        "https://github.com/clemarc/fava/pull/32#issuecomment-6361873460",
+        "https://github.com/clemarc/fava/actions/runs/39932283671/job/120344072144",
+        "https://github.com/clemarc/fava/actions/runs/39932283671/job/120344071945"
+      ]
     }
   ],
   "findings": [
@@ -917,7 +941,7 @@
       "url": "https://github.com/clemarc/fava/actions/runs/39637681016/job/119352650254",
       "severity": "high",
       "head": "be7c25cb5e2e1bda63247314095896425f212f98",
-      "state": "open",
+      "state": "fixed",
       "assessment": "Both initial cancelled native logs contain six genuine FoundationUITests.swift:35 assertion failures: the added Done helper expects zero source reads after deliberate library entry, which correctly starts one. Both builds succeed, but no complete simulator suite passes. Current pure-import head has identical application/test bytes.",
       "proposed_fix": "Keep original pre-entry zero-read assertions, add exact one-read assertion immediately before opening Settings after deliberate library entry, and assert the same one read after whole-flow Done. Preserve access request counts, every existing test and production/fixture/workflow behavior.",
       "validation_plan": "After actual canonical round-one reservation and verified pure signed import, publish one consolidated scoped FoundationUITests helper correction. Require fresh exact-head deterministic checks, actual full iPhone/iPad native builds and nonzero complete simulator suites, independent review and current bot review. Cancelled partial logs and declared 89 methods are not passing evidence.",
@@ -925,7 +949,11 @@
         "https://github.com/clemarc/fava/pull/32#issuecomment-6322002627",
         "https://github.com/clemarc/fava/actions/runs/39637681016/job/119352650254",
         "https://github.com/clemarc/fava/actions/runs/39637681016/job/119352650083"
-      ]
+      ],
+      "disposition": "fixed",
+      "reviewed_head": "496d9ea58361313cf187066aed35d4ea4bd668de",
+      "reviewed_target": "b81f069210471fc12db6691ca32b774158c3aec9",
+      "resolution": "The retained round-one correction restores the legitimate one-read assertion after deliberate library entry while preserving zero pre-entry and no-additional-read Settings/access/Done coverage. Both current native families passed all 89 tests with zero failed or skipped; coordinator report 6362706067 records the exact-head disposition."
     },
     {
       "task": "T004",
@@ -933,13 +961,17 @@
       "url": "https://github.com/clemarc/fava/actions/runs/39689703920/job/119742401645",
       "severity": "high",
       "head": "c37d7b5171912075ff7f43c78bd26b62f254eb0c",
-      "state": "open",
+      "state": "fixed",
       "assessment": "The unchanged-head retry confirms a second native failure. All 68 unit tests and 20 UI tests pass, but the cancelled fixture's second nested Settings request does not reach the synthetic provider: access-request-count remains one and the cancellation outcome never returns. The earlier attempt's complete passing iPhone suite remains retained evidence but cannot satisfy this failed current run.",
       "proposed_fix": "Reveal and require a hittable nested HealthKit-access button and request button before tapping. Require both the expected failed/cancelled outcome and exact request count after each request, preserving the two-request assertion and all source-read assertions.",
       "validation_plan": "After this canonical round-two reservation and verified pure signed import, publish one FoundationUITests-only correction. Require fresh current-head deterministic checks, full successful nonzero iPhone and iPad simulator suites, configured current-head bot review, independent review and all finding dispositions before integration.",
       "evidence": [
         "https://github.com/clemarc/fava/actions/runs/39689703920/job/119742401645"
-      ]
+      ],
+      "disposition": "fixed",
+      "reviewed_head": "496d9ea58361313cf187066aed35d4ea4bd668de",
+      "reviewed_target": "b81f069210471fc12db6691ca32b774158c3aec9",
+      "resolution": "The retained round-two correction waits for the nested HealthKit request control and verifies exact failed/cancelled request counts one and two. Both current native families passed testFailureAndReportedCancellationAllowRetry and emitted 89 passed, zero failed or skipped tests; coordinator report 6362706067 retains the evidence."
     }
   ],
   "physical_acceptance": {
