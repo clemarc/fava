@@ -80,9 +80,28 @@ final class RunLibraryUITests: XCTestCase {
             XCTAssertTrue(app.buttons["run-" + firstID].exists)
             awaitMessage("Loading", in: app)
             assertCounts(1, in: app)
+            let first = app.buttons["run-" + firstID]
+            reveal(first, in: app); first.tap()
+            let rowBefore = first.label
+            notices(in: app)
+            let provenanceBefore = app.staticTexts["saved-provenance"].label
             app.buttons["open-settings"].tap()
             app.buttons["unit-miles"].tap()
             app.buttons["close-settings"].tap()
+            XCTAssertTrue(app.navigationBars["Run library"].exists)
+            assertCounts(1, in: app)
+            app.buttons["open-settings"].tap()
+            app.buttons["open-health-access"].tap()
+            XCTAssertTrue(app.staticTexts["access-status"].label.contains("Choose when"))
+            XCTAssertTrue(app.buttons["request-access"].isEnabled)
+            XCTAssertFalse(app.staticTexts["access-guidance"].exists)
+            app.buttons["close-settings"].tap()
+            XCTAssertTrue(app.navigationBars["Run library"].exists)
+            XCTAssertFalse(app.navigationBars["Settings"].exists)
+            XCTAssertEqual(app.staticTexts["saved-provenance"].label, provenanceBefore)
+            reveal(first, in: app)
+            XCTAssertEqual(first.label, rowBefore)
+            XCTAssertEqual(first.value as? String, "Selected")
             XCUIDevice.shared.press(.home); app.activate()
             assertCounts(1, in: app)
             app.navigationBars.buttons.element(boundBy: 0).tap()
@@ -437,6 +456,27 @@ final class RunLibraryUITests: XCTestCase {
             let oldest = app.buttons["run-00000000-0000-0000-0000-000000000003"]
             reveal(oldest, in: app);XCTAssertTrue(oldest.isHittable, category)
             XCTAssertTrue(app.buttons["open-settings"].isHittable)
+            app.buttons["open-settings"].tap()
+            for mode in ["device", "kilometres", "miles"] {
+                let unit = app.buttons["unit-" + mode]
+                reveal(unit, in: app)
+                XCTAssertTrue(unit.isHittable, category)
+                XCTAssertTrue(unit.isEnabled, category)
+                unit.tap()
+                XCTAssertEqual(unit.value as? String, "Selected", category)
+            }
+            let access = app.buttons["open-health-access"]
+            reveal(access, in: app); XCTAssertTrue(access.isHittable, category); access.tap()
+            let request = app.buttons["request-access"]
+            reveal(request, in: app)
+            XCTAssertTrue(request.isHittable, category)
+            XCTAssertTrue(request.isEnabled, category)
+            XCTAssertTrue(app.buttons["close-settings"].isHittable, category)
+            app.buttons["close-settings"].tap()
+            XCTAssertTrue(app.navigationBars["Run library"].exists)
+            assertCounts(1, in: app)
+            notices(in: app); reveal(row, in: app)
+            XCTAssertEqual(row.value as? String, "Selected", category)
             app.terminate()
         }
     }

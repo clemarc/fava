@@ -18,6 +18,40 @@ final class FoundationUITests: XCTestCase {
         }
     }
 
+    private func openSettingsAccess(_ app: XCUIApplication) {
+        XCTAssertEqual(app.staticTexts["source-read-count"].label, "Source reads: 1", "Deliberate library entry starts one read")
+        app.buttons["open-settings"].tap()
+        let access = app.buttons["open-health-access"]
+        XCTAssertTrue(access.waitForExistence(timeout: 3))
+        reveal(access, in: app)
+        XCTAssertTrue(access.isHittable)
+        access.tap()
+        let request = app.buttons["request-access"]
+        XCTAssertTrue(request.waitForExistence(timeout: 3))
+        reveal(request, in: app)
+        XCTAssertTrue(request.isHittable)
+    }
+
+    private func awaitAccessRequest(_ outcome: String, count: Int, in app: XCUIApplication) {
+        let status = app.staticTexts["access-status"]
+        let requests = app.staticTexts["access-request-count"]
+        XCTAssertTrue(status.waitForExistence(timeout: 3))
+        XCTAssertTrue(requests.waitForExistence(timeout: 3))
+        let reportedOutcome = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label CONTAINS %@", outcome), object: status)
+        let exactCount = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@", "Access requests: \(count)"), object: requests)
+        XCTAssertEqual(XCTWaiter.wait(for: [reportedOutcome, exactCount], timeout: 5), .completed)
+    }
+
+    private func doneReturnsToLibrary(_ app: XCUIApplication, requests: Int) {
+        app.buttons["close-settings"].tap()
+        XCTAssertTrue(app.navigationBars["Run library"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.navigationBars["Settings"].exists)
+        XCTAssertEqual(app.staticTexts["access-request-count"].label, "Access requests: \(requests)")
+        XCTAssertEqual(app.staticTexts["source-read-count"].label, "Source reads: 1", "Settings, access, Done and foregrounding must not add a read")
+    }
+
     func testLaunchNavigateReturnAndRelaunchWithoutAutomaticRequest() {
         let app = launch()
         XCTAssertTrue(app.staticTexts["access-status"].label.contains("Choose when"))
@@ -41,22 +75,36 @@ final class FoundationUITests: XCTestCase {
         XCTAssertFalse(status.label.contains("granted"))
         XCTAssertFalse(status.label.contains("denied"))
         XCTAssertTrue(app.buttons["request-access"].isEnabled)
-        app.buttons["request-access"].tap()
+        app.buttons["open-library"].tap()
+        openSettingsAccess(app)
+        XCTAssertTrue(status.label.contains("Request completed"))
+        let guidance = app.staticTexts["access-guidance"]
+        reveal(guidance, in: app)
+        XCTAssertTrue(guidance.label.contains("Health or system Settings"))
+        XCTAssertTrue(guidance.label.contains("return and Refresh"))
+        let request = app.buttons["request-access"]
+        reveal(request, in: app); request.tap()
         expectation(for: completed, evaluatedWith: status)
         waitForExpectations(timeout: 5)
+        doneReturnsToLibrary(app, requests: 2)
     }
 
     func testFailureAndReportedCancellationAllowRetry() {
         for fixture in ["failed", "cancelled"] {
             let app = launch(fixture)
             app.buttons["request-access"].tap()
-            let predicate = NSPredicate(format: "label CONTAINS %@", fixture == "failed" ? "request failed" : "Request not completed")
-            expectation(for: predicate, evaluatedWith: app.staticTexts["access-status"])
-            waitForExpectations(timeout: 5)
+            let outcome = fixture == "failed" ? "request failed" : "Request not completed"
+            awaitAccessRequest(outcome, count: 1, in: app)
             XCTAssertTrue(app.buttons["request-access"].isEnabled)
             XCTAssertEqual(app.buttons["request-access"].label, "Retry HealthKit request")
             app.buttons["open-library"].tap()
             XCTAssertTrue(app.navigationBars["Run library"].exists)
+            openSettingsAccess(app)
+            XCTAssertEqual(app.buttons["request-access"].label, "Retry HealthKit request")
+            XCTAssertTrue(app.buttons["request-access"].isEnabled)
+            app.buttons["request-access"].tap()
+            awaitAccessRequest(outcome, count: 2, in: app)
+            doneReturnsToLibrary(app, requests: 2)
             app.terminate()
         }
     }
@@ -67,6 +115,10 @@ final class FoundationUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["access-status"].label.contains("unavailable"))
         app.buttons["open-library"].tap()
         XCTAssertTrue(app.navigationBars["Run library"].exists)
+        openSettingsAccess(app)
+        XCTAssertTrue(app.staticTexts["access-status"].label.contains("unavailable"))
+        XCTAssertFalse(app.buttons["request-access"].isEnabled)
+        doneReturnsToLibrary(app, requests: 0)
     }
 
     func testActiveRequestDisablesActionAndBackgroundReturnPreservesNavigation() {
@@ -80,6 +132,15 @@ final class FoundationUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["source-read-count"].label, "Source reads: 0")
         app.buttons["open-library"].tap()
         XCTAssertTrue(app.navigationBars["Run library"].exists)
+        openSettingsAccess(app)
+        XCTAssertTrue(app.staticTexts["access-status"].label.contains("in progress"))
+        XCTAssertFalse(app.buttons["request-access"].isEnabled)
+        doneReturnsToLibrary(app, requests: 1)
+        openSettingsAccess(app)
+        XCTAssertFalse(app.buttons["request-access"].isEnabled)
+        XCUIDevice.shared.press(.home); app.activate()
+        XCTAssertTrue(app.staticTexts["access-status"].label.contains("in progress"))
+        doneReturnsToLibrary(app, requests: 1)
     }
 
     func testActionsReachableAtEveryDynamicTypeSize() {

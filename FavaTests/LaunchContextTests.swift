@@ -132,4 +132,50 @@ final class LaunchContextTests: XCTestCase {
         context.leaveLibrary(); context.enterLibrary()
         XCTAssertEqual(reader.reads, 1)
     }
+
+    func testSettingsDependenciesPreserveLibraryHistoryAndTransportAcrossAccessOutcomes() throws {
+        for activeRead in [false, true] {
+            for outcome in [HealthAccessOutcome.completed, .failed, .cancelled] {
+                let (context, ingestion, reader, store) = try make([run])
+                if activeRead { context.startInitialEntry() }
+                let history = ingestion.savedHistory
+                let provider = HealthAccessTests.Provider()
+                let access = HealthAccessModel(provider: provider)
+                let suite = "T004-" + UUID().uuidString
+                let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+                defer { defaults.removePersistentDomain(forName: suite) }
+                let settings = DistanceSettings(defaults: defaults)
+                for mode in DistanceMode.allCases {
+                    settings.mode = mode
+                    access.updateAvailability(); ingestion.updateAvailability()
+                    XCTAssertEqual(provider.requests, 0)
+                    XCTAssertEqual(context.route, .library)
+                    XCTAssertEqual(ingestion.savedHistory, history)
+                    XCTAssertEqual(reader.reads, activeRead ? 1 : 0)
+                }
+                access.request(); access.request()
+                access.updateAvailability(); ingestion.updateAvailability()
+                XCTAssertEqual(provider.requests, 1)
+                XCTAssertEqual(access.state, .requesting)
+                XCTAssertFalse(access.canRequest)
+                provider.completion?(outcome)
+                XCTAssertEqual(access.state, outcome == .completed ? .completed : outcome == .failed ? .failed : .cancelled)
+                access.request()
+                XCTAssertEqual(provider.requests, 2)
+                provider.completion?(outcome)
+                provider.isAvailable = false
+                access.updateAvailability(); access.request()
+                XCTAssertEqual(access.state, .unavailable)
+                XCTAssertFalse(access.canRequest)
+                XCTAssertEqual(provider.requests, 2)
+                XCTAssertEqual(context.route, .library)
+                XCTAssertEqual(ingestion.savedHistory, history)
+                XCTAssertEqual(store.saves, 0)
+                XCTAssertEqual(reader.reads, activeRead ? 1 : 0)
+                XCTAssertEqual(ingestion.isTransportActive, activeRead)
+                XCTAssertEqual(settings.mode, .miles)
+            }
+        }
+    }
+
 }
