@@ -154,6 +154,27 @@ final class RunIngestionTests: XCTestCase {
         XCTAssertEqual(clockCalls, 2)
     }
 
+    func testDuplicateDeliveryKeepsFirstSummaryButEqualLookingDifferentIDsBothRemain() throws {
+        let reader = Reader(); let cache = MemoryStore()
+        let a = record()
+        let originalB = record(distance: WorkoutDistance(value: 4, unit: .miles))
+        cache.history = try history([a, originalB], at: firstTime)
+        let model = RunIngestionModel(reader: reader, historyStore: cache, clock: { self.firstTime.addingTimeInterval(60) })
+
+        let replacementB = record(originalB.id, duration: 0, distance: nil)
+        let equalLookingButDistinct = record(distance: nil)
+        let ignoredDuplicate = record(originalB.id, duration: 180, distance: WorkoutDistance(value: 9, unit: .metres))
+        model.requestRead(); reader.complete(.success([replacementB, equalLookingButDistinct, ignoredDuplicate]))
+
+        let saved = try XCTUnwrap(model.savedHistory)
+        XCTAssertEqual(saved.runs, [a, replacementB, equalLookingButDistinct])
+        XCTAssertEqual(saved.runsByID[originalB.id], replacementB)
+        XCTAssertEqual(saved.runs.count, 3)
+        XCTAssertNotEqual(replacementB.id, equalLookingButDistinct.id)
+        XCTAssertEqual(saved.latestSavedObservation?.returnedIDs, [originalB.id, equalLookingButDistinct.id])
+        XCTAssertEqual(model.state, .sourceSuccess(returnedCount: 2, savingFailed: false))
+    }
+
     func testRepeatedEmptyAdvancesOnlyObservationAndLaterReadRetainsHistory() throws {
         let reader = Reader(); let cache = MemoryStore(); let a = record()
         cache.history = try history([a], at: firstTime)
@@ -282,6 +303,26 @@ final class RunIngestionTests: XCTestCase {
         }
     }
 
+    func testOfflineRelaunchKeepsUntimedLegacyHistoryWithoutStartingRead() throws {
+        let a = record(); let b = record()
+        let cache = MemoryStore()
+        cache.history = try RetainedRunHistory.adoptingLegacy(runs: [a, b], capturedAt: nil)
+        let reader = Reader(); reader.isAvailable = false
+
+        let model = RunIngestionModel(reader: reader, historyStore: cache)
+
+        XCTAssertEqual(model.savedHistory?.runs, [a, b])
+        XCTAssertEqual(model.savedHistory?.lastObservedAtByID, [:])
+        XCTAssertEqual(model.savedHistory?.latestSavedObservation,
+                       SavedReadObservation(observedAt: nil, returnedIDs: [a.id, b.id]))
+        XCTAssertTrue(model.isPriorSavedObservation)
+        XCTAssertEqual(model.state, .notRequested)
+        model.requestRead()
+        XCTAssertEqual(model.state, .unavailable)
+        XCTAssertEqual(reader.reads, 0)
+        XCTAssertEqual(model.savedHistory, cache.history)
+    }
+
     func testSaveFailurePreservesExactHistoryAcrossPriorStatesAndRelaunchAndRetryReadsAgain() throws {
         let a = record(); let b = record(); let unsaved = record(a.id, duration: 180)
         let priors: [RetainedRunHistory?] = [nil, try history([], at: firstTime), try history([a], at: firstTime), try history([a])]
@@ -309,6 +350,33 @@ final class RunIngestionTests: XCTestCase {
                 XCTAssertEqual(model.savedHistory?.latestSavedObservation?.returnedIDs, [b.id])
             }
         }
+    }
+
+    func testSaveFailureDoesNotPublishUnsavedSummaryOrProvenanceChanges() throws {
+        let reader = Reader(); let cache = MemoryStore()
+        let a = record(distance: WorkoutDistance(value: 1, unit: .miles))
+        let b = record()
+        let priorTime = firstTime
+        let prior = try RetainedRunHistory(
+            runs: [a, b],
+            lastObservedAtByID: [a.id: priorTime],
+            latestSavedObservation: SavedReadObservation(observedAt: priorTime, returnedIDs: [a.id]))
+        cache.history = prior
+        cache.failSave = true
+        let model = RunIngestionModel(reader: reader, historyStore: cache, clock: { self.firstTime.addingTimeInterval(60) })
+
+        let changedA = record(a.id, duration: 0, distance: nil)
+        let newC = record()
+        model.requestRead(); reader.complete(.success([changedA, newC]))
+
+        XCTAssertEqual(model.state, .sourceSuccess(returnedCount: 2, savingFailed: true))
+        XCTAssertEqual(model.savedHistory, prior)
+        XCTAssertEqual(cache.history, prior)
+        XCTAssertEqual(model.savedHistory?.runsByID[a.id], a)
+        XCTAssertNil(model.savedHistory?.runsByID[newC.id])
+        XCTAssertEqual(model.savedHistory?.lastObservedAtByID, [a.id: priorTime])
+        XCTAssertEqual(model.savedHistory?.latestSavedObservation,
+                       SavedReadObservation(observedAt: priorTime, returnedIDs: [a.id]))
     }
 
     func testSourceFailurePreservesHistoryAndCurrentSessionObservationOrigin() throws {
