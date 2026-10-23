@@ -32,8 +32,10 @@
   `.specify/templates/escalation-template.md`: findings/evidence, attempted fixes,
   a concrete proposed patch and validation plan, risks and exact owner decision.
   Human owner review remains mandatory for preparation/main/governance. Task
-  review is independent of the worker; head/target changes invalidate evidence.
-  Explicitly request subagents where supported; isolate their checkouts and writes.
+  Codex review is separate from implementation; head/target changes invalidate
+  evidence. Legacy integrations retain their original independent report.
+  Use isolated implementation subagents when useful; a second reviewer runtime
+  is not mandatory after codex-only policy adoption/import. Isolate their writes.
   Coordinator alone writes shared ledger/tasks/decisions; integrate serially.
   Quality checklists are reviewer-owned. Read actual Codex findings; record
   evidence-backed disposition before resolving discussions. Report pending
@@ -50,3 +52,28 @@
   shell tracing, environment dumps or the companion skill's curl client fallback.
   Preserve proxy/CA trust. Never persist/expose credentials or upload real health
   data. Public tests/logs/artifacts must contain synthetic data only.
+
+## Code Review Rules
+
+Use `.agents/skills/fava-review/SKILL.md` for Codex PR review and coordinator
+verification. Follow its review procedure within the runtime's
+actual capabilities; report unavailable checks or evidence explicitly.
+
+- Review the complete change against approved scope, requirements and task
+  dependencies, including affected callers and tests.
+- Check that each task can integrate with compatible APIs, truthful UI and the
+  minimum regression coverage needed when its behavior activates.
+- Examine valid workflows as well as rejection cases, especially amendments,
+  target imports, documentation/tooling tasks and interruption/resume.
+- Check lifecycle transitions and retained evidence identity and chronology;
+  favorable report fields cannot replace actual proof.
+- Report concrete defects with triggers, consequences and precise code references.
+  Preserve existing regression assertions and distinguish missing verification
+  from a demonstrated bug.
+
+After owner adoption and target import of ADR-004, Codex is the only required
+reviewer; the coordinator records scope/native verification and dispositions.
+Current CI, signatures and owner approval remain mandatory. Preserve the legacy
+dual-review gates for earlier integrations. Use `tools/sdd/codex_review.py` and
+`docs/process/codex-review.md` for bounded requests/retries; timeout never waives
+review. A worker's self-check is not independent review.

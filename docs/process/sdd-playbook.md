@@ -51,8 +51,10 @@ Preparation runs plan → tasks → checklist → analyze in lifecycle order. No
 implementation before the actual signed owner planning merge. Existing prep is
 resumed, never blindly regenerated/reopened; planning amendments require owner
 review. One coordinator owns shared task records/decisions/ledger and integration.
-Explicitly request subagents where supported; independent review is separate
-from the worker. Sequential work is the baseline. Parallel groups require reviewed
+Use isolated implementation subagents when useful. After ADR-004 adoption and
+target import, Codex is the required reviewer and the coordinator verifies
+evidence; a separate reviewer runtime is optional. Legacy targets retain dual
+review. Sequential work is the baseline. Parallel groups require reviewed
 disjoint ownership, isolated checkouts and integrated dependencies.
 
 ## Task design and traceability
@@ -89,7 +91,7 @@ replace deterministic tests, signing or human acceptance.
 
 Task integration requires current head AND target evidence: authorized scope,
 integrated dependencies, valid trailers and all introduced signatures, CI/native
-success, separate independent review, completed configured available Codex review,
+success, completed exact-head Codex review under the adopted target policy,
 evidence-backed disposition of every finding and structural/semantic drift checks.
 Head edits or target movement refresh validation/review. Unresolved critical
 correctness/security/scope/consistency findings block integration. Three automatic
@@ -103,6 +105,20 @@ New findings and resumed invocations do not reset the three-round budget.
 Quality checklist markers belong to reviewers. Implementation workers cannot
 mark them or manufacture owner approval. GitHub bot review is not an owner's
 approval and pending/stale reviews are not completed review.
+
+Use the [review skill](../../.agents/skills/fava-review/SKILL.md) for Codex review
+and coordinator verification; `AGENTS.md` provides the Codex entry point.
+[ADR-004](../decisions/004-codex-only-review.md) removes the mandatory second
+reviewer only after signed owner adoption and import into the milestone target.
+The coordinator retains scope/native interpretation and complete finding
+dispositions. Earlier integrations keep their original dual-review proof.
+Use the [measured timing and bounded retry policy](codex-review.md); unavailable
+or timed-out Codex review blocks integration. Report capability limitations.
+Adopt review-guidance changes through an owner-reviewed tooling PR to main.
+After owner merge and main-push verification, import the approved governance
+through a separate owner-reviewed synchronization PR to an active milestone;
+ordinary task/checkpoint PRs cannot introduce framework changes. Refresh affected
+head/target review evidence after synchronization; retain task/correction history.
 
 ## Cloud publication, runtime and settings
 

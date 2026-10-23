@@ -10,11 +10,12 @@ Read `AGENTS.md`, constitution, playbook, `docs/process/sdd-v2.md`, CI/signing/L
 guidance, and installed skills before using them. Never require chat history, a
 feature path or branch argument. Never merge or enable auto-merge into main.
 
-1. Check actual Cloud capabilities. **Explicitly request subagents** using the
-   selected runtime's supported delegation tools when available: one isolated
-   implementation worker and a separate independent reviewer. If unavailable,
-   implement sequentially and obtain independent review through an available
-   separate reviewer/session or owner; do not self-certify independent review.
+1. Check actual Cloud capabilities. Use an isolated implementation worker when
+   useful, or implement sequentially. After ADR-004 adoption and import into the
+   target, Codex PR review is the only required reviewer; the coordinator uses
+   `.agents/skills/fava-review/SKILL.md` for scope, CI/native interpretation and
+   finding dispositions. Preserve mandatory separate review for legacy targets
+   and historical integrations. Do not self-certify independent evidence.
    Do not invent Goal, worktree, agent or resume commands. Runtime limits mean
    checkpoint and resume, not weaken gates. See the shared resource for isolation.
 2. Set FAVA_MILESTONE to the user-supplied ID and run
@@ -31,7 +32,7 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    both parents. Register its actual SHA as planning_revision in a signed planning
    checkpoint on the milestone branch through a small registration PR. The owner
    already reviewed preparation; this metadata-only PR may use task integration
-   gates with independent review, current CI/signatures and a planning exception.
+   gates with target-policy review, current CI/signatures and a planning exception.
    No new product approval is manufactured. Before source work use
    `tools/sdd/lifecycle.py` through SDD validation to verify chronology.
 4. Use **one coordinator** as the only writer for execution.json, task checkbox
@@ -61,9 +62,10 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    macOS CI when Cloud is Linux. Use only synthetic fixtures.
 7. Publish signed GraphQL commits with Spec/Task/Implements trailers. The
    coordinator adds scoped durable progress/evidence in the task branch and
-   opens/updates its signed PR against the milestone branch. Request independent
-   review and configured Codex bot review for the full current head SHA using a
-   new unedited SHA-scoped request comment; never reuse old reactions. Review
+   opens/updates its signed PR against the milestone branch. Request Codex review
+   with `python3 tools/sdd/codex_review.py --pr NUMBER --retry`; poll read-only
+   using the same command without `--retry`. Follow the bounded policy in
+   `docs/process/codex-review.md`; preserve target-required legacy review. Review
    requests/comments to GitHub are authorized by this owner-started skill.
    Before integration, register its numeric PR key, immutable branch/task IDs,
    zero counter and one initial published head in task_prs via a gated metadata checkpoint on
@@ -89,7 +91,7 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    without authorization. Never relax requirements/gates.
 9. Apply every gate in `docs/process/sdd-v2.md`, using
    `python3 tools/sdd/integration.py "$FAVA_MILESTONE" --pr NUMBER --evidence-comment COMMENT_ID`
-   with retained check_run_ids and the immutable independent JSON report described
+   with retained check_run_ids and the immutable target-policy JSON report described
    in the shared resource, after setting FAVA_MILESTONE to the resolver-returned normalized id
    with a coordinator JSON comment written after publication of the current
    SHA (see the shared resource) as a read-only structural
@@ -97,7 +99,9 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    reports and all live review discussions; a successful assessment does not
    itself authorize integration. Verify report revision/author and evidence,
    every finding's disposition and current target SHA. No stale or pending bot
-   review counts; prove actual unavailability if configured review cannot run.
+   review counts; record actual failures and block if Codex cannot complete.
+   Same-head request retries do not consume source correction rounds or reset
+   the overall review deadline. Head changes require new current-head evidence.
 10. Once authorized gates pass, **merge only this task PR into the registered
     milestone branch**, with a two-parent merge retaining source history and
     valid merge-message trailers. Reinspect the target immediately before the
