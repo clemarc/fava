@@ -20,7 +20,7 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Build and test on an available simulator
-        run: python3 .github/checks/native.py test --family ${{ matrix.family }}
+        run: python3 .github/checks/native.py test --family ${{ matrix.family }} --timing-path artifacts/native-timing-${{ matrix.family }}.json
       - name: Preserve diagnostics and test results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -29,5 +29,6 @@ jobs:
           path: |
             artifacts/*.log
             artifacts/*.xcresult
+            artifacts/native-timing-*.json
           if-no-files-found: warn
           retention-days: 5
