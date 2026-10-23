@@ -12,6 +12,7 @@ import sdd
 from milestone import github, inspect, read, ancestor, integrated_task_errors
 from lifecycle import planning_ref
 from ledger import AUTOMATIC_CORRECTION_LIMIT, target_import, task_delta_errors
+from review_policy import CODEX_ONLY, LEGACY, policy_for
 
 
 def represented_task_ids(root, commits, target):
@@ -179,8 +180,11 @@ def evaluate(evidence):
     head, target = evidence.get('head'), evidence.get('target')
     if not head or not target or evidence.get('validated_head') != head or evidence.get('validated_target') != target:
         errors.append('validation is missing or stale for current head/target')
-    for field in ['scope', 'dependencies', 'trailers', 'signatures', 'protected_target', 'structural_drift',
-                  'semantic_drift', 'independent_review', 'findings_disposed']:
+    fields = ['scope', 'dependencies', 'trailers', 'signatures', 'protected_target', 'structural_drift',
+              'semantic_drift', 'findings_disposed']
+    if evidence.get('review_policy', LEGACY) != CODEX_ONLY:
+        fields.append('independent_review')
+    for field in fields:
         if evidence.get(field) is not True:
             errors.append(field + ': verified evidence required')
     if evidence.get('base') != evidence.get('milestone_branch') or not str(evidence.get('base', '')).startswith('milestone/'):
@@ -197,7 +201,11 @@ def evaluate(evidence):
     if evidence.get('native_required'):
         if checks.get('ios-build-test') != 'SUCCESS' or not evidence.get('simulator_tests', 0) > 0 or not evidence.get('macos_build'):
             errors.append('actual macOS compilation and nonzero simulator tests required')
-    if evidence.get('codex_configured') and evidence.get('codex_available'):
+    if evidence.get('review_policy') == CODEX_ONLY:
+        if (evidence.get('codex_configured') is not True or evidence.get('codex_available') is not True
+                or evidence.get('codex_review_head') != head or evidence.get('codex_review_complete') is not True):
+            errors.append('Codex bot review pending/stale/unavailable; retry cannot waive review')
+    elif evidence.get('codex_configured') and evidence.get('codex_available'):
         if evidence.get('codex_review_head') != head or evidence.get('codex_review_complete') is not True:
             errors.append('Codex bot review pending/stale')
     elif evidence.get('codex_configured') and not evidence.get('codex_unavailability_evidence'):
@@ -310,6 +318,11 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
     evidence = json.loads(report['body'])
     if not isinstance(evidence, dict):
         raise ValueError('integration report must be complete JSON object')
+    declared_policy = evidence.get('review_policy')
+    selected_policy = policy_for(root, target, head, sdd.git)
+    if declared_policy not in (None, selected_policy) or (selected_policy == CODEX_ONLY and declared_policy != CODEX_ONLY):
+        raise ValueError('integration report review_policy must match adopted target policy')
+    evidence['review_policy'] = selected_policy
     evidence['_created_at'] = report['created_at']
     evidence.update(head=head, target=target, base=pr['baseRefName'],
                     milestone_branch=context['milestone_branch'], state='OPEN' if historical else pr['state'], draft=pr['isDraft'], protected_target=protected)
@@ -430,7 +443,12 @@ def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=N
     reviewed = {}
     reviewed_at = None
     evidence['independent_review'] = False
-    if evidence.get('independent_review_comment'):
+    if selected_policy == CODEX_ONLY:
+        # The immutable coordinator report now owns semantic/native interpretation
+        # and every finding disposition, after actual CI and bot evidence.
+        reviewed = evidence
+        reviewed_at = report_time
+    elif evidence.get('independent_review_comment'):
         independent = github('api', f'repos/clemarc/fava/issues/comments/{evidence["independent_review_comment"]}')
         if immutable_comment(independent, number, report_time, head_time) and independent['html_url'] == review:
             reviewed = json.loads(independent['body'])

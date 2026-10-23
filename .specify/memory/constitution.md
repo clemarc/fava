@@ -108,8 +108,8 @@ and MUST NOT require an OpenAI API key in CI.
 Roadmap/specification/clarification and governance PRs MUST be owner-reviewed and
 human-merged to main. Preparation PRs MUST be owner-reviewed and human-merged to
 the registered milestone integration branch before source implementation. After
-owner adoption of this amendment, one coordinator MAY merge independently
-reviewed task/checkpoint PRs only into that registered branch after all current
+owner adoption of this amendment, one coordinator MAY merge Codex-reviewed
+task/checkpoint PRs only into that registered branch after all current
 head/target gates in `docs/process/sdd-v2.md` pass. Agents MUST NOT merge or enable
 auto-merge to main; auto-merge MUST NOT be used. The prior prohibition on all agent
 merges remains effective until the owner approves and merges this governance.
@@ -130,8 +130,14 @@ One coordinator MUST serialize integration and shared execution/task/decision
 records. Parallel workers require isolated checkouts, disjoint ownership and
 satisfied dependencies. Every integration MUST verify destination/scope/dependencies,
 trailers/signatures, current deterministic CI/ci-required, applicable actual macOS
-compilation/nonzero simulator tests, independent and configured available Codex
-review, finding dispositions and structural/semantic drift. Head/target movement
+compilation/nonzero simulator tests, completed exact-head Codex review, finding
+dispositions and structural/semantic drift. Under the adopted codex-only policy,
+the coordinator MUST interpret actual native logs and record complete findings
+and semantic evidence; a second reviewer runtime is not required. Earlier
+integrations MUST retain their original independent/Codex proof. The new policy
+MUST activate only after signed owner main adoption and target import as specified
+in `docs/decisions/004-codex-only-review.md`. Timeout or unavailable Codex MUST
+block integration, never waive the sole review gate. Head/target movement
 MUST refresh evidence. Three automatic correction cycles per task PR are the
 limit unless the owner authorizes more; blocked tasks MUST NOT weaken gates.
 Escalations MUST include linked findings with severity/impact, evidence and
@@ -187,4 +193,15 @@ fix proposals at escalation to reduce owner interruptions. Counts remain durable
 and monotonic; active work gets no reset, approval or weaker integration gate.
 The new policy takes effect only upon owner adoption of this governance PR.
 
-**Version**: 2.0.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-14
+Amendment 3.0.0 (proposed for owner review in PR #36): removes the mandatory
+additional independent reviewer after signed owner adoption and milestone-target
+import of ADR-004. This is MAJOR because new task/checkpoint review evidence
+changes incompatibly. Codex remains required; the coordinator takes responsibility
+for actual scope/native interpretation and finding dispositions. Owner main/prep
+approval, signatures, CI, device acceptance and source correction limits remain.
+Historical integrations are verified using their original target policy; no
+records, counters, requirements or task history are migrated. Same-head request
+retries are bounded separately and cannot establish completion. This amendment
+is not active merely because its proposal exists in a PR head.
+
+**Version**: 3.0.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-22
