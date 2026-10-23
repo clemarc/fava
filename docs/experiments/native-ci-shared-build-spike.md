@@ -1,6 +1,6 @@
 # Native CI shared-build spike
 
-Status: experimental. The workflow in `.github/workflows/native-ci-shared-build-spike.yml` is manually dispatched and is not an input to `ci-required` or the milestone integration assessor.
+Status: experimental. The workflow in `.github/workflows/native-ci-shared-build-spike.yml` runs on a PR only when its own spike files change, and is manually dispatchable after it reaches the default branch. It is not an input to `ci-required` or the milestone integration assessor.
 
 ## Baseline inspected at 7b2b072
 
@@ -22,7 +22,7 @@ The provenance binds the archive to the source SHA, workflow run and attempt, ar
 
 ## Benchmark protocol
 
-Use a PR-triggered `ios-build-test` run on the spike SHA as the current-pipeline baseline, then manually dispatch the spike with `mode=shared` for that exact SHA. Do not use an artifact from another run or attempt. Download retained timing/result/provenance artifacts before the one-day expiry and record the following without inferring queue time from subprocess timing.
+Use the PR-triggered `ios-build-test` run on the spike SHA as the current-pipeline baseline and the spike’s PR-triggered shared run for that exact SHA. After this workflow is on the default branch, manual dispatch with `mode=shared` is also available. Do not use an artifact from another run or attempt. Download retained timing/result/provenance artifacts before the one-day expiry and record the following without inferring queue time from subprocess timing.
 
 | Metric | Current | Shared build | Single runner |
 | --- | --- | --- | --- |

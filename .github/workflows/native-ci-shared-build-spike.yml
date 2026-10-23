@@ -1,6 +1,15 @@
 name: Native CI shared-build spike
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/checks/native.py'
+      - '.github/checks/native_spike.py'
+      - '.github/checks/test_native_spike.py'
+      - '.github/workflows/ios-ci.yml'
+      - '.github/workflows/native-ci-shared-build-spike.yml'
+      - 'docs/experiments/native-ci-shared-build-spike.md'
   workflow_dispatch:
     inputs:
       mode:
@@ -14,7 +23,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: native-ci-shared-build-spike-${{ github.ref }}-${{ inputs.mode }}
+  group: native-ci-shared-build-spike-${{ github.event.pull_request.number || github.ref }}-${{ inputs.mode || 'shared' }}
   cancel-in-progress: true
 
 env:
@@ -23,7 +32,7 @@ env:
 
 jobs:
   current-native:
-    if: inputs.mode == 'current'
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'current'
     name: spike-current-native (${{ matrix.family }})
     runs-on: macos-26
     timeout-minutes: 30
@@ -51,7 +60,7 @@ jobs:
           retention-days: 1
 
   prepare-native:
-    if: inputs.mode == 'shared'
+    if: github.event_name == 'pull_request' || inputs.mode == 'shared'
     name: spike-prepare-native
     runs-on: macos-26
     timeout-minutes: 30
@@ -115,7 +124,7 @@ jobs:
           retention-days: 1
 
   test-native:
-    if: inputs.mode == 'shared'
+    if: github.event_name == 'pull_request' || inputs.mode == 'shared'
     needs: prepare-native
     name: spike-test-native (${{ matrix.family }})
     runs-on: macos-26
@@ -168,7 +177,7 @@ jobs:
           retention-days: 1
 
   spike-evidence-gate:
-    if: always() && inputs.mode == 'shared'
+    if: always() && (github.event_name == 'pull_request' || inputs.mode == 'shared')
     needs: [prepare-native, test-native]
     name: spike-evidence-gate
     runs-on: ubuntu-24.04
