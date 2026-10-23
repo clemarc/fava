@@ -20,6 +20,14 @@ invent missing feature artifacts or validation evidence.
    These agent checks supplement deterministic CI. Do not call analyze/converge
    against nonexistent spec/plan/tasks. Governance work uses a documented review
    against the constitution and mission instead.
+   Apply `.agents/skills/fava-review/SKILL.md` to the actual head/target and
+   lifecycle scope, including governance/tooling. After ADR-004 adoption/import,
+   Codex is the sole required reviewer and the coordinator owns actual
+   scope/native/finding verification. Preserve legacy evidence requirements
+   until activation; a proposal cannot adopt itself. Use
+   `tools/sdd/codex_review.py` with `docs/process/codex-review.md` for bounded
+   requests/retries. Review requests to GitHub are authorized by this delivery
+   skill; retries never bypass the completed-review gate.
    Review changed prose against `docs/process/writing.md` before publication.
 3. Run available component tests. In Linux cloud, native Xcode validation awaits
    macOS Actions. Record durable decisions before regenerating derived artifacts.

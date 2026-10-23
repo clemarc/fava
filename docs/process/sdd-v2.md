@@ -17,6 +17,40 @@ The implementation coordinator may integrate gated task/checkpoint PRs **only**
 into the registered milestone branch. It ends with a milestone PR against main
 for owner testing, review and human merge. Agents never enable auto-merge.
 
+## Review policy adoption
+
+[ADR-004](../decisions/004-codex-only-review.md) proposes `codex-only-v1`:
+Codex is the sole required reviewer and the coordinator owns semantic scope,
+actual CI/native log interpretation and all finding dispositions. Activate only
+with the exact policy record in both target and head and an actual signed owner
+main-adoption merge in target ancestry. A PR-head record or report claim cannot
+activate it. Historical integrations select policy from their retained target
+parent; targets without the marker keep the legacy independent/Codex gates.
+
+New coordinator evidence after activation contains `review_policy: codex-only-v1`,
+`validated_head`, `validated_target`, exact task IDs, `check_run_ids`,
+`semantic_drift: true`, `findings_disposed: true`, a complete `findings` list, the
+actual Codex completion IDs and applicable `native` family results. Each finding
+has `url`, `rationale`, `evidence`, exact `head`/`target`, and `disposition` of
+`fixed` or `not-actionable`. Include all actual review bodies/comments, even
+completion-receipt content; no finding may be at or after the coordinator report.
+For each configured native family, retain `build_succeeded`, positive integer
+`tests` and the actual successful check's `job_url`, based on inspected logs.
+The report is immutable, written after actual CI/review and before integration.
+A separate independent JSON comment/runtime is no longer mandatory. The
+coordinator's own inspection is not labelled independent review.
+
+The legacy two-report details below remain the contract for pre-activation
+targets and retained integrations. Under `codex-only-v1`, substitute the immutable
+coordinator report for the separate semantic/native/disposition report and use
+the single-report chronology above; do not require the report to precede itself.
+No Codex unavailability exception applies under the single-review policy.
+
+Use `python3 tools/sdd/codex_review.py --pr NUMBER` to inspect review state and
+`--retry` to authorize an eligible initial/retry request. Follow the
+[measured timing and bounded policy](codex-review.md). Request retries preserve
+all source correction counters; completion and finding gates never time out open.
+
 ## Identity and shared resolution
 
 Both skills use `python3 tools/sdd/milestone.py ID --phase prepare|implement`.
@@ -111,7 +145,7 @@ Planning_revision is null in the prep PR because its future merge does not yet
 exist. After owner merge, implementation verifies and records the actual merge
 in a small checkpoint PR, with `SDD-Type: planning`; subsequent source commits
 require that checkpoint in their first-parent history. Checkpoint PRs use the
-same signing, current CI, independent review and findings gates; scope consists
+same signing, current CI, target-policy review and findings gates; scope consists
 only of execution metadata/task evidence/append-only decisions, never contracts.
 Their native applicability follows the actual diff, not a name-based exemption.
 
@@ -152,9 +186,10 @@ publishes signed task PRs, monitors validation/review, fixes justified findings,
 integrates serially, records evidence and projects actual Linear state. It
 continues until approved work and whole-milestone automated validation pass or
 no unrelated ready task remains. Sequential execution is reliable baseline.
-Explicitly request subagents where supported. Independent review uses a reviewer
-separate from the implementation worker; if unavailable, record blocked review
-and obtain another supported reviewer/session or owner. Parallel workers require
+Use isolated implementation subagents when useful. Under adopted `codex-only-v1`,
+Codex supplies required review and the coordinator supplies evidence inspection;
+no additional reviewer runtime is required. Legacy targets require the separate
+independent reviewer; unavailable legacy review remains blocked. Parallel workers require
 isolated clean checkouts, reviewed disjoint write ownership and integrated
 dependencies. Shared state has one writer and integrations always serialize.
 
@@ -167,8 +202,9 @@ target**:
 - Successful deterministic sdd-quality, tooling-validation, ci-applicability and
   fail-closed ci-required. Actual macOS compilation and nonzero simulator tests
   when native applies; inspect logs/xcresult summaries, exact SHA and run links.
-- Independent review of current head/target, with reviewer and worker identity,
-  report revision and findings. Configured available Codex bot review must
+- Target-policy review of current head/target: the adopted codex-only policy
+  requires Codex plus coordinator evidence; legacy policy additionally requires
+  the separate reviewer identity/report. Configured Codex bot review must
   complete for that head. Reaction-based completion requires a new unedited
   single-SHA request on this PR and a bot reaction after its creation. A pending request, older review or silence is not
   approval. If configured review cannot run, record the actual failure and block
@@ -179,7 +215,8 @@ target**:
   No unresolved critical correctness/security/scope/consistency finding.
 - Structural drift checks plus semantic comparison to the approved specification,
   reviewed plan/tasks and FR/US/acceptance mappings. CI cannot judge requirement
-  meaning; the independent reviewer/coordinator must inspect the actual reports.
+  meaning; the coordinator must inspect the actual reports and retain the
+  separate reviewer evidence when the target policy requires it.
 - Fresh tests, review and drift assessment after head edits or target movement.
   Recheck refs immediately before merge. Update a stale task branch with a signed
   merge from the current target, then rerun. Never treat an older green SHA as
@@ -215,7 +252,7 @@ before import; they cannot be hidden behind an already integrated task ID.
 Use that same import classification when proving task-owned changes before both
 integration and completion. An empty task claim followed by another task's
 shared-file import cannot establish completion, even with relabeled trailers.
-Independent review is retained in a separate reviewer JSON PR comment
+Under the legacy target policy, independent review is retained in a separate reviewer JSON PR comment
 (independent_review_comment plus URL), optionally linking its original GitHub review, containing head, target, reviewer and
 worker runtime identities. The coordinator publishes a subagent's unedited
 report, preserving its identity and findings; shared GitHub login does not create
@@ -410,7 +447,7 @@ path is conservatively excluded as ownership evidence unless every modifying
 commit includes the task. Use separate serial task PRs or a reviewed coherent
 batch with truthful joint Task/FR mappings; a historical touch is insufficient.
 
-Coordinator JSON must include `check_run_ids` for the actual successful Actions
+Legacy coordinator JSON must include `check_run_ids` for the actual successful Actions
 check runs, `validated_head`, `validated_target`, exact `tasks`, `semantic_drift`,
 `findings_disposed`, `independent_review_comment` and its
 `independent_review_url`. Publish a new comment after evidence is available; do
