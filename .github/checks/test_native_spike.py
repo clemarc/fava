@@ -64,6 +64,13 @@ class NativeSpikeTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 native_spike.verify_tree_manifest(root, manifest)
 
+    def test_test_products_command_uses_the_xctestrun_without_project_or_scheme(self):
+        command = native_spike.test_without_building_command('products', 'platform=iOS Simulator,id=A', 'result.xcresult')
+        self.assertIn('-testProductsPath', command)
+        self.assertNotIn('-project', command)
+        self.assertNotIn('-workspace', command)
+        self.assertNotIn('-scheme', command)
+
     def test_timing_evidence_is_best_effort_machine_readable(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / 'timing.json'

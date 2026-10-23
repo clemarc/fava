@@ -29,6 +29,7 @@ concurrency:
 env:
   DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
   ARTIFACT_RETENTION_DAYS: '1'
+  SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   current-native:
@@ -44,7 +45,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-          ref: ${{ github.sha }}
+          ref: ${{ env.SOURCE_SHA }}
       - name: Build and test independently (baseline)
         run: python3 .github/checks/native.py test --family ${{ matrix.family }} --timing-path artifacts/current-${{ matrix.family }}-timing.json
       - name: Preserve baseline evidence
@@ -72,18 +73,18 @@ jobs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
       action_artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
     env:
-      ARTIFACT_NAME: native-test-products-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
+      ARTIFACT_NAME: native-test-products-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-          ref: ${{ github.sha }}
+          ref: ${{ env.SOURCE_SHA }}
       - name: Build portable test products
         run: >-
           python3 .github/checks/native_spike.py prepare
           --products artifacts/products/Fava.xctestproducts
           --metadata artifacts/products/build-metadata.json
-          --source-sha "$GITHUB_SHA"
+          --source-sha "$SOURCE_SHA"
           --workflow-run-id "$GITHUB_RUN_ID"
           --workflow-run-attempt "$GITHUB_RUN_ATTEMPT"
           --timing-path artifacts/prepare-timing.json
@@ -137,7 +138,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-          ref: ${{ github.sha }}
+          ref: ${{ env.SOURCE_SHA }}
       - name: Download build products from this run
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -149,7 +150,7 @@ jobs:
           --archive artifacts/download/Fava.xctestproducts.zip
           --provenance artifacts/download/provenance.json
           --extract-root artifacts/extracted
-          --source-sha "$GITHUB_SHA"
+          --source-sha "$SOURCE_SHA"
           --workflow-run-id "$GITHUB_RUN_ID"
           --workflow-run-attempt "$GITHUB_RUN_ATTEMPT"
           --artifact-name "${{ needs.prepare-native.outputs.artifact_name }}"
@@ -197,7 +198,7 @@ jobs:
           python3 .github/checks/native_spike.py assess
           --iphone-report artifacts/evidence/native-evidence-iPhone.json
           --ipad-report artifacts/evidence/native-evidence-iPad.json
-          --source-sha "$GITHUB_SHA"
+          --source-sha "$SOURCE_SHA"
           --workflow-run-id "$GITHUB_RUN_ID"
           --workflow-run-attempt "$GITHUB_RUN_ATTEMPT"
           --artifact-name "${{ needs.prepare-native.outputs.artifact_name }}"

@@ -195,6 +195,13 @@ def strings(value):
         yield value
 
 
+def test_without_building_command(products, destination, result):
+    """`-testProductsPath` selects an xctestrun, which cannot also select a scheme."""
+    return ['xcodebuild', '-destination', destination, '-destination-timeout', '120',
+            '-testProductsPath', str(products), '-resultBundlePath', str(result),
+            'test-without-building']
+
+
 def test_products(args):
     require_macos()
     artifacts, products = Path(args.artifacts), Path(args.products)
@@ -214,9 +221,8 @@ def test_products(args):
             run(['xcrun', 'simctl', 'bootstatus', udid, '-b'], 'bootstatus', artifacts)
         result = artifacts / f'FavaTests-{args.family}.xcresult'
         with timings.phase('test_without_building'):
-            run([*common, '-destination', 'platform=iOS Simulator,id=' + udid,
-                 '-destination-timeout', '120', '-testProductsPath', str(products),
-                 '-resultBundlePath', str(result), 'test-without-building'], 'tests', artifacts)
+            run(test_without_building_command(products, 'platform=iOS Simulator,id=' + udid, result),
+                'tests', artifacts)
         with timings.phase('result_bundle_processing'):
             summary = json.loads(run(['xcrun', 'xcresulttool', 'get', 'test-results', 'summary', '--path', str(result)],
                                      'test-summary', artifacts, True))
