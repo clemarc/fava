@@ -22,10 +22,26 @@ final class FoundationUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["source-read-count"].label, "Source reads: 1", "Deliberate library entry starts one read")
         app.buttons["open-settings"].tap()
         let access = app.buttons["open-health-access"]
+        XCTAssertTrue(access.waitForExistence(timeout: 3))
         reveal(access, in: app)
         XCTAssertTrue(access.isHittable)
         access.tap()
-        XCTAssertTrue(app.buttons["request-access"].waitForExistence(timeout: 3))
+        let request = app.buttons["request-access"]
+        XCTAssertTrue(request.waitForExistence(timeout: 3))
+        reveal(request, in: app)
+        XCTAssertTrue(request.isHittable)
+    }
+
+    private func awaitAccessRequest(_ outcome: String, count: Int, in app: XCUIApplication) {
+        let status = app.staticTexts["access-status"]
+        let requests = app.staticTexts["access-request-count"]
+        XCTAssertTrue(status.waitForExistence(timeout: 3))
+        XCTAssertTrue(requests.waitForExistence(timeout: 3))
+        let reportedOutcome = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label CONTAINS %@", outcome), object: status)
+        let exactCount = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@", "Access requests: \(count)"), object: requests)
+        XCTAssertEqual(XCTWaiter.wait(for: [reportedOutcome, exactCount], timeout: 5), .completed)
     }
 
     private func doneReturnsToLibrary(_ app: XCUIApplication, requests: Int) {
@@ -77,9 +93,8 @@ final class FoundationUITests: XCTestCase {
         for fixture in ["failed", "cancelled"] {
             let app = launch(fixture)
             app.buttons["request-access"].tap()
-            let predicate = NSPredicate(format: "label CONTAINS %@", fixture == "failed" ? "request failed" : "Request not completed")
-            expectation(for: predicate, evaluatedWith: app.staticTexts["access-status"])
-            waitForExpectations(timeout: 5)
+            let outcome = fixture == "failed" ? "request failed" : "Request not completed"
+            awaitAccessRequest(outcome, count: 1, in: app)
             XCTAssertTrue(app.buttons["request-access"].isEnabled)
             XCTAssertEqual(app.buttons["request-access"].label, "Retry HealthKit request")
             app.buttons["open-library"].tap()
@@ -88,8 +103,7 @@ final class FoundationUITests: XCTestCase {
             XCTAssertEqual(app.buttons["request-access"].label, "Retry HealthKit request")
             XCTAssertTrue(app.buttons["request-access"].isEnabled)
             app.buttons["request-access"].tap()
-            expectation(for: predicate, evaluatedWith: app.staticTexts["access-status"])
-            waitForExpectations(timeout: 5)
+            awaitAccessRequest(outcome, count: 2, in: app)
             doneReturnsToLibrary(app, requests: 2)
             app.terminate()
         }
