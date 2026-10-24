@@ -117,6 +117,67 @@ def native_test(family):
     if result.get('totalTestCount', 0) < 1: raise ValueError('test result contains no tests; select unit/integration/UI targets in the shared scheme')
 
 
+def evidence_summary(result, family):
+    """Validate the actual xcresulttool summary, including executed test counts."""
+    keys = ('totalTestCount', 'passedTests', 'failedTests', 'skippedTests', 'expectedFailures')
+    if not isinstance(result, dict) or any(type(result.get(k)) is not int or result[k] < 0 for k in keys):
+        raise ValueError('missing_or_invalid_test_counts')
+    if result['totalTestCount'] != sum(result[k] for k in keys[1:]):
+        raise ValueError('inconsistent_test_counts')
+    devices = result.get('devicesAndConfigurations')
+    if not isinstance(devices, list) or not devices:
+        raise ValueError('missing_device_results')
+    for entry in devices:
+        device = entry.get('device', {}) if isinstance(entry, dict) else {}
+        if (not str(device.get('deviceName', '')).startswith(family)
+                or device.get('platform') != 'iOS Simulator'):
+            raise ValueError('wrong_simulator_family')
+        if any(type(entry.get(k)) is not int or entry[k] < 0 for k in keys[1:]):
+            raise ValueError('incomplete_device_counts')
+    if any(sum(entry[k] for entry in devices) != result[k] for k in keys[1:]):
+        raise ValueError('inconsistent_device_counts')
+    if result.get('result') not in {'Passed', 'Failed'}:
+        raise ValueError('unknown_test_result')
+    if (result['result'] == 'Passed') != (result['failedTests'] == 0):
+        raise ValueError('inconsistent_test_result')
+    return dict(tests=result['passedTests'] + result['failedTests'] + result['expectedFailures'],
+                passed=result['passedTests'], failed=result['failedTests'],
+                skipped=result['skippedTests'], expected_failures=result['expectedFailures'],
+                result=result['result'])
+
+
+def evidence_log_text(log, head):
+    """Normalize job logs and establish checkout and terminal-log identity."""
+    # Both gh's decorated output and connector logs carry ISO timestamps.
+    text = '\n'.join(re.sub(r'^.*?\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d+Z ?', '', line)
+                     for line in re.sub(r'\x1b\[[0-9;]*m', '', log).splitlines())
+    checkout = re.findall(r'^\[command\].*git checkout --progress --force ([0-9a-f]{40})$', text, re.M)
+    if checkout != [head]:
+        raise ValueError('checkout_identity_missing_or_inconsistent')
+    if 'Cleaning up orphan processes' not in text:
+        raise ValueError('incomplete_job_log')
+    return text
+
+
+def log_evidence(log, head, family):
+    """Parse full approved-route job logs without retaining their raw content."""
+    text = evidence_log_text(log, head)
+    command = '+ xcrun xcresulttool get test-results summary --path artifacts/FavaTests.xcresult'
+    if text.count(command) != 1:
+        raise ValueError('missing_or_ambiguous_test_summary')
+    tail = text.split(command, 1)[1].lstrip()
+    try:
+        summary, _ = json.JSONDecoder().raw_decode(tail)
+    except (ValueError, TypeError):
+        raise ValueError('incomplete_test_summary') from None
+    parsed = evidence_summary(summary, family)
+    build = len(re.findall(r'^\*\* BUILD SUCCEEDED \*\*$', text, re.M)) == 1
+    test = len(re.findall(r'^\*\* TEST SUCCEEDED \*\*$', text, re.M)) == 1
+    if any(marker in text for marker in ('** BUILD FAILED **', '** TEST FAILED **')):
+        raise ValueError('contradictory_native_result')
+    return dict(parsed, build_succeeded=build, test_succeeded=test)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('mode', choices=['classify', 'test'])
