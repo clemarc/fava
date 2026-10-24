@@ -13,6 +13,32 @@ from sdd import FEATURE, ROADMAP_ID, git, status, task_rows
 from signatures import owner_merge
 
 
+# This is an immutable reconciliation record, not a second destination policy.
+# PR #41 was the one automatic merge used to import C015 into the already-open
+# T005 branch. Its reverse destination is otherwise forbidden. Keeping every
+# identifying field here makes any later reverse-target PR fail closed.
+TARGET_IMPORT_PR_RECONCILIATIONS = {
+    'R3.5': {
+        41: {
+            'url': 'https://github.com/clemarc/fava/pull/41',
+            'head': 'milestone/r3.5',
+            'sha': '195631baf6deb20fcfce595fb43287cbde6a6206',
+            'base': 'task/r3.5/t005',
+            'merge_sha': '611f56ebac503c206c8c310161a6f3d6bcbceb36',
+        },
+    },
+}
+
+
+def reconciled_target_import_pr(result, pr):
+    """Accept the one owner-authorized historical reverse target import only."""
+    expected = TARGET_IMPORT_PR_RECONCILIATIONS.get(result['id'], {}).get(pr['number'])
+    if not expected:
+        return False
+    return (pr.get('state') == 'closed' and bool(pr.get('merged'))
+            and all(pr.get(key) == value for key, value in expected.items()))
+
+
 def normalize(value):
     value = value.strip().upper()
     if not re.fullmatch(ROADMAP_ID, value):
@@ -507,7 +533,7 @@ def reconcile(result, phase):
             raise ValueError('completed execution cannot be reopened')
     for pr in result.get('prs', []):
         expected = 'main' if pr['head'] == result['milestone_branch'] else result['milestone_branch']
-        if pr['base'] != expected:
+        if pr['base'] != expected and not reconciled_target_import_pr(result, pr):
             raise ValueError(f'PR #{pr["number"]}: wrong target {pr["base"]}, expected {expected}')
     prep = [p for p in result.get('prs', []) if p['head'] == result['preparation_branch']]
     if len([p for p in prep if p['state'] == 'open']) > 1:
