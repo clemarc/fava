@@ -155,6 +155,27 @@ class ResolverTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'completed'):
             milestone.reconcile(context, 'implement')
 
+    def test_only_the_pinned_r35_target_import_pr_can_use_its_reverse_destination(self):
+        context = self.context()
+        exception = dict(number=41,
+                         url='https://github.com/clemarc/fava/pull/41',
+                         state='closed', merged='2026-10-23T20:46:00Z',
+                         head='milestone/r3.5',
+                         sha='195631baf6deb20fcfce595fb43287cbde6a6206',
+                         base='task/r3.5/t005',
+                         merge_sha='611f56ebac503c206c8c310161a6f3d6bcbceb36')
+        context['prs'] = [exception]
+        self.assertIsNone(milestone.reconcile(context, 'prepare'))
+        for field, value in [('number', 42), ('url', 'https://github.com/clemarc/fava/pull/42'),
+                             ('state', 'open'), ('merged', None), ('head', 'milestone/r3.5-copy'),
+                             ('sha', 'a' * 40), ('base', 'task/r3.5/t006'),
+                             ('merge_sha', 'b' * 40)]:
+            with self.subTest(field=field):
+                candidate = dict(exception, **{field: value})
+                context['prs'] = [candidate]
+                with self.assertRaisesRegex(ValueError, 'wrong target'):
+                    milestone.reconcile(context, 'prepare')
+
     def test_existing_branch_and_dirty_divergent_checkouts(self):
         context = self.context()
         context.update(target_sha='head', branches={'refs/heads/prepare/r3.5': 'head'})
