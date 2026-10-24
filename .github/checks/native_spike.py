@@ -229,10 +229,10 @@ def test_products(args):
             # Xcode's summary intentionally omits the target/suite tree. Read the
             # detailed result too, rather than treating a successful nonzero run as
             # evidence that both mandatory targets executed.
-            details = json.loads(run(['xcrun', 'xcresulttool', 'get', 'test-results', 'tests', '--path', str(result)],
-                                     'test-details', artifacts, True))
+            test_details = json.loads(run(['xcrun', 'xcresulttool', 'get', 'test-results', 'tests', '--path', str(result)],
+                                          'test-details', artifacts, True))
             count = summary.get('totalTestCount', 0)
-            suite_text = list(strings(summary)) + list(strings(details))
+            suite_text = list(strings(summary)) + list(strings(test_details))
             suites = {suite: any(suite in item for item in suite_text) for suite in REQUIRED_SUITES}
             if not isinstance(count, int) or count < 1:
                 raise ValueError('test result contains no tests')
