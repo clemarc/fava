@@ -123,6 +123,30 @@ class RecoveryTests(unittest.TestCase):
         self.context['target_sha']=RESERVATION
         self.assertEqual(set(self.recover()['stale_fields']),{'head','target'})
 
+    def test_inline_comment_edits_and_replies_invalidate_live_review_digest(self):
+        self.context['prs']=[dict(number=10,sha=HEAD,head='task/r3.5/t001')]
+        inline=[dict(id=50,body='original finding',updated_at='2026-10-24T09:00:00Z')]
+        def api(*args):
+            path=args[-1]
+            if '/git/ref/' in path:return {'object':{'sha':TARGET}}
+            if 'check-runs' in path:return [{'check_runs':[]}]
+            if path.endswith('/comments?per_page=100'):
+                return [inline] if '/pulls/' in path else [[]]
+            if '/reviews?' in path:return [[]]
+            return self.observation['pr']
+        with patch.object(milestone,'git',return_value=HEAD):
+            before=recovery.live_observation(self.root,self.context,10,api)
+            old=recovery.snapshot(self.context,before,'implement')
+            inline[0].update(body='edited finding',updated_at='2026-10-24T10:00:00Z')
+            after=recovery.live_observation(self.root,self.context,10,api)
+            result=recovery.recover(self.root,self.context,old,after)
+            self.assertIn('review_digest',result['stale_fields'])
+            self.assertEqual(result['next_action'],'refresh_current_evidence')
+            reply_baseline=recovery.snapshot(self.context,after,'implement')
+            inline.append(dict(id=51,in_reply_to_id=50,body='new reply'))
+            replied=recovery.live_observation(self.root,self.context,10,api)
+            self.assertIn('review_digest',recovery.recover(self.root,self.context,reply_baseline,replied)['stale_fields'])
+
     def test_lost_merge_acknowledgement_requires_exact_intended_parents(self):
         self.old['ambiguous_mutation']=dict(kind='merge',pr=10,head=HEAD,target=TARGET,evidence_comment=123)
         self.assertEqual(self.recover()['next_action'],'reassess_before_guarded_merge')

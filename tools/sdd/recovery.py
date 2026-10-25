@@ -55,6 +55,7 @@ def live_observation(root, context, number, api=milestone.github):
                  f'repos/{REPOSITORY}/commits/{pr["head"]["sha"]}/check-runs?filter=all&per_page=100')
     reviews = api('api', '--paginate', '--slurp', f'repos/{REPOSITORY}/pulls/{number}/reviews?per_page=100')
     comments = api('api', '--paginate', '--slurp', f'repos/{REPOSITORY}/issues/{number}/comments?per_page=100')
+    inline = api('api', '--paginate', '--slurp', f'repos/{REPOSITORY}/pulls/{number}/comments?per_page=100')
     # Digests include current content/edit/state so a favorable stale report
     # cannot hide a later finding, dismissal or rerun. Digests grant no approval.
     check_rows = [r for page in checks for r in page['check_runs']]
@@ -73,7 +74,7 @@ def live_observation(root, context, number, api=milestone.github):
         if errors:
             raise ValueError('task identity cannot be verified from actual source history')
         task_ids = sorted(ids)
-    return dict(pr=pr, check_digest=digest(checks), review_digest=digest([reviews, comments]),
+    return dict(pr=pr, check_digest=digest(checks), review_digest=digest([reviews, comments, inline]),
                 native=dict(state='checks_only_acceptance_not_verified', jobs=native),
                 review_references=[dict(id=r.get('id'), commit=r.get('commit_id'),
                                         state=r.get('state'), url=r.get('html_url'))
