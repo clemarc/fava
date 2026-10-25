@@ -184,6 +184,8 @@ def recover(root, context, old, observation, gate=verify_merged, publication=rec
               review_digest=observation['review_digest']).items() if old.get(k) != value]
     result = dict(state='reconciled', stale_fields=stale, verified_evidence=[],
                   missing_requirements=[], next_action='refresh_current_evidence', blocking_reason=None)
+    if pr['state'] != 'open' and not pr.get('merged'):
+        raise ValueError('closed unmerged PR requires owner reconciliation')
     progress = context.get('task_progress', {}).get(str(pr['number']), {})
     count = progress.get('correction_cycles', 0)
     if pr['state'] == 'open' and pr['head']['ref'].startswith(context['task_branch_prefix']):

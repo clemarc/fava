@@ -577,6 +577,12 @@ def main():
                     or (outcome or {}).get('verified_evidence')):
                 ambiguous = previous['ambiguous_mutation']
             report = args.session_report or (previous or {}).get('evidence_comment')
+            verified = (outcome or {}).get('verified_evidence', [])
+            if verified:
+                verified_report = verified[0]['evidence_comment']
+                if args.session_report and args.session_report != verified_report:
+                    raise ValueError('requested report differs from verified merge evidence')
+                report = verified_report
             current = snapshot(result, observation, args.phase, ambiguous, report)
             if outcome:
                 current['pending_transition'] = outcome.get('next_action') or 'blocked'

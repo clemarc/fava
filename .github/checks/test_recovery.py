@@ -9,7 +9,7 @@ import sys
 import subprocess
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import patch, Mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools/sdd'))
@@ -235,6 +235,35 @@ class RecoveryTests(unittest.TestCase):
                 self.assertEqual(stopped.exception.code,1)
                 save.assert_not_called()
             self.assertEqual(snapshot.read_text(),'null')
+
+    def test_retired_pr_cannot_resume_through_ambiguous_publication(self):
+        self.observation['pr']['state']='closed'
+        self.old['ambiguous_mutation']=dict(kind='publication',branch='task/r3.5/t001',
+            parent=TARGET,tree=MERGE,message_sha256='e'*64)
+        publication=Mock(return_value=dict(state='not_observed',action='reassess_before_expected_head_publication'))
+        with self.assertRaisesRegex(ValueError,'owner reconciliation'):self.recover(publication=publication)
+        publication.assert_not_called()
+
+    def test_cli_retains_verified_merge_report_across_second_interruption(self):
+        self.merged()
+        self.old['evidence_comment']=None
+        self.old['ambiguous_mutation']=dict(kind='merge',pr=10,head=HEAD,target=TARGET,evidence_comment=123)
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp); prior=root/'prior.json';prior.write_text(json.dumps(self.old))
+            outcome=dict(state='reconciled',verified_evidence=[self.proof],next_action='prepare_standalone_completion_checkpoint')
+            with (patch.object(sys,'argv',['milestone.py','R3.5','--phase','implement','--root',temp,
+                    '--recover',str(prior),'--handoff']),patch.object(milestone,'inspect',return_value=self.context),
+                    patch.object(recovery,'live_observation',return_value=self.observation),
+                    patch.object(recovery,'recover',return_value=outcome),redirect_stdout(io.StringIO())):
+                with self.assertRaises(SystemExit) as stopped:milestone.main()
+                self.assertEqual(stopped.exception.code,0)
+            saved=json.loads((root/'artifacts/sdd-session/r3.5/snapshot.json').read_text())
+            self.assertEqual(saved['evidence_comment'],123)
+            self.assertIsNone(saved['ambiguous_mutation'])
+            gate=Mock(return_value=self.proof)
+            resumed=recovery.recover(root,self.context,saved,self.observation,gate=gate)
+            self.assertEqual(gate.call_args.args[-1],123)
+            self.assertEqual(resumed['next_action'],'prepare_standalone_completion_checkpoint')
 
 
 if __name__=='__main__':unittest.main()
