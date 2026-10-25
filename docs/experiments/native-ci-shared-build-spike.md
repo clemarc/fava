@@ -26,16 +26,26 @@ Use the PR-triggered `ios-build-test` run on the spike SHA as the current-pipeli
 
 | Metric | Current | Shared build | Single runner |
 | --- | --- | --- | --- |
-| Compilation duration | pending | pending | not implemented |
-| Simulator setup duration | pending; boot unknown | pending | not evaluated |
-| iPhone/iPad test duration | pending | pending | not evaluated |
-| Artifact upload/download | n/a | pending | n/a |
-| Native job count | 2 | 3 | not evaluated |
-| Total runner-minutes | pending | pending | not evaluated |
-| End-to-end elapsed time | pending | pending | not evaluated |
-| Test counts/evidence completeness | pending | pending | not evaluated |
+| Compilation duration | iPhone 25.0s; iPad 16.2s | one generic build-for-testing: 54.0s | not implemented |
+| Simulator setup duration | selection: 21.8s / 2.1s; boot unknown (owned by `xcodebuild test`) | selection: 37.3s / 2.1s; boot: 307.4s / 230.8s | not evaluated |
+| iPhone/iPad test duration | 1,027.1s / 817.6s | 705.6s / 729.9s | not evaluated |
+| Artifact upload/download | n/a | upload 3s; download 1s / 4s | n/a |
+| Native job count | 2 | 3 (prepare, iPhone, iPad) | not evaluated |
+| Total macOS runner-minutes | 32.8 | 36.9 | not evaluated |
+| End-to-end elapsed time | 18m42s | 20m05s | not evaluated |
+| Test counts/evidence completeness | 41 per family; passing conventional gate | 41 per family; both required suites, `.xcresult`, provenance, and isolated gate accepted | not evaluated |
 
-Treat product portability as unproven until the shared run’s two `test-without-building` jobs and evidence gate pass. The architecture only merits production migration if it saves runner time without worsening critical-path time or reducing the two-family evidence.
+### Recorded comparison
+
+The controlled comparison used source `29a3c1c1bc4e0e824205f15c519356f0d1d4da8b`, Xcode 26.6 (17F113), and iOS Simulator SDK 26.5 on `macos-26`. The conventional run was [40177650811](https://github.com/clemarc/fava/actions/runs/40177650811); the shared run was [40177650776](https://github.com/clemarc/fava/actions/runs/40177650776), attempt 1. Both started at `2026-10-25T08:41:56Z`, so no material queue delay confounds this observation.
+
+The portable artifact was `native-test-products-40177650776-1-29a3c1c1bc4e0e824205f15c519356f0d1d4da8b` (artifact ID `12593261828`): 15,659,445 bytes compressed, 51,525,462 bytes uncompressed, internal archive SHA-256 `c438e35c6d68c291e1c627c86fd7afed131f342750f2bc21eb54279bce7e8bf1`, and GitHub artifact digest `sha256:3be9a431d8269d2a2d478085b9bb6fb4a7d35fd531af2c5d00808e3fb0d7e10b`. It expires after one day. `ditto` packaging plus manifest verification preserved executable modes and symbolic links. Independent evidence artifacts were `12593625231` (iPhone) and `12593049671` (iPad), also one-day retention.
+
+This is one verified paired observation, not a three-sample performance claim. Although shared compilation eliminated one 16--25 second per-family build and shortened raw test execution, the additional generic build, serial dependency, simulator startup, and artifact workflow raised both measured macOS runner use (+4.2 minutes) and critical path (+1m23s). Retain the current parallel architecture for production; first optimize simulator startup/UI-test variance and collect more paired samples before reconsidering shared build. A single-runner variant was intentionally not implemented because it would serialize the two device-family acceptance paths and make independent evidence weaker.
+
+The prototype also observed two earlier iPad UI-test failures in different `FoundationUITests` methods while the matching conventional iPad job passed. A final independent shared run passed both families and the evidence gate, so this is recorded as UI-test variance rather than a product-portability defect. The gate rejects incomplete evidence; it was corrected to check out the tested source before loading the isolated parser.
+
+Product portability is proven for the recorded run: both `test-without-building` jobs and the evidence gate passed. A production migration still requires repeated paired samples that save runner time without worsening critical-path time or reducing two-family evidence.
 
 ## Production migration and rollback
 
