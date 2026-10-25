@@ -1,11 +1,13 @@
 """Classify native applicability and run real Xcode simulator validation on macOS."""
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 import xml.etree.ElementTree as ET
 
 from sdd import implementation_paths
@@ -46,6 +48,33 @@ def classify(paths, files, base_files=()):
 
 
 def run(command, name, capture=False):
+    """Time existing phases without changing build/test commands or evidence."""
+    started = time.perf_counter()
+    outcome = 'interrupted'
+
+    def emit(record):
+        text = json.dumps(dict(phase=name, observed_at=datetime.now(timezone.utc).isoformat(), **record),
+                          sort_keys=True, separators=(',', ':'))
+        print('FAVA_NATIVE_PHASE ' + text, flush=True)
+        try:
+            with Path('artifacts/native-phases.log').open('a') as stream:
+                stream.write(text + '\n')
+        except OSError:
+            print('Optional native phase timing file unavailable.', flush=True)
+
+    emit(dict(event='start'))
+    try:
+        result = _run(command, name, capture)
+        outcome = 'success'
+        return result
+    except (ValueError, OSError, subprocess.SubprocessError):
+        outcome = 'failure'
+        raise
+    finally:
+        emit(dict(event='complete', outcome=outcome, seconds=time.perf_counter() - started))
+
+
+def _run(command, name, capture=False):
     print('+', ' '.join(command), flush=True)
     log = Path('artifacts') / (name + '.log')
     with log.open('w') as stream:
@@ -117,14 +146,42 @@ def native_test(family):
     if result.get('totalTestCount', 0) < 1: raise ValueError('test result contains no tests; select unit/integration/UI targets in the shared scheme')
 
 
+def compile_feedback():
+    """Cheap initial-head feedback; never simulator-test acceptance evidence."""
+    if sys.platform != 'darwin': raise ValueError('compilation feedback requires macOS')
+    Path('artifacts').mkdir(exist_ok=True)
+    args = validate_config(json.loads(Path('.github/ios.json').read_text()), tracked())
+    common = ['xcodebuild', *args, '-configuration', 'Debug', '-derivedDataPath',
+              'artifacts/DerivedData', '-clonedSourcePackagesDirPath', 'artifacts/SourcePackages',
+              '-disableAutomaticPackageResolution', '-onlyUsePackageVersionsFromResolvedFile',
+              '-skipPackageUpdates', 'CODE_SIGNING_ALLOWED=NO', 'CODE_SIGNING_REQUIRED=NO']
+    run(['xcodebuild', '-version'], 'compile-xcode-version')
+    run([*common, '-resolvePackageDependencies'], 'compile-dependencies')
+    run([*common, '-destination', 'generic/platform=iOS Simulator', 'build'], 'compile-feedback')
+    print('Compilation feedback only. No simulator tests ran; native acceptance is not established.')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('mode', choices=['classify', 'test'])
+    parser.add_argument('mode', choices=['classify', 'test', 'compile', 'schedule'])
     parser.add_argument('--base')
     parser.add_argument('--family', choices=['iPhone', 'iPad'], default='iPhone')
     args = parser.parse_args()
     try:
         if args.mode == 'test': native_test(args.family)
+        elif args.mode == 'compile': compile_feedback()
+        elif args.mode == 'schedule':
+            from native_scheduling import decide, full
+            event_file = os.environ.get('GITHUB_EVENT_PATH')
+            try:
+                decision = decide(Path.cwd(), json.loads(Path(event_file).read_text())) if event_file else full('event_not_available')
+            except (OSError, ValueError):
+                decision = full('event_not_available')
+            print(json.dumps(decision, sort_keys=True))
+            if os.environ.get('GITHUB_OUTPUT'):
+                with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+                    stream.write('acceptance=' + str(decision['acceptance']).lower() + '\n')
+                    stream.write('compile_feedback=' + str(decision['compile_feedback']).lower() + '\n')
         else:
             paths = subprocess.check_output(['git', 'diff', '--name-only', args.base, 'HEAD'], text=True).splitlines() if args.base else tracked()
             state = classify(paths, tracked(), tracked(args.base) if args.base else [])
