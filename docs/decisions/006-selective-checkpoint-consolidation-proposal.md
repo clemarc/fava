@@ -1,4 +1,4 @@
-# ADR-005 proposal: selective completion and registration checkpoints
+# ADR-006 proposal: selective completion and registration checkpoints
 
 Status: proposed; owner approval absent; activation disabled.
 
