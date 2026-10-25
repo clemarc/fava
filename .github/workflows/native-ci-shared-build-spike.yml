@@ -1,0 +1,208 @@
+name: Native CI shared-build spike
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/checks/native.py'
+      - '.github/checks/native_spike.py'
+      - '.github/checks/test_native_spike.py'
+      - '.github/workflows/ios-ci.yml'
+      - '.github/workflows/native-ci-shared-build-spike.yml'
+      - 'docs/experiments/native-ci-shared-build-spike.md'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Benchmark mode; this workflow never satisfies production acceptance.
+        required: true
+        default: shared
+        type: choice
+        options: [shared, current]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-ci-shared-build-spike-${{ github.event.pull_request.number || github.ref }}-${{ inputs.mode || 'shared' }}
+  cancel-in-progress: true
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+  ARTIFACT_RETENTION_DAYS: '1'
+  SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  current-native:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'current'
+    name: spike-current-native (${{ matrix.family }})
+    runs-on: macos-26
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [iPhone, iPad]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ env.SOURCE_SHA }}
+      - name: Build and test independently (baseline)
+        run: python3 .github/checks/native.py test --family ${{ matrix.family }} --timing-path artifacts/current-${{ matrix.family }}-timing.json
+      - name: Preserve baseline evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-spike-current-${{ matrix.family }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/*.log
+            artifacts/*.xcresult
+            artifacts/current-*-timing.json
+          if-no-files-found: warn
+          retention-days: 1
+
+  prepare-native:
+    if: github.event_name == 'pull_request' || inputs.mode == 'shared'
+    name: spike-prepare-native
+    runs-on: macos-26
+    timeout-minutes: 30
+    outputs:
+      artifact_name: ${{ steps.identity.outputs.artifact_name }}
+      archive_sha256: ${{ steps.identity.outputs.archive_sha256 }}
+      compressed_size_bytes: ${{ steps.identity.outputs.compressed_size_bytes }}
+      uncompressed_size_bytes: ${{ steps.identity.outputs.uncompressed_size_bytes }}
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      action_artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
+    env:
+      ARTIFACT_NAME: native-test-products-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ env.SOURCE_SHA }}
+      - name: Build portable test products
+        run: >-
+          python3 .github/checks/native_spike.py prepare
+          --products artifacts/products/Fava.xctestproducts
+          --metadata artifacts/products/build-metadata.json
+          --source-sha "$SOURCE_SHA"
+          --workflow-run-id "$GITHUB_RUN_ID"
+          --workflow-run-attempt "$GITHUB_RUN_ATTEMPT"
+          --timing-path artifacts/prepare-timing.json
+      - name: Package products and record provenance
+        run: >-
+          python3 .github/checks/native_spike.py package
+          --products artifacts/products/Fava.xctestproducts
+          --metadata artifacts/products/build-metadata.json
+          --archive artifacts/Fava.xctestproducts.zip
+          --provenance artifacts/provenance.json
+          --artifact-name "$ARTIFACT_NAME"
+          --retention-days "$ARTIFACT_RETENTION_DAYS"
+      - id: identity
+        name: Export verified artifact identity
+        run: |
+          python3 -c 'import json, os; p=json.load(open("artifacts/provenance.json")); o=open(os.environ["GITHUB_OUTPUT"], "a"); [o.write("{}={}\n".format(k, p[k])) for k in ("archive_sha256", "compressed_size_bytes", "uncompressed_size_bytes")]; o.write("artifact_name={}\n".format(os.environ["ARTIFACT_NAME"]))'
+      - id: upload
+        name: Upload portable test products
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ steps.identity.outputs.artifact_name }}
+          path: |
+            artifacts/Fava.xctestproducts.zip
+            artifacts/provenance.json
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+      - name: Preserve prepare diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-spike-prepare-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/*.log
+            artifacts/*timing.json
+            artifacts/provenance.json
+          if-no-files-found: warn
+          retention-days: 1
+
+  test-native:
+    if: github.event_name == 'pull_request' || inputs.mode == 'shared'
+    needs: prepare-native
+    name: spike-test-native (${{ matrix.family }})
+    runs-on: macos-26
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [iPhone, iPad]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ env.SOURCE_SHA }}
+      - name: Download build products from this run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ${{ needs.prepare-native.outputs.artifact_name }}
+          path: artifacts/download
+      - name: Verify provenance, digest, permissions, and symbolic links
+        run: >-
+          python3 .github/checks/native_spike.py extract-and-verify
+          --archive artifacts/download/Fava.xctestproducts.zip
+          --provenance artifacts/download/provenance.json
+          --extract-root artifacts/extracted
+          --source-sha "$SOURCE_SHA"
+          --workflow-run-id "$GITHUB_RUN_ID"
+          --workflow-run-attempt "$GITHUB_RUN_ATTEMPT"
+          --artifact-name "${{ needs.prepare-native.outputs.artifact_name }}"
+          --archive-sha256 "${{ needs.prepare-native.outputs.archive_sha256 }}"
+      - name: Test portable products on ${{ matrix.family }}
+        run: >-
+          python3 .github/checks/native_spike.py test-products
+          --family ${{ matrix.family }}
+          --products artifacts/extracted/Fava.xctestproducts
+          --provenance artifacts/extracted/verified-provenance.json
+          --report artifacts/native-evidence-${{ matrix.family }}.json
+          --timing-path artifacts/shared-${{ matrix.family }}-timing.json
+      - name: Preserve independent native evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-spike-evidence-${{ matrix.family }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/*.log
+            artifacts/*.xcresult
+            artifacts/*timing.json
+            artifacts/native-evidence-*.json
+            artifacts/download/provenance.json
+          if-no-files-found: warn
+          retention-days: 1
+
+  spike-evidence-gate:
+    if: always() && (github.event_name == 'pull_request' || inputs.mode == 'shared')
+    needs: [prepare-native, test-native]
+    name: spike-evidence-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+      - name: Fail closed on missing or cancelled native jobs
+        run: |
+          test '${{ needs.prepare-native.result }}' = success
+          test '${{ needs.test-native.result }}' = success
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: native-spike-evidence-*-${{ github.run_id }}-${{ github.run_attempt }}
+          merge-multiple: true
+          path: artifacts/evidence
+      - name: Verify iPhone and iPad result evidence
+        run: >-
+          python3 .github/checks/native_spike.py assess
+          --iphone-report artifacts/evidence/native-evidence-iPhone.json
+          --ipad-report artifacts/evidence/native-evidence-iPad.json
+          --source-sha "$SOURCE_SHA"
+          --workflow-run-id "$GITHUB_RUN_ID"
+          --workflow-run-attempt "$GITHUB_RUN_ATTEMPT"
+          --artifact-name "${{ needs.prepare-native.outputs.artifact_name }}"
+          --archive-sha256 "${{ needs.prepare-native.outputs.archive_sha256 }}"
