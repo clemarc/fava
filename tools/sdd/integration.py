@@ -13,6 +13,7 @@ from milestone import github, inspect, read, ancestor, integrated_task_errors
 from lifecycle import planning_ref
 from ledger import AUTOMATIC_CORRECTION_LIMIT, target_import, task_delta_errors
 from review_policy import CODEX_ONLY, LEGACY, policy_for
+from metrics import measured, invocation, PURPOSES
 
 
 def represented_task_ids(root, commits, target):
@@ -215,6 +216,7 @@ def evaluate(evidence):
     return errors
 
 
+@measured('integration_entry')
 def assess(root, identifier, number, evidence_comment=None):
     context = inspect(root, identifier, 'implement')
     pr = github('pr', 'view', str(number), '--repo', 'clemarc/fava', '--json',
@@ -273,6 +275,7 @@ def retained_checks(head, report, cutoff):
     return check_results(results), {r['name']: r['details_url'] for r in selected}
 
 
+@measured('integration_assessor', historical=True, live=True)
 def assess_revision(root, context, pr, evidence_comment, cutoff=None, verified=None):
     """Full gates at explicit retained parents; never calls the resolver.
 
@@ -505,13 +508,16 @@ def main():
     parser.add_argument('identifier')
     parser.add_argument('--pr', type=int, required=True)
     parser.add_argument('--evidence-comment', type=int, help='SHA-bound coordinator JSON PR comment, written after publication')
+    parser.add_argument('--measure', action='store_true', help='append sanitized timing/counts under ignored artifacts')
+    parser.add_argument('--purpose', choices=sorted(PURPOSES), default='integration')
     args = parser.parse_args()
-    try:
-        evidence, errors = assess(Path.cwd(), args.identifier, args.pr, args.evidence_comment)
-        print(json.dumps({'evidence': evidence, 'blockers': errors}, indent=2))
-        raise SystemExit(bool(errors))
-    except (ValueError, KeyError, subprocess.CalledProcessError) as error:
-        parser.exit(1, f'STOP: {error}\n')
+    with invocation(args.purpose, Path.cwd() / 'artifacts/sdd-metrics.jsonl' if args.measure else None):
+        try:
+            evidence, errors = assess(Path.cwd(), args.identifier, args.pr, args.evidence_comment)
+            print(json.dumps({'evidence': evidence, 'blockers': errors}, indent=2))
+            raise SystemExit(bool(errors))
+        except (ValueError, KeyError, subprocess.CalledProcessError) as error:
+            parser.exit(1, f'STOP: {error}\n')
 
 
 if __name__ == '__main__':

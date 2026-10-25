@@ -11,6 +11,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / '.github/checks'))
 from sdd import FEATURE, ROADMAP_ID, git, status, task_rows
 from signatures import owner_merge
+from metrics import github_request, historical_record, invocation, measured, PURPOSES
 
 
 def normalize(value):
@@ -59,10 +60,12 @@ def ancestor(root, earlier, later):
         return False
 
 
+@measured('approval_history', historical='always')
 def approval_merge(root, ref, path):
     """Find actual signed owner first-parent merge carrying the current artifact."""
     current = read(root, ref, path)
     for sha in git(root, 'log', '--first-parent', '--format=%H', ref, '--', path).splitlines():
+        historical_record(('approval', sha, path))
         if owner_merge(root, sha, git) and read(root, sha, path) == current:
             return sha
     raise ValueError(f'{path}: no signed owner merge for this baseline; draft/status text is not approval')
@@ -72,11 +75,15 @@ def github(*args):
     if not os.environ.get('FAVA_GITHUB_API_TOKEN'):
         raise ValueError('missing configured FAVA_GITHUB_API_TOKEN')
     env = dict(os.environ, GH_TOKEN=os.environ['FAVA_GITHUB_API_TOKEN'], GH_DEBUG='')
-    result = subprocess.run(['gh', *args], env=env, capture_output=True, text=True)
-    if result.returncode:
-        # Do not echo command environment, HTTP headers or credential-bearing output.
-        raise ValueError('GitHub inspection failed; inspect safe CLI/runtime diagnostics before retrying')
-    return json.loads(result.stdout)
+    with github_request(args) as measurement:
+        result = subprocess.run(['gh', *args], env=env, capture_output=True, text=True)
+        if result.returncode:
+            measurement['failed'] = True
+            # Do not echo command environment, HTTP headers or credential-bearing output.
+            raise ValueError('GitHub inspection failed; inspect safe CLI/runtime diagnostics before retrying')
+        response = json.loads(result.stdout)
+        measurement['response'] = response
+        return response
 
 
 def merged_pr(repository, sha, target):
@@ -102,11 +109,13 @@ def merged_pr(repository, sha, target):
     return pr['html_url']
 
 
+@measured('task_history', historical='always')
 def integrated_task_errors(root, feature, branch, ident, record, target, verified=None):
     """Bind a completed record to this task's source PR, merge and report."""
     from ledger import task_merge_errors
     verified = verified if verified is not None else set()
     key = (feature, branch, ident, json.dumps(record, sort_keys=True), target)
+    historical_record(('task', key), deduplicated=key in verified)
     if key in verified:
         return []
     errors = task_merge_errors(root, feature, ident, record, target, git)
@@ -204,6 +213,7 @@ def preparation_progress(root, result):
     return preparation_revision_progress(root, result, pr, record)
 
 
+@measured('preparation_history', historical='always')
 def preparation_revision_progress(root, result, pr, record, cutoff=None, verification_base=None):
     """Verify one explicit preparation revision, whether open or already merged."""
     from ledger import AUTOMATIC_CORRECTION_LIMIT, transition_errors, preparation_round_errors
@@ -222,12 +232,14 @@ def preparation_revision_progress(root, result, pr, record, cutoff=None, verific
     proof_base = verification_base or result['main_sha']
     commits = set(git(root, 'rev-list', f'{proof_base}..{pr["sha"]}').splitlines()) | {record['heads'][0]}
     for sha in commits:
+        historical_record(('preparation_revision', sha, result['ledger']))
         signature = github('api', f'repos/clemarc/fava/commits/{sha}')['commit']['verification']
         if signature.get('verified') is not True or signature.get('reason') != 'valid':
             raise ValueError('preparation resume history contains an unverified signature')
         if transition_errors(root, sha, result['ledger'], git):
             raise ValueError('invalid intermediate preparation ledger transition')
     for sha in git(root, 'rev-list', '--first-parent', f'{result["main_sha"]}..{pr["sha"]}').splitlines():
+        historical_record(('preparation_round', sha, result['ledger']))
         errors = preparation_round_errors(root, sha, result['ledger'], pr['number'], opened_at,
                                           result.get('target_sha', result['main_sha']), git)
         if errors:
@@ -271,6 +283,7 @@ def preparation_trailers(root, result):
     return reconciliations
 
 
+@measured('retained_preparation_history', historical='always')
 def retained_preparation_progress(root, result):
     """Revalidate every merged preparation and freeze its budget record at source."""
     from integration import timestamp
@@ -281,6 +294,7 @@ def retained_preparation_progress(root, result):
     verified = {}
     for pr in merged:
         sha = pr['merge_sha']
+        historical_record(('retained_preparation', sha, result['ledger']))
         actual = github('api', f'repos/clemarc/fava/pulls/{pr["number"]}')
         parents = git(root, 'show', '-s', '--format=%P', sha).split()
         if (len(parents) != 2 or not ancestor(root, sha, result['target_sha'])
@@ -394,6 +408,7 @@ def task_progress(root, result):
     return progress
 
 
+@measured('resolver')
 def inspect(root, identifier, phase):
     repository = 'clemarc/fava'
     main = github('api', f'repos/{repository}/git/ref/heads/main')['object']['sha']
@@ -545,15 +560,18 @@ def main():
     parser.add_argument('--phase', choices=['prepare', 'implement'], required=True)
     parser.add_argument('--root', type=Path, default=Path.cwd())
     parser.add_argument('--checkout', choices=['milestone', 'preparation'])
+    parser.add_argument('--measure', action='store_true', help='append sanitized timing/counts under ignored artifacts')
+    parser.add_argument('--purpose', choices=sorted(PURPOSES), default='resolve')
     args = parser.parse_args()
-    try:
-        result = inspect(args.root, args.identifier, args.phase)
-        if args.checkout:
-            checkout(args.root, result, result[args.checkout + '_branch'])
-        result['SPECIFY_FEATURE_DIRECTORY'] = str(args.root.resolve() / result['feature'])
-        print(json.dumps(result, indent=2))
-    except (ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
-        parser.exit(1, f'STOP: {error}\n')
+    with invocation(args.purpose, args.root / 'artifacts/sdd-metrics.jsonl' if args.measure else None):
+        try:
+            result = inspect(args.root, args.identifier, args.phase)
+            if args.checkout:
+                checkout(args.root, result, result[args.checkout + '_branch'])
+            result['SPECIFY_FEATURE_DIRECTORY'] = str(args.root.resolve() / result['feature'])
+            print(json.dumps(result, indent=2))
+        except (ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
+            parser.exit(1, f'STOP: {error}\n')
 
 
 if __name__ == '__main__':

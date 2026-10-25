@@ -3,6 +3,7 @@ import re
 import json
 import subprocess
 from datetime import datetime
+from metrics import historical_record
 
 AUTOMATIC_CORRECTION_LIMIT = 3
 
@@ -300,6 +301,7 @@ def task_publication_progress(root, target, head, path, number, opened_at, git):
     completed = 0
     segment = [initial]
     for sha in chain[chain.index(initial) + 1:]:
+        historical_record(('task_publication', sha, path, number))
         imported, errors = target_import(root, sha, target, git)
         if errors:
             raise ValueError('; '.join(errors))
@@ -324,6 +326,7 @@ def task_publication_progress(root, target, head, path, number, opened_at, git):
     previous = None
     reservations = {}
     for sha in git(root, 'rev-list', '--first-parent', '--reverse', target).splitlines():
+        historical_record(('canonical_reservation', sha, path, number))
         try:
             snapshot = json.loads(git(root, 'show', f'{sha}:{path}'))
         except subprocess.CalledProcessError:
