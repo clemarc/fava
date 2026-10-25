@@ -1,8 +1,12 @@
 """Default-off scheduling preserves full native acceptance and correction runs."""
 import json
+import io
+import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
+from contextlib import redirect_stdout
 import unittest
 from unittest.mock import Mock, patch
 
@@ -124,6 +128,32 @@ class SchedulingTests(unittest.TestCase):
         commands=[c.args[0] for c in run.call_args_list]
         self.assertTrue(any('build' in c and 'generic/platform=iOS Simulator' in c for c in commands))
         self.assertFalse(any('test' in c or 'test-without-building' in c or 'simctl' in c for c in commands))
+
+    def test_phase_timing_preserves_capture_result_and_command_failure(self):
+        original=Path.cwd()
+        with tempfile.TemporaryDirectory() as temp:
+            try:
+                os.chdir(temp);Path('artifacts').mkdir()
+                with redirect_stdout(io.StringIO()):
+                    result=native.run([sys.executable,'-c','print("synthetic")'],'fixture',capture=True)
+                    self.assertEqual(result,'synthetic\n')
+                    with self.assertRaises(ValueError):native.run([sys.executable,'-c','raise SystemExit(1)'],'fixture-failed',capture=True)
+                rows=[json.loads(line) for line in Path('artifacts/native-phases.log').read_text().splitlines()]
+                self.assertEqual([r['event'] for r in rows],['start','complete','start','complete'])
+                self.assertEqual([r['outcome'] for r in rows if r['event']=='complete'],['success','failure'])
+                self.assertTrue(all(r['seconds']>=0 for r in rows if r['event']=='complete'))
+            finally:os.chdir(original)
+
+    def test_phase_timing_keeps_interruption_distinct_from_test_failure(self):
+        original=Path.cwd()
+        with tempfile.TemporaryDirectory() as temp:
+            try:
+                os.chdir(temp);Path('artifacts').mkdir()
+                with patch.object(native,'_run',side_effect=KeyboardInterrupt()),redirect_stdout(io.StringIO()):
+                    with self.assertRaises(KeyboardInterrupt):native.run(['unused'],'fixture-interrupted')
+                rows=[json.loads(line) for line in Path('artifacts/native-phases.log').read_text().splitlines()]
+                self.assertEqual(rows[-1]['outcome'],'interrupted')
+            finally:os.chdir(original)
 
 
 if __name__=='__main__':unittest.main()

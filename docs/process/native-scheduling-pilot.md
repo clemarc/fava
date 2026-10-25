@@ -6,6 +6,22 @@ configuration change for the selected milestone and normal signed import of the
 reviewed workflow/configuration. This work changes no repository variable,
 required check, ruleset, active execution record or historical checkpoint.
 
+The owner's completed spike decision is to retain parallel native execution.
+The paired observation at source `29a3c1c1bc4e0e824205f15c519356f0d1d4da8b`
+compared conventional run `40177650811` with verified shared run `40177650776`:
+
+| Architecture | Runner consumption | Elapsed | Executed tests |
+| --- | --- | --- | --- |
+| Existing parallel iPhone/iPad | 32.8 runner-minutes | 18m42s | 41 per family |
+| Shared-build prototype | 36.9 runner-minutes | 20m05s | 41 per family |
+
+Both passed their applicable evidence gates; this is one paired observation.
+Production does not migrate to shared build-for-testing/test-without-building.
+Keep the parallel matrix and its independent family acceptance gates. Do not
+introduce persistent DerivedData caching or cross-commit native evidence reuse.
+The completed report is `docs/experiments/native-ci-shared-build-spike.md` on the
+spike branch; that branch and its experimental files remain untouched here.
+
 The scheduler reads configuration from the event's exact target SHA, never from
 the candidate head. Only same-repository `task/<milestone>/...` PRs targeting the
 matching registered milestone qualify. It resolves the canonical feature and
@@ -65,6 +81,30 @@ start/end, queue time, conclusion and supersession/import relationship. Measure:
 - Runner time: sum started native jobs plus compilation-feedback runner time.
 - Elapsed time: initial publication through eligible current-head native/review
   completion, reporting queueing and concurrent work separately.
+- Defect discovery: initial source publication through the first actionable
+  preflight/compiler/test diagnostic. Report the check, phase and diagnostic
+  timestamp; compare matching revisions with ordinary full-native scheduling.
+  A successful build proves no test-defect latency. If exact first diagnostic
+  timing is unavailable, report it unavailable; label a failed-phase completion
+  time only as an upper bound. Do not treat missing defects as zero latency.
+
+Within the existing architecture, each subprocess phase now emits
+`FAVA_NATIVE_PHASE` JSON with UTC observation time, phase, start/completion,
+outcome and monotonic duration. The same sanitized rows are retained in
+`artifacts/native-phases.log` through the existing diagnostics glob. Build/test
+commands, destinations and acceptance results are unchanged. Capture dependencies,
+device/destination selection, build, tests and result-summary durations separately.
+Simulator boot remains included in `xcodebuild test`; report it unknown rather
+than inventing an isolated boot duration. Job queue/allocation time still comes
+from authoritative GitHub metadata. Missing phase completion after cancellation
+is incomplete timing, not a test failure.
+
+Report expected configured suite coverage and observed executed counts for each
+family (41 each in the completed comparison). Both families and nonzero actual
+tests remain mandatory; a changed reviewed suite needs its own expected count.
+Retain skipped, cancelled, timed-out, superseded, unavailable and infrastructure
+classifications separately. Only started jobs consume measured runner time;
+compilation-only feedback has no simulator test count or acceptance result.
 
 The supplied baseline is 86.1 superseded runner-minutes from seven started jobs,
 within 395.1 native runner-minutes across 23 started device jobs. That 21.8% share

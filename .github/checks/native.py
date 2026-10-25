@@ -1,11 +1,13 @@
 """Classify native applicability and run real Xcode simulator validation on macOS."""
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 import xml.etree.ElementTree as ET
 
 from sdd import implementation_paths
@@ -46,6 +48,33 @@ def classify(paths, files, base_files=()):
 
 
 def run(command, name, capture=False):
+    """Time existing phases without changing build/test commands or evidence."""
+    started = time.perf_counter()
+    outcome = 'interrupted'
+
+    def emit(record):
+        text = json.dumps(dict(phase=name, observed_at=datetime.now(timezone.utc).isoformat(), **record),
+                          sort_keys=True, separators=(',', ':'))
+        print('FAVA_NATIVE_PHASE ' + text, flush=True)
+        try:
+            with Path('artifacts/native-phases.log').open('a') as stream:
+                stream.write(text + '\n')
+        except OSError:
+            print('Optional native phase timing file unavailable.', flush=True)
+
+    emit(dict(event='start'))
+    try:
+        result = _run(command, name, capture)
+        outcome = 'success'
+        return result
+    except (ValueError, OSError, subprocess.SubprocessError):
+        outcome = 'failure'
+        raise
+    finally:
+        emit(dict(event='complete', outcome=outcome, seconds=time.perf_counter() - started))
+
+
+def _run(command, name, capture=False):
     print('+', ' '.join(command), flush=True)
     log = Path('artifacts') / (name + '.log')
     with log.open('w') as stream:
