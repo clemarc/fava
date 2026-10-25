@@ -68,6 +68,10 @@ invent missing feature artifacts or validation evidence.
    distinguish success, failure, cancellation, missing check and intentional
    native skip. Read failing steps/logs and relevant artifacts; never rely on an
    older green SHA or a skipped job as native test evidence.
+   For native jobs, use `tools/sdd/native_evidence.py` and the retrieval procedure
+   in `docs/process/ci-and-agent-verification.md`. Its structured result handles
+   log fallback requests and test-count extraction. Bind it to the freshly
+   inspected head/run/attempt; it does not replace review or integration gates.
 8. On failure, diagnose actual logs, make a scoped fix, rerun applicable local
    checks, publish another verified GraphQL commit on the same branch, verify
    the new SHA and monitor its CI. Allow at most **three automatic correction
