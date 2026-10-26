@@ -2,9 +2,203 @@
 import re
 import json
 import subprocess
+import hashlib
 from datetime import datetime
 
 AUTOMATIC_CORRECTION_LIMIT = 3
+
+
+def composite_candidate(root, context, before, after, tasks_before, tasks_after,
+                        completed, successor_number, *, git=None, api=None,
+                        completion_verifier=None, signed=None, history_protection=None):
+    """Inactive preview of one atomic complete+register delta, never authorization.
+
+    Production transition dispatch deliberately does not call this function.
+    Owner sequencing approval and a separate activation change are required.
+    Providers can be injected by synthetic tests; defaults use existing proof.
+    """
+    import milestone
+    import sdd
+    from signatures import verify
+    git, api = git or sdd.git, api or milestone.github
+    completion_verifier = completion_verifier or milestone.integrated_task_errors
+    signed = signed or verify
+    history_protection = history_protection or milestone.task_history_protection
+    result = dict(activation_enabled=False, accepted=False, valid_for_review=False,
+                  intermediate_state='INTEGRATED_PENDING_COMPLETION', errors=[],
+                  next_action='owner_policy_approval_and_separate_activation_required')
+    if successor_number is None:
+        return dict(result, next_action='assess_standalone_completion',
+                    reason='successor_absent_or_delayed')
+    errors = result['errors']
+    try:
+        target, feature = context['target_sha'], context['feature']
+        result['expected_target'] = target
+        result['base_digest'] = hashlib.sha256(json.dumps(
+            [before, tasks_before], sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        branch, path = context['milestone_branch'], context['ledger']
+        if api('api', f'repos/clemarc/fava/git/ref/heads/{branch}')['object']['sha'] != target:
+            raise ValueError('stale_target')
+        if json.loads(git(root, 'show', target + ':' + path)) != before:
+            raise ValueError('candidate_parent_is_not_canonical_ledger')
+        if git(root, 'show', target + ':' + feature + '/tasks.md') != tasks_before:
+            raise ValueError('candidate_tasks_are_not_canonical')
+        if type(successor_number) is not int or successor_number < 1:
+            raise ValueError('actual_successor_pr_required')
+        if not completed or len(completed) != len(set(completed)):
+            raise ValueError('unique_predecessor_tasks_required')
+        completed = set(completed)
+        errors += validate(before, feature, tasks_before)
+        errors += validate(after, feature, tasks_after)
+        errors += history_errors(before, after)
+        old_rows, new_rows = sdd.task_rows(tasks_before), sdd.task_rows(tasks_after)
+        approved_rows = sdd.task_rows(git(root, 'show', before['planning_revision'] + ':' + feature + '/tasks.md'))
+        if [(r[0], r[2:]) for r in old_rows] != [(r[0], r[2:]) for r in approved_rows]:
+            errors.append('target_task_definitions_differ_from_reviewed_planning')
+        if [(r[0], r[2:]) for r in old_rows] != [(r[0], r[2:]) for r in new_rows]:
+            errors.append('composite_cannot_change_task_definitions')
+        changed_checks = {old[0] for old, new in zip(old_rows, new_rows) if old[1] != new[1]}
+        if changed_checks != completed:
+            errors.append('only_predecessor_completion_checkboxes_may_change')
+        if any(before.get(k) != after.get(k) for k in set(before) | set(after)
+               if k not in {'tasks', 'task_prs', 'checkpoints'}):
+            errors.append('unrelated_execution_fields_changed')
+        key = str(successor_number)
+        previous_prs, current_prs = before.get('task_prs', {}), after.get('task_prs', {})
+        if key in previous_prs:
+            errors.append('duplicate_successor_registration')
+        if set(current_prs) != set(previous_prs) | {key} or any(
+                current_prs.get(k) != v for k, v in previous_prs.items()):
+            errors.append('correction_reservations_or_retained_heads_changed')
+        record = current_prs.get(key, {})
+        successors = set(record.get('tasks', []))
+        if not successors or successors & completed:
+            errors.append('distinct_successor_tasks_required')
+        for ident, old in before['tasks'].items():
+            new = after['tasks'].get(ident, {})
+            if old.get('correction_cycles', 0) != new.get('correction_cycles', 0):
+                errors.append('task_correction_count_changed')
+            if ident not in completed | successors and old != new:
+                errors.append('unrelated_task_changed')
+        for ident in completed:
+            if before['tasks'].get(ident, {}).get('state') == 'integrated':
+                errors.append('duplicate_predecessor_completion')
+            candidate = after['tasks'].get(ident, {})
+            if candidate.get('state') != 'integrated':
+                errors.append('predecessor_completion_missing')
+            errors += completion_verifier(root, feature, branch, ident, candidate, target)
+        rows = {r[0]:r for r in approved_rows}
+        dependencies = set()
+        for ident in successors:
+            if ident not in rows:
+                errors.append('successor_not_in_approved_tasks')
+                continue
+            deps = set(re.findall(sdd.TASK, rows[ident][2]))
+            dependencies |= deps
+            for dep in deps - completed:
+                old = before['tasks'].get(dep, {})
+                if old.get('state') != 'integrated':
+                    errors.append('other_dependency_not_canonical')
+                else:
+                    errors += completion_verifier(root, feature, branch, dep, old, target)
+        if not completed <= dependencies:
+            errors.append('dependency_relationship_not_approved')
+        pr = api('api', f'repos/clemarc/fava/pulls/{successor_number}')
+        head = pr['head']['sha']
+        if (pr.get('state') != 'open' or pr.get('merged_at') or pr['base']['ref'] != branch
+                or pr['head']['ref'] != record.get('branch')
+                or record.get('heads') != [head] or record.get('correction_cycles') != 0):
+            errors.append('successor_exact_initial_head_or_pr_invalid')
+        commit = api('api', f'repos/clemarc/fava/commits/{head}')
+        verification = commit['commit']['verification']
+        opened = datetime.fromisoformat(pr['created_at'].replace('Z', '+00:00'))
+        published = datetime.fromisoformat(commit['commit']['committer']['date'].replace('Z', '+00:00'))
+        if (published.tzinfo is None or opened.tzinfo is None or published >= opened
+                or verification.get('verified') is not True or verification.get('reason') != 'valid'
+                or not signed(root, head)):
+            errors.append('successor_initial_publication_not_verified')
+        history_protection(record.get('branch'), published, api)
+        for ident in completed:
+            git(root, 'merge-base', '--is-ancestor', after['tasks'][ident]['merge_sha'], head)
+        from integration import represented_task_ids
+        commits = git(root, 'rev-list', target + '..' + head).splitlines()
+        for introduced in set(commits) | {head}:
+            proof = verification if introduced == head else api(
+                'api', f'repos/clemarc/fava/commits/{introduced}')['commit']['verification']
+            if proof.get('verified') is not True or proof.get('reason') != 'valid' or not signed(root, introduced):
+                errors.append('successor_introduced_history_not_verified')
+        ids, scope_errors = represented_task_ids(root, commits, target, git)
+        errors += scope_errors
+        if ids != successors:
+            errors.append('successor_source_task_identity_mismatch')
+        allowed = set().union(*(sdd.task_paths(rows[t][2]) for t in successors if t in rows))
+        shared = {feature + '/' + p for p in ['execution.json', 'tasks.md', 'decision-log.md']}
+        paths = set(git(root, 'diff', '--name-only', target, head).splitlines())
+        if not paths <= allowed | shared:
+            errors.append('successor_changed_paths_outside_approved_scope')
+        errors += task_delta_errors(root, feature, successors, commits, target, rows, git, head)
+        checkpoints = before.get('checkpoints', [])
+        proposed = after.get('checkpoints', [])
+        if len(proposed) != len(checkpoints) + 1 or proposed[:-1] != checkpoints:
+            errors.append('one_atomic_checkpoint_required')
+        else:
+            checkpoint = proposed[-1]
+            ident = checkpoint.get('id', '')
+            if (not re.fullmatch(r'C[0-9]{3}', ident) or any(c.get('id') == ident for c in checkpoints)
+                    or checkpoint.get('branch') != context['checkpoint_branch_prefix'] + ident.lower()
+                    or checkpoint.get('kind') != 'task-completion-registration'
+                    or set(checkpoint.get('completion', {}).get('tasks', [])) != completed
+                    or set(checkpoint.get('registration', {}).get('tasks', [])) != successors
+                    or checkpoint.get('registration', {}).get('task_pr') != pr['html_url']
+                    or checkpoint.get('registration', {}).get('initial_head') != head):
+                errors.append('atomic_checkpoint_identity_invalid')
+        if api('api', f'repos/clemarc/fava/git/ref/heads/{branch}')['object']['sha'] != target:
+            errors.append('target_moved_during_candidate_validation')
+        final_pr = api('api', f'repos/clemarc/fava/pulls/{successor_number}')
+        if (final_pr['head']['sha'] != head or final_pr['head']['ref'] != pr['head']['ref']
+                or final_pr['base']['ref'] != branch or final_pr.get('state') != 'open' or final_pr.get('merged_at')):
+            errors.append('successor_moved_during_candidate_validation')
+        if not errors:
+            result['valid_for_review'] = True
+            result['candidate_digest'] = hashlib.sha256(json.dumps(
+                [after, tasks_after], sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    except (ValueError, KeyError, TypeError, AttributeError, OSError, subprocess.SubprocessError):
+        errors.append('incomplete_or_inconsistent_composite_candidate')
+    return result
+
+
+def composite_recovery_preview(candidate, observation):
+    """Synthetic interrupted-operation model, not an executable transition.
+
+    Digests identify whole ledger+tasks candidates, never one half. A future
+    activation must obtain observations through existing signed-publication and
+    retained-merge verification; this preview cannot establish that proof.
+    """
+    if not isinstance(candidate, dict) or not isinstance(observation, dict):
+        return dict(activation_enabled=False, accepted=False, next_action='blocked_invalid_observation')
+    action = 'await_owner_policy_approval'
+    expected = candidate.get('candidate_digest')
+    canonical, published = observation.get('canonical_digest'), observation.get('published_digest')
+    status = observation.get('checkpoint_result')
+    if status is not None and not isinstance(status, str):
+        return dict(activation_enabled=False, accepted=False, next_action='blocked_invalid_observation')
+    if candidate.get('valid_for_review') is not True or not isinstance(expected, str) or not re.fullmatch('[0-9a-f]{64}', expected):
+        action = 'blocked_invalid_candidate'
+    elif canonical is not None and canonical not in (expected, candidate.get('base_digest')):
+        action = 'blocked_partial_or_conflicting_canonical_state'
+    elif canonical == expected:
+        action = 'verify_existing_composite_merge'
+    elif status in {'failure', 'cancelled', 'timed_out'}:
+        action = 'reconcile_failed_checkpoint_before_standalone_fallback'
+    elif published is not None and published != expected:
+        action = 'blocked_conflicting_publication'
+    elif observation.get('target') != candidate.get('expected_target'):
+        action = 'rebuild_against_fresh_target'
+    elif published == expected:
+        action = 'reuse_existing_candidate_and_refresh_gates'
+    elif observation.get('mutation_pending'):
+        action = 'reconcile_publication_before_retry'
+    return dict(activation_enabled=False, accepted=False, next_action=action)
 
 
 def validate(ledger, feature, tasks):
