@@ -90,6 +90,62 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(result['next_action'],'refresh_canonical_state')
         self.assertEqual(result['last_verified_checkpoint']['merge_sha'],MERGE)
 
+    def test_merge_intent_preserves_canonical_blocker(self):
+        self.old['ambiguous_mutation']=dict(kind='merge',pr=10,head=HEAD,target=TARGET,evidence_comment=123)
+        self.context['task_progress']['10']['state']='blocked'
+        result=self.recover()
+        self.assertEqual(result['state'],'blocked')
+        self.assertIsNone(result['next_action'])
+        self.assertFalse(result['mutation_resolved'])
+
+    def test_publication_intent_must_belong_to_selected_pr(self):
+        self.old['ambiguous_mutation']=dict(kind='publication',branch='task/r3.5/other',
+            parent=TARGET,tree=MERGE,message_sha256='e'*64)
+        publication=Mock()
+        with self.assertRaisesRegex(ValueError,'another PR branch'):
+            self.recover(publication=publication)
+        publication.assert_not_called()
+
+    def test_merged_publication_always_verifies_merge_and_completion(self):
+        self.old['ambiguous_mutation']=dict(kind='publication',branch='task/r3.5/t001',
+            parent=TARGET,tree=MERGE,message_sha256='e'*64)
+        self.merged()
+        publication=Mock(return_value=dict(state='verified_applied',action='refresh_current_evidence',commit=HEAD))
+        gate=Mock(return_value=self.proof)
+        result=self.recover(gate=gate,publication=publication)
+        gate.assert_called_once_with(self.root,self.context,self.observation['pr'],123)
+        self.assertEqual(result['next_action'],'prepare_standalone_completion_checkpoint')
+        self.assertTrue(result['mutation_resolved'])
+        with self.assertRaisesRegex(ValueError,'independent proof'):
+            self.recover(gate=Mock(side_effect=ValueError('missing independent proof')),publication=publication)
+        publication.return_value['commit']=TARGET
+        with self.assertRaisesRegex(ValueError,'differs from merged PR head'):
+            self.recover(publication=publication)
+
+    def test_merged_unobserved_publication_survives_cli_handoff(self):
+        self.old['ambiguous_mutation']=dict(kind='publication',branch='task/r3.5/t001',
+            parent=TARGET,tree=MERGE,message_sha256='e'*64)
+        self.merged()
+        publication=Mock(return_value=dict(state='not_observed',action='reassess_before_expected_head_publication'))
+        gate=Mock(return_value=self.proof)
+        outcome=self.recover(gate=gate,publication=publication)
+        gate.assert_called_once()
+        self.assertEqual(outcome['state'],'blocked')
+        self.assertIsNone(outcome['next_action'])
+        self.assertFalse(outcome['mutation_resolved'])
+        self.assertEqual(outcome['verified_evidence'],[self.proof])
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);prior=root/'prior.json';prior.write_text(json.dumps(self.old))
+            with (patch.object(sys,'argv',['milestone.py','R3.5','--phase','implement','--root',temp,
+                    '--recover',str(prior),'--handoff']),patch.object(milestone,'inspect',return_value=self.context),
+                    patch.object(recovery,'live_observation',return_value=self.observation),
+                    patch.object(recovery,'recover',return_value=outcome),redirect_stdout(io.StringIO())):
+                with self.assertRaises(SystemExit) as stopped:milestone.main()
+                self.assertEqual(stopped.exception.code,1)
+            saved=json.loads((root/'artifacts/sdd-session/r3.5/snapshot.json').read_text())
+            self.assertEqual(saved['ambiguous_mutation'],self.old['ambiguous_mutation'])
+            self.assertEqual(saved['pending_transition'],'blocked')
+
     def test_reserved_correction_is_resumed_without_increment(self):
         self.context['task_progress']['10'].update(state='resume-reserved-fix',pending_reservation=True)
         result=self.recover()
@@ -250,7 +306,8 @@ class RecoveryTests(unittest.TestCase):
         self.old['ambiguous_mutation']=dict(kind='merge',pr=10,head=HEAD,target=TARGET,evidence_comment=123)
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp); prior=root/'prior.json';prior.write_text(json.dumps(self.old))
-            outcome=dict(state='reconciled',verified_evidence=[self.proof],next_action='prepare_standalone_completion_checkpoint')
+            outcome=dict(state='reconciled',verified_evidence=[self.proof],mutation_resolved=True,
+                         next_action='prepare_standalone_completion_checkpoint')
             with (patch.object(sys,'argv',['milestone.py','R3.5','--phase','implement','--root',temp,
                     '--recover',str(prior),'--handoff']),patch.object(milestone,'inspect',return_value=self.context),
                     patch.object(recovery,'live_observation',return_value=self.observation),

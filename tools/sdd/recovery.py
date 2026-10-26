@@ -183,7 +183,8 @@ def recover(root, context, old, observation, gate=verify_merged, publication=rec
               checkout_head=observation['checkout_head'], check_digest=observation['check_digest'],
               review_digest=observation['review_digest']).items() if old.get(k) != value]
     result = dict(state='reconciled', stale_fields=stale, verified_evidence=[],
-                  missing_requirements=[], next_action='refresh_current_evidence', blocking_reason=None)
+                  missing_requirements=[], next_action='refresh_current_evidence', blocking_reason=None,
+                  mutation_resolved=False)
     if pr['state'] != 'open' and not pr.get('merged'):
         raise ValueError('closed unmerged PR requires owner reconciliation')
     progress = context.get('task_progress', {}).get(str(pr['number']), {})
@@ -197,13 +198,20 @@ def recover(root, context, old, observation, gate=verify_merged, publication=rec
                 raise ValueError('pending correction lacks verified canonical reservation')
     mutation = pending_mutation(old.get('ambiguous_mutation'))
     if mutation and mutation['kind'] == 'publication':
+        if mutation['branch'] != pr['head']['ref']:
+            raise ValueError('ambiguous publication belongs to another PR branch')
         outcome = publication(root, context, mutation)
-        result.update(next_action=outcome['action'], publication=outcome)
-        if progress.get('state') == 'blocked':
-            result.update(state='blocked', next_action=None, blocking_reason='canonical_task_blocked')
-        elif outcome['state'] == 'not_observed':
-            result['missing_requirements'] = ['fresh_publication_budget_and_verified_pure_import_checks']
-        return result
+        result.update(next_action=outcome['action'], publication=outcome,
+                      mutation_resolved=outcome['state'] == 'verified_applied')
+        if pr.get('merged'):
+            if result['mutation_resolved'] and outcome['commit'] != pr['head']['sha']:
+                raise ValueError('reconciled publication differs from merged PR head')
+        else:
+            if progress.get('state') == 'blocked':
+                result.update(state='blocked', next_action=None, blocking_reason='canonical_task_blocked')
+            elif outcome['state'] == 'not_observed':
+                result['missing_requirements'] = ['fresh_publication_budget_and_verified_pure_import_checks']
+            return result
     if mutation and mutation['kind'] == 'merge':
         if mutation['pr'] != pr['number']:
             raise ValueError('ambiguous merge belongs to another PR')
@@ -211,13 +219,21 @@ def recover(root, context, old, observation, gate=verify_merged, publication=rec
             if pr['state'] != 'open' or mutation['head'] != pr['head']['sha'] or mutation['target'] != context['target_sha']:
                 raise ValueError('unacknowledged merge has stale or retired inputs')
             result.update(next_action='reassess_before_guarded_merge', missing_requirements=['fresh_integration_assessment'])
+            if progress.get('state') == 'blocked':
+                result.update(state='blocked', next_action=None, blocking_reason='canonical_task_blocked')
             return result
     if pr.get('merged'):
-        report = mutation['evidence_comment'] if mutation else old.get('evidence_comment')
+        merge_intent = mutation if mutation and mutation['kind'] == 'merge' else None
+        report = merge_intent['evidence_comment'] if merge_intent else old.get('evidence_comment')
         proof = gate(root, context, pr, report)
-        if mutation and (proof['head'] != mutation['head'] or proof['target'] != mutation['target']):
+        if merge_intent and (proof['head'] != merge_intent['head'] or proof['target'] != merge_intent['target']):
             raise ValueError('actual merge differs from ambiguous mutation intent')
         result['verified_evidence'].append(proof)
+        if merge_intent:
+            result['mutation_resolved'] = True
+        if mutation and not result['mutation_resolved']:
+            return dict(result, state='blocked', next_action=None,
+                        blocking_reason='unresolved_publication_on_merged_pr')
         if pr['head']['ref'].startswith(context['checkpoint_branch_prefix']):
             result.update(next_action='refresh_canonical_state', last_verified_checkpoint=proof)
         else:

@@ -572,9 +572,7 @@ def main():
             observation = live_observation(args.root, result, number)
             outcome = recover(args.root, result, previous, observation) if previous is not None else None
             ambiguous = json.loads(args.ambiguous_mutation.read_text()) if args.ambiguous_mutation else None
-            if previous and previous.get('ambiguous_mutation') and not (
-                    (outcome or {}).get('publication', {}).get('state') == 'verified_applied'
-                    or (outcome or {}).get('verified_evidence')):
+            if previous and previous.get('ambiguous_mutation') and not (outcome or {}).get('mutation_resolved'):
                 ambiguous = previous['ambiguous_mutation']
             report = args.session_report or (previous or {}).get('evidence_comment')
             verified = (outcome or {}).get('verified_evidence', [])
