@@ -13,10 +13,10 @@ status; this document records the subsequent implementation and rollout gates.
 | --- | --- | --- |
 | [43](https://github.com/clemarc/fava/pull/43) | Capability preflight and deterministic routes | `bf5a641639591efe0762dfb4dbe7cc989d38da8b` |
 | [44](https://github.com/clemarc/fava/pull/44) | Native evidence retrieval, fallback and structured verification | `1694e708a11b6541b62cb4a0d11655c5ff493699` |
-| [46](https://github.com/clemarc/fava/pull/46) | Compact observations and interrupted-session reconciliation | `a6ca98e3c5b1591185988cee0710c44e057f7cb3` |
+| [46](https://github.com/clemarc/fava/pull/46) | Compact observations and interrupted-session reconciliation | `31a7d153a0e06475e590bf7a35b4a12dde0ada2c` |
 | [47](https://github.com/clemarc/fava/pull/47) | Resolver/assessor timing and request/history counters | `403ba24d5ad7b6af28e44eb06f2fc52c20f42400` |
 | [48](https://github.com/clemarc/fava/pull/48) | Default-off A1 scheduling and existing-phase timing | `b1eb274298718551a3e7c74385155a05091d3a13` |
-| [49](https://github.com/clemarc/fava/pull/49) | Inactive atomic checkpoint validator and ADR-006 proposal | `6b9c446106cc4f594db604599ae4c5a2d594e5d6` |
+| [49](https://github.com/clemarc/fava/pull/49) | Inactive atomic checkpoint validator and ADR-006 proposal | `ea7844252ca3a020af8c1847f1c36125aab6643d` |
 
 Each PR records exact changed files, local tests, correctness/security effects,
 compatibility, rollback and dependencies. Implementation changes received isolated
@@ -45,14 +45,16 @@ are required when applying the independent PRs:
 
 - `tools/sdd/milestone.py`: retain the complete recovery CLI flags/body and its
   controlled errors. Add measurement flags and wrap that entire body in the
-  measurement invocation. Preserve owner PR #45's exact reconciliation unchanged.
+  measurement invocation. Retain explicit `mutation_resolved` handling; verified
+  merge evidence alone cannot clear an unresolved publication intent. Preserve
+  owner PR #45's exact reconciliation unchanged.
 - `.github/checks/native.py`: retain the evidence-summary/log parsing functions
   and the separate compile-feedback function, schedule CLI and phase timing.
   Preserve original test commands and both-family architecture.
 
-The final combined tree `24e6e82f2b3b8f8906858e2db52ae90060806c26`
-passed 236 governance fixtures and 16 GitHub tooling tests, including the timing
-update. SDD, tooling guardrails, whitespace and standalone pinned-signature
+The final combined tree `c8ce5c702a6444178a56e138c56375f7a222e508`
+passed 241 governance fixtures and 16 GitHub tooling tests, including the timing
+and recovery/scope corrections. SDD, tooling guardrails, whitespace and standalone pinned-signature
 preflight checks passed. Independent compatibility review confirmed the owner
 reconciliation is unchanged and the shared-file resolutions preserve both helpers.
 These are local compatibility results, not new native or merge acceptance.
@@ -88,6 +90,52 @@ keep signed history and correction records.
 Read the canonical helper contracts in `github-cloud-commits.md`,
 `ci-and-agent-verification.md`, `sdd-v2.md` and `sdd-measurements.md`. Do not
 introduce another orchestration service or improvise credentials/API fallbacks.
+
+## Observed verification cost
+
+A read-only combined resolver invocation on 2026-10-25 took 199.785 seconds,
+with 406 observed GitHub requests (188.858 seconds), 505 historical records
+visited, 504 historical-object inspections, 264 repeated inspections and 156
+immutable-object verifications. It completed without an error or retry. This is
+one baseline observation, not a measured speedup. Nested spans overlap and must
+not be summed as elapsed time. No live integration refresh was exercised in this
+resolver observation; its zero duration does not establish an instantaneous gate.
+No persistent proof cache was introduced. Use these counters to justify and
+review any later SHA-bound reuse and invalidation proposal separately.
+
+## Delivery observations and blockers
+
+The 2026-10-26 22:30:51 UTC inventory of these seven improvement branches counted
+20 finished, started native jobs consuming 281.333 runner-minutes: 17 successful
+jobs used 253.350 minutes, one failed job used 17.733 minutes, and two cancelled
+jobs used 10.250 minutes. Twelve finished jobs were superseded by later source
+heads and consumed 154.783 minutes; supersession is separate from conclusion.
+Six additional jobs were unresolved (five running, one queued); their eventual
+consumption is not zero and is excluded from the finished total. No native family
+job was skipped or timed out in that inventory. Documentation-only PR #50 emitted
+no native family jobs. Earlier successful counts are not reused for new heads.
+
+PR #48 head `b1eb274` run `40242171395`, attempt 1, consumed 35.417 native
+runner-minutes, with 24m03s workflow elapsed and 19m23s native-pair elapsed.
+Both builds passed. iPhone executed 41 tests (28 unit, 13 UI) with one failure;
+iPad passed all 41. The failure was the status-label assertion in
+`FoundationUITests.testFailureAndReportedCancellationAllowRetry`, not runner
+infrastructure or job cancellation. The phase logger recorded build durations
+17.276s/25.196s and test durations 1010.844s/981.099s for iPhone/iPad respectively.
+The first actionable assertion appeared 14m06.445s after the signed commit timestamp
+(the source-publication proxy used for this observation);
+failed-phase completion gives a separate 22m10.441s upper bound. A1 was disabled,
+so this observation cannot establish an A1 change in defect-discovery latency.
+
+One full unchanged-head rerun was requested, retaining the original failure and
+all test requirements. PR #48's Codex request `6404624958` exceeded its hard
+deadline; owner disposition is required before another review attempt. No duplicate
+review was requested. PR #46 and #49's latest signed corrections have fresh CI
+and Codex requests; prior-head green evidence cannot approve those heads. Their
+current gates and PR #48's rerun must be inspected after completion. Recovery has
+used all three automatic maintenance source-correction rounds; any further source
+correction requires owner authorization. None of these PRs is owner-approved or
+merged by this handoff.
 
 ## Native decision and remaining rollout evidence
 
