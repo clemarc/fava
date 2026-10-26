@@ -40,6 +40,8 @@ class CompositeTests(unittest.TestCase):
         self.history=Mock();self.commits=[HEAD];self.bad_ancestor=None
         self.pr_reads=0;self.move_successor=False
         self.approved_tasks=TASKS
+        self.changed_paths=['Fava/B.swift']
+        self.commit_paths={}
 
     def api(self,*args):
         path=args[-1]
@@ -61,7 +63,8 @@ class CompositeTests(unittest.TestCase):
             if not self.ancestry:raise subprocess.CalledProcessError(1,args)
             return ''
         if args[0]=='rev-list':return '\n'.join(self.commits)
-        if args[0] in {'diff','diff-tree'}:return 'Fava/B.swift'
+        if args[0]=='diff':return '\n'.join(self.changed_paths)
+        if args[0]=='diff-tree':return '\n'.join(self.commit_paths.get(args[-1],['Fava/B.swift']))
         if args[:3]==('show','-s','--format=%P'):return TARGET
         if args[:3]==('show','-s','--format=%B'):
             return 'feat: successor\n\nSpec: '+FEATURE+'\nTask: T002\nImplements: FR-001\n'
@@ -157,6 +160,22 @@ class CompositeTests(unittest.TestCase):
 
     def test_successor_head_movement_during_validation_blocks_candidate(self):
         self.move_successor=True;self.invalid()
+
+    def test_same_task_out_of_scope_commit_cannot_hide_behind_valid_source(self):
+        extra='e'*40
+        self.commits=[HEAD,extra]
+        self.changed_paths.append('Fava/OutOfScope.swift')
+        self.commit_paths[extra]=['Fava/OutOfScope.swift']
+        result=self.candidate()
+        self.assertIn('successor_changed_paths_outside_approved_scope',result['errors'])
+        self.assertFalse(result['valid_for_review'])
+        self.assertFalse(result['accepted'])
+        self.assertFalse(result['activation_enabled'])
+        # Both commits have valid same-task trailers/signatures; approved work
+        # in HEAD proves the task delta but cannot excuse the extra path.
+        self.assertNotIn('T002: no task-owned approved changes outside target imports',result['errors'])
+        self.signed.assert_any_call(Path('/synthetic'),extra)
+        self.assertEqual(result['errors'],['successor_changed_paths_outside_approved_scope'])
 
     def test_scope_and_dependencies_must_match_reviewed_planning_revision(self):
         self.approved_tasks=TASKS.replace('Fava/B.swift','Fava/Approved.swift');self.invalid()

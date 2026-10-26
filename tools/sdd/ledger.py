@@ -131,6 +131,11 @@ def composite_candidate(root, context, before, after, tasks_before, tasks_after,
         errors += scope_errors
         if ids != successors:
             errors.append('successor_source_task_identity_mismatch')
+        allowed = set().union(*(sdd.task_paths(rows[t][2]) for t in successors if t in rows))
+        shared = {feature + '/' + p for p in ['execution.json', 'tasks.md', 'decision-log.md']}
+        paths = set(git(root, 'diff', '--name-only', target, head).splitlines())
+        if not paths <= allowed | shared:
+            errors.append('successor_changed_paths_outside_approved_scope')
         errors += task_delta_errors(root, feature, successors, commits, target, rows, git, head)
         checkpoints = before.get('checkpoints', [])
         proposed = after.get('checkpoints', [])
