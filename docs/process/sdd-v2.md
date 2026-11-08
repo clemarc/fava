@@ -85,6 +85,64 @@ decision logs and ledger. Set **SPECIFY_FEATURE_DIRECTORY** to the resolved
 absolute directory for every Spec Kit invocation and every worker. No reliance
 on a previous chat, feature.json, supplied feature path or manually chosen branch.
 
+## Compact coordinator observations
+
+For an existing actual task/checkpoint PR, the coordinator may generate a local
+handoff through the existing resolver:
+
+```sh
+python3 tools/sdd/milestone.py R3.5 --phase implement --session-pr NUMBER --handoff
+python3 tools/sdd/milestone.py R3.5 --phase implement --recover artifacts/sdd-session/r3.5/snapshot.json --handoff
+```
+
+Use the owner-supplied milestone ID and actual PR number. This does not change
+canonical execution state. Output lives under ignored `artifacts/sdd-session/`:
+`snapshot.json` contains milestone/task/PR identities, phase, head/target,
+correction count/reservation, check/review digests and references, native check
+state, pending transition and any ambiguous mutation. `CURRENT.md` stays compact;
+previous snapshots and verbose notes are archived by content hash. Files are
+private and replaced atomically. A nonblocking kernel lock serializes writers
+and is released automatically if the process dies. Only the coordinator writes
+these observations; workers keep their own scoped reports.
+
+Every recovery first runs full live resolution. It rereads checks, reviews and
+comments, detects stale head/target/checkout/evidence values, and identifies the
+next advisory action. Native check success is labeled as checks-only, never
+reused as actual native acceptance. A changed review or rerun requires refreshed
+assessment. Snapshot references and digests cannot authorize any transition.
+All current integration, publication and counter/import prerequisites still run.
+
+Before an operation whose acknowledgement could be lost, retain its exact intent
+with `--ambiguous-mutation PATH --handoff --session-pr NUMBER`. The temporary JSON
+contains only one of these forms (full SHAs, numeric IDs, no tokens or API bodies):
+
+- Publication: `kind: publication`, `branch`, `parent`, `tree`, `message_sha256`.
+  Hash the complete intended message after trimming leading/trailing whitespace,
+  matching the repository's exact-message publication verification.
+- Merge: `kind: merge`, `pr`, `head`, `target`, `evidence_comment`.
+
+Recovery checks publication against the actual branch, expected parent, complete
+tree, message hash, authenticated author, REST signature and pinned public-key
+verification. An unchanged parent permits only fresh publication-prerequisite
+assessment; it does not authorize a blind retry. Keep the same expected-head
+guard if a retry is subsequently permitted. Unknown or mismatched results stop
+progression. Unresolved mutation intent remains in the next saved observation.
+
+A merged task/checkpoint is validated against its actual signed two-parent merge,
+destination/ancestry and the existing retained integration assessor at the merge
+parents and historical cutoff. Supply `--session-report COMMENT_ID` for the
+actual immutable integration report when creating the snapshot. Missing evidence
+blocks recovery. A verified merged task with missing completion proposes a
+standalone completion checkpoint; it never repeats implementation or merges.
+An existing correction reservation resumes the same round and still requires
+its verified pure target import before corrective publication. Blocked tasks,
+decreased counters, closed unmerged PRs or inconsistent identities fail closed.
+
+This helper covers sessions with an actual PR. Before initial PR creation, retain
+the existing exact branch/publication intent and use the signed-publication
+reconciliation procedure; never invent a PR number to fit a snapshot.
+Snapshots are local recovery aids and are not a persistent immutable-proof cache.
+
 ## Branches and interruption recovery
 
 | Purpose | Deterministic branch | Start revision | PR destination |

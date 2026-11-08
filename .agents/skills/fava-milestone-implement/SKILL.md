@@ -27,6 +27,11 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    approved spec/clarifications, plan/tasks, append-only decisions, checklists,
    prep report, ledger and predecessor verification. Stop on unknown, ambiguous,
    completed or inconsistent work. Stop if reviewed preparation has not merged.
+   Use its `--session-pr NUMBER --handoff` option for compact local recovery and
+   `--recover PATH --handoff` on interruption, as described in
+   `docs/process/sdd-v2.md`. The snapshot is an observation; live resolution and
+   retained integration gates remain authoritative. Keep verbose notes archived
+   by the helper instead of appending to CURRENT.md.
 3. Verify the merged prep PR's actual destination, signed owner two-parent merge,
    unchanged approved contract and review evidence. Fetch the merge and preserve
    both parents. Register its actual SHA as planning_revision in a signed planning
