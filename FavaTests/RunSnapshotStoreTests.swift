@@ -350,6 +350,34 @@ final class RunSnapshotStoreTests: XCTestCase {
         }
     }
 
+    func testSchemaTwoRoundTripRetainsKnownAndUnknownRowTimesThroughSavedEmptyObservation() throws {
+        let store = FileRunSnapshotStore(directory: directory)
+        let timed = run(firstID)
+        let untimed = run(secondID, distance: WorkoutDistance(value: 0, unit: .kilometres))
+        let firstObservation = try RetainedRunHistory(
+            runs: [timed, untimed],
+            lastObservedAtByID: [timed.id: observedAt],
+            latestSavedObservation: SavedReadObservation(observedAt: observedAt, returnedIDs: [timed.id]))
+
+        try store.saveHistory(firstObservation)
+        XCTAssertEqual(try FileRunSnapshotStore(directory: directory).loadHistory(), firstObservation)
+        XCTAssertNil(try FileRunSnapshotStore(directory: directory).loadHistory()?.lastObservedAtByID[untimed.id])
+
+        let emptyObservationTime = observedAt.addingTimeInterval(60)
+        let savedEmpty = try RetainedRunHistory(
+            runs: [timed, untimed],
+            lastObservedAtByID: [timed.id: observedAt],
+            latestSavedObservation: SavedReadObservation(observedAt: emptyObservationTime, returnedIDs: []))
+        try store.saveHistory(savedEmpty)
+
+        let relaunched = try XCTUnwrap(try FileRunSnapshotStore(directory: directory).loadHistory())
+        XCTAssertEqual(relaunched, savedEmpty)
+        XCTAssertEqual(relaunched.lastObservedAtByID[timed.id], observedAt)
+        XCTAssertNil(relaunched.lastObservedAtByID[untimed.id])
+        XCTAssertEqual(relaunched.latestSavedObservation,
+                       SavedReadObservation(observedAt: emptyObservationTime, returnedIDs: []))
+    }
+
     func testInjectedMigrationAndSaveFailuresKeepExactPriorBytesAndRelaunchState() throws {
         let store = FileRunSnapshotStore(directory: directory)
         let priorDocuments = [
