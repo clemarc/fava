@@ -614,6 +614,8 @@ def main():
                 if type(number) is not int or number < 1:
                     raise ValueError('compact recovery requires an actual positive session PR')
                 observation = live_observation(args.root, result, number)
+                if previous is not None and args.session_report is not None:
+                    previous = dict(previous, evidence_comment=args.session_report)
                 outcome = recover(args.root, result, previous, observation) if previous is not None else None
                 ambiguous = json.loads(args.ambiguous_mutation.read_text()) if args.ambiguous_mutation else None
                 if previous and previous.get('ambiguous_mutation') and not (outcome or {}).get('mutation_resolved'):

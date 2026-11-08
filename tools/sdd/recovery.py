@@ -97,6 +97,9 @@ def verify_merged(root, context, pr, report, api=milestone.github):
             or not signature.get('verified') or signature.get('reason') != 'valid'
             or not verify(root, sha)):
         raise ValueError('actual signed retained merge ancestry is not verified')
+    if (milestone.git(root, 'show', '-s', '--format=%T', sha).strip()
+            != milestone.git(root, 'show', '-s', '--format=%T', parents[1]).strip()):
+        raise ValueError('actual merge tree differs from reviewed source tree')
     canonical = json.loads(milestone.read(root, parents[0], context['ledger']))
     retained_context = dict(context, target_sha=parents[0], execution=canonical,
                             main_sha=canonical['specification_base'],
