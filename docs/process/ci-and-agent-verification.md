@@ -6,6 +6,60 @@ Cloud validates tooling on Linux, publishes verified GitHub GraphQL commits and
 monitors Actions; the owner reviews and merges manually. This setup changes no
 R1–R3 product requirements and creates no placeholder application.
 
+## Native evidence retrieval
+
+Use the existing native parser through the read-only collector:
+
+```sh
+python3 tools/sdd/native_evidence.py --run RUN_ID --attempt ATTEMPT --head FULL_HEAD_SHA
+```
+
+Resolve those identifiers from the current PR and authoritative Actions metadata,
+not a saved report. The collector fetches run and exact-attempt job metadata,
+tries `gh run view --job --log`, and checks the native simulator step, actual
+checkout, terminal log content, Xcode build/test success and xcresulttool counts
+for both iPhone and iPad. It validates per-device counts against summary totals,
+requires executed tests and refreshes run/job identity after collection. It does
+not treat `ci-required` or an aggregate green check as native proof.
+
+When standard logs fail or are incomplete, `jobs[].next_action` specifies the
+authorized connector call and exact identity. Invoke the available GitHub
+`fetch_workflow_job_logs` tool for that job. Process its response programmatically;
+do not paste raw logs into model context. Complete logs can appear in
+`structuredContent.content` even when ordinary text says only “Action completed.”
+The parser supports full text and ordered UTF-8 byte-offset chunks with an exact
+`total_bytes`; truncation, missing chunks and inconsistent identity fail closed.
+
+To resume, pass `--connector-responses PATH`, a JSON object keyed by job ID. Each
+value contains `repository`, `run_id`, `attempt`, `job_id` and the current tool
+`response`. Strip URL strings (including all signed query parameters), credentials
+and authorization headers **in memory before writing** any temporary envelope.
+Keep only the sanitized response, use a private temporary file and delete it
+after collection. Do not reuse a response for another identity. The collector
+validates the envelope against fresh metadata and the actual log checkout.
+This explicit handoff lets Cloud tools supply connector results without adding
+connector credentials or a second API client to the repository.
+
+The compact result retains counts, canonical identities, routes, sanitized
+failure categories and destination hostnames. Raw logs, download URLs and API
+error bodies are never included. `accepted` refers only to complete native
+evidence for the supplied identity, not overall task acceptance. Exit nonzero
+means native evidence is not established. Outcomes distinguish
+`verified_successful`, `verified_failed`, `cancelled`, `timed_out`, `incomplete`,
+`unavailable`, `superseded`, `infrastructure_error` and `unknown`. Cancellation
+does not imply a failing test. An unexplained job failure remains unknown.
+
+Diagnostics are retrieved separately as optional archives. Validate artifact
+name/run/head/expiry and creation within the job's attempt interval; inspect ZIP
+integrity and test-summary consistency in memory without extracting paths or
+persisting content. Missing or inaccessible optional diagnostics do not waive
+any mandatory evidence and do not block independently complete log proof.
+An available contradictory artifact summary blocks acceptance. If a specific
+governed task requires additional artifact evidence, collect and inspect that
+evidence before accepting the task; the collector's result cannot waive it.
+Existing coordinator native attestations, current-head/target checks, independent
+review and separate physical-device acceptance remain mandatory.
+
 ## CI architecture
 
 `.github/workflows/sdd-quality.yml` runs on every PR, main push and manual dispatch,
