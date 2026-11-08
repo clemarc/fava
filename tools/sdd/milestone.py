@@ -14,6 +14,32 @@ from signatures import owner_merge
 from metrics import github_request, historical_record, invocation, measured, PURPOSES
 
 
+# This is an immutable reconciliation record, not a second destination policy.
+# PR #41 was the one automatic merge used to import C015 into the already-open
+# T005 branch. Its reverse destination is otherwise forbidden. Keeping every
+# identifying field here makes any later reverse-target PR fail closed.
+TARGET_IMPORT_PR_RECONCILIATIONS = {
+    'R3.5': {
+        41: {
+            'url': 'https://github.com/clemarc/fava/pull/41',
+            'head': 'milestone/r3.5',
+            'sha': '195631baf6deb20fcfce595fb43287cbde6a6206',
+            'base': 'task/r3.5/t005',
+            'merge_sha': '611f56ebac503c206c8c310161a6f3d6bcbceb36',
+        },
+    },
+}
+
+
+def reconciled_target_import_pr(result, pr):
+    """Accept the one owner-authorized historical reverse target import only."""
+    expected = TARGET_IMPORT_PR_RECONCILIATIONS.get(result['id'], {}).get(pr['number'])
+    if not expected:
+        return False
+    return (pr.get('state') == 'closed' and bool(pr.get('merged'))
+            and all(pr.get(key) == value for key, value in expected.items()))
+
+
 def normalize(value):
     value = value.strip().upper()
     if not re.fullmatch(ROADMAP_ID, value):
@@ -522,7 +548,7 @@ def reconcile(result, phase):
             raise ValueError('completed execution cannot be reopened')
     for pr in result.get('prs', []):
         expected = 'main' if pr['head'] == result['milestone_branch'] else result['milestone_branch']
-        if pr['base'] != expected:
+        if pr['base'] != expected and not reconciled_target_import_pr(result, pr):
             raise ValueError(f'PR #{pr["number"]}: wrong target {pr["base"]}, expected {expected}')
     prep = [p for p in result.get('prs', []) if p['head'] == result['preparation_branch']]
     if len([p for p in prep if p['state'] == 'open']) > 1:
@@ -560,17 +586,60 @@ def main():
     parser.add_argument('--phase', choices=['prepare', 'implement'], required=True)
     parser.add_argument('--root', type=Path, default=Path.cwd())
     parser.add_argument('--checkout', choices=['milestone', 'preparation'])
+    parser.add_argument('--session-pr', type=int, help='actual task/checkpoint PR for compact coordinator recovery')
+    parser.add_argument('--session-report', type=int, help='actual immutable integration report comment ID')
+    parser.add_argument('--handoff', action='store_true', help='write coordinator observation under ignored artifacts/sdd-session')
+    parser.add_argument('--recover', type=Path, help='reconcile a prior observation against fresh resolution and GitHub')
+    parser.add_argument('--ambiguous-mutation', type=Path, help='exact pending publication/merge identity JSON; never credentials')
     parser.add_argument('--measure', action='store_true', help='append sanitized timing/counts under ignored artifacts')
     parser.add_argument('--purpose', choices=sorted(PURPOSES), default='resolve')
     args = parser.parse_args()
     with invocation(args.purpose, args.root / 'artifacts/sdd-metrics.jsonl' if args.measure else None):
         try:
+            if (args.handoff or args.recover or args.ambiguous_mutation) and args.phase != 'implement':
+                raise ValueError('compact session recovery currently supports implementation only')
+            if args.checkout and (args.handoff or args.recover or args.session_pr):
+                raise ValueError('recovery is read-only; choose an isolated checkout separately')
+            if args.recover and args.ambiguous_mutation:
+                raise ValueError('recovery must reconcile its retained mutation before replacing it')
+            if args.ambiguous_mutation and not args.handoff:
+                raise ValueError('retain an ambiguous mutation only through an explicit handoff')
             result = inspect(args.root, args.identifier, args.phase)
+            if args.handoff or args.recover or args.session_pr:
+                from recovery import live_observation, snapshot, recover, save
+                previous = json.loads(args.recover.read_text()) if args.recover else None
+                if args.recover and not isinstance(previous, dict):
+                    raise ValueError('handoff must be a JSON object')
+                number = args.session_pr or (previous or {}).get('pr')
+                if type(number) is not int or number < 1:
+                    raise ValueError('compact recovery requires an actual positive session PR')
+                observation = live_observation(args.root, result, number)
+                outcome = recover(args.root, result, previous, observation) if previous is not None else None
+                ambiguous = json.loads(args.ambiguous_mutation.read_text()) if args.ambiguous_mutation else None
+                if previous and previous.get('ambiguous_mutation') and not (outcome or {}).get('mutation_resolved'):
+                    ambiguous = previous['ambiguous_mutation']
+                report = args.session_report or (previous or {}).get('evidence_comment')
+                verified = (outcome or {}).get('verified_evidence', [])
+                if verified:
+                    verified_report = verified[0]['evidence_comment']
+                    if args.session_report and args.session_report != verified_report:
+                        raise ValueError('requested report differs from verified merge evidence')
+                    report = verified_report
+                current = snapshot(result, observation, args.phase, ambiguous, report)
+                if outcome:
+                    current['pending_transition'] = outcome.get('next_action') or 'blocked'
+                    current['last_verified_checkpoint'] = outcome.get('last_verified_checkpoint')
+                output = dict(current_state=current, recovery=outcome,
+                              next_action=(outcome or {}).get('next_action', current['pending_transition']))
+                if args.handoff:
+                    output['snapshot'] = save(args.root, current, outcome)
+                print(json.dumps(output, separators=(',', ':'), sort_keys=True))
+                raise SystemExit(1 if outcome and outcome.get('state') == 'blocked' else 0)
             if args.checkout:
                 checkout(args.root, result, result[args.checkout + '_branch'])
             result['SPECIFY_FEATURE_DIRECTORY'] = str(args.root.resolve() / result['feature'])
             print(json.dumps(result, indent=2))
-        except (ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
+        except (ValueError, OSError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
             parser.exit(1, f'STOP: {error}\n')
 
 
