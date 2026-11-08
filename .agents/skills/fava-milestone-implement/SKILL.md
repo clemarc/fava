@@ -80,7 +80,14 @@ feature path or branch argument. Never merge or enable auto-merge into main.
    bind the real pre-opening head at zero. Checkpoint gating cannot
    manufacture task completion: exact merge/PR/task report proof is mandatory.
 8. Monitor current-head CI, macOS build and **nonzero simulator tests** when
-   native applies. Read real failed logs and Codex comments; assess each finding,
+   native applies. After adopting the native evidence helper, use
+   `tools/sdd/native_evidence.py` with the actual run/attempt/head. Read its compact
+   outcomes, counts, missing requirements and connector `next_action`; process
+   fallback responses programmatically as documented in
+   `docs/process/ci-and-agent-verification.md`. Inspect targeted diagnostics for
+   unresolved failures instead of repeatedly parsing whole successful logs.
+   Native-only acceptance is not integration permission. Read actual Codex
+   comments and semantic evidence; assess each finding,
    fix justified issues and refresh tests/review after changes. Retain three
    automatic correction cycles per PR across invocations; then record blocked
    findings and continue unrelated ready tasks. Use
