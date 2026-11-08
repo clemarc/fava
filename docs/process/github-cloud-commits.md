@@ -61,6 +61,62 @@ Environment configuration changes must use Codex Cloud's configuration workflow.
 Republish and start a task from the updated environment when required; existing
 tasks can retain their earlier configuration.
 
+## Session capability preflight
+
+Run `python3 tools/github/preflight.py --network` from the repository root before
+Cloud GitHub operations. It emits one compact JSON object (schema version 1).
+Without `--network`, it performs local probes only. The network probe selects
+the existing protected binding exactly as above and performs one read-only
+GraphQL query. It never creates a commit, branch, PR, comment or merge.
+
+If the coordinator can inspect its current session tools, supply their exact
+names as a JSON array in a temporary file with `--connector-tools PATH`.
+Do not copy a previous session's inventory. Inventory establishes interface
+availability only; connector authorization remains `not_checked` until the
+actual operation. No arbitrary GraphQL connector fallback is assumed.
+
+The report includes resolved executable paths and versions, required `gh`
+command help probes, repository permission evidence, local head/branch/worktree
+state, helper presence, pinned-key verification of HEAD and a no-autostart
+GPG-agent probe. Helper presence does not mean its validators passed. A missing
+private agent does not prevent the existing offline public-key verification;
+the actual signature verifier result is reported separately. A detached HEAD or
+unverified HEAD requires inspection, not an inferred signing-policy exception.
+
+Every capability has a `state` and sanitized `reason`:
+
+| State | Meaning |
+| --- | --- |
+| `supported` | The stated probe or interface evidence succeeded |
+| `unsupported` | Required executable, helper or inventoried interface is absent |
+| `authorization_blocked` | Binding missing or authentication/permission denied |
+| `temporarily_unavailable` | Transport, service, timeout or local execution blocked |
+| `not_checked` | Unrequested, incomplete, ambiguous or unclassified evidence |
+
+Exit zero means the report was produced, **not** that delivery is ready. Inspect
+the capability needed for the next operation. No aggregate readiness flag can
+replace current-head CI, review, ancestry, signing or integration gates. Reports
+are observations, not persisted authorization or reusable acceptance evidence.
+Repository write permission cannot prove workflow permission or future signing;
+`publication` remains `not_checked` until actual publication is verified below.
+Raw API errors and bodies are not emitted. Keep reports local: worktree paths
+and changed filenames can identify unpublished work.
+
+`routes` defines preferred interfaces and permitted fallbacks. Prefer `gh` for
+PR inspection/creation, comments, guarded merge and evidence retrieval. A current
+connector inventory permits the listed PR/comment/retrieval fallback; its
+authorization must still be established. Merge has no generic connector fallback
+because this inventory cannot establish an expected-head guard. Signed source
+publication uses GraphQL exclusively. These routes do not grant merge authority.
+
+Before switching routes or retrying an ambiguous mutation, read authoritative
+state: inspect branch head/parent/tree/message/signature after publication,
+existing PR head/base after PR creation, and existing comment identity/body after
+comment publication. Reconcile against the intended operation before retrying;
+never infer failure from a lost acknowledgement. Merge reconciliation must also
+verify actual destination, parents, signature and post-merge gates under SDD v2.
+Do not send a second mutation while the first outcome remains unknown.
+
 ## Prepare the exact commit
 
 1. Inspect repository guidance and the destination branch. Confirm its current

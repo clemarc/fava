@@ -11,6 +11,11 @@ invent missing feature artifacts or validation evidence.
 1. Confirm the assigned scope, active feature directory and lifecycle stage.
    Read its approved spec, available plan/tasks and decision log. Work in small
    task batches. Never alter an approved requirements contract during implementation.
+   Run `python3 tools/github/preflight.py --network` before Cloud GitHub work;
+   use the capability report and operation routes described in
+   `docs/process/github-cloud-commits.md`. Supply the current session connector
+   tool inventory when available. Recheck blocked capabilities after an approved
+   environment change; tool exposure and read access do not prove write permission.
 2. Run `python3 .github/checks/sdd.py`, validator fixtures, commit-builder tests
    and `python3 .github/checks/tooling.py`. For spec changes use
    `$speckit-checklist`; for planning use `$speckit-analyze` once its prerequisites
