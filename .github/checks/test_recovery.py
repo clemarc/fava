@@ -36,6 +36,31 @@ def observation():
                 native=dict(state='checks_only_acceptance_not_verified',jobs=[]))
 
 
+def retained_fixture(context, message=None, checkpoint=False):
+    feature=context['feature']
+    canonical=dict(planning_revision='e'*40,specification_base='f'*40,
+                   task_prs={'10':dict(tasks=['T001'])})
+    if message is None:
+        message=('chore: checkpoint\n\nSDD-Type: planning\n' if checkpoint else
+                 f'feat: task\n\nSpec: {feature}\nTask: T001\nImplements: FR-001\n')
+    def git(root,*args):
+        if args[:3]==('show','-s','--format=%P'):return TARGET+' '+HEAD
+        if args[:3]==('show','-s','--format=%T'):return '1'*40
+        if args[:3]==('show','-s','--format=%B'):return message
+        if args[:2]==('diff','--name-only'):
+            return feature+'/execution.json' if checkpoint else 'Fava/A.swift'
+        raise AssertionError(args)
+    def read(root,ref,path):
+        if path==context['ledger']:return json.dumps(canonical)
+        if path.endswith('/spec.md'):return '- **FR-001**: first.\n- **FR-002**: second.\n'
+        if path.endswith('/tasks.md'):
+            return ('## Phase 2: User Story 1\n'
+                    '- [ ] T001 [US1] Implement Fava/A.swift (FR-001)\n'
+                    '- [ ] T002 [US1] Implement Fava/B.swift (FR-002)\n')
+        raise AssertionError(path)
+    return canonical,git,read
+
+
 class RecoveryTests(unittest.TestCase):
     def setUp(self):
         self.root=Path('/synthetic')
@@ -49,7 +74,8 @@ class RecoveryTests(unittest.TestCase):
                                 publication=publication or Mock())
 
     def merged(self, checkpoint=False):
-        self.observation['pr'].update(merged=True,state='closed',merge_commit_sha=MERGE,merged_at='2026-10-24T10:00:00Z')
+        self.observation['pr'].update(merged=True,state='closed',merge_commit_sha=MERGE,
+            merged_at='2026-10-24T10:00:00Z',merged_by=dict(login='clemarc'))
         if checkpoint:
             self.observation['pr']['head']['ref']='checkpoint/r3.5/c016'
             self.old['branch']='checkpoint/r3.5/c016'
@@ -259,10 +285,10 @@ class RecoveryTests(unittest.TestCase):
 
     def test_actual_merge_recovery_reuses_historical_assessor_and_signature_gates(self):
         self.merged()
-        canonical=dict(planning_revision='e'*40,specification_base='f'*40)
+        canonical,git,read=retained_fixture(self.context)
         api=Mock(return_value=dict(commit=dict(verification=dict(verified=True,reason='valid'))))
-        with patch.object(milestone,'git',return_value=TARGET+' '+HEAD), patch.object(
-                milestone,'ancestor',return_value=True), patch.object(milestone,'read',return_value=json.dumps(canonical)), patch(
+        with patch.object(milestone,'git',side_effect=git), patch.object(
+                milestone,'ancestor',return_value=True), patch.object(milestone,'read',side_effect=read), patch(
                 'signatures.verify',return_value=True), patch('integration.assess_revision',return_value=({},[])) as assess:
             proof=recovery.verify_merged(self.root,self.context,self.observation['pr'],123,api)
             self.assertEqual(proof['merge_sha'],MERGE)
@@ -273,6 +299,51 @@ class RecoveryTests(unittest.TestCase):
             with self.assertRaises(ValueError):recovery.verify_merged(self.root,self.context,self.observation['pr'],123,api)
             with patch('signatures.verify',return_value=False):
                 with self.assertRaises(ValueError):recovery.verify_merged(self.root,self.context,self.observation['pr'],123,api)
+
+    def test_actual_task_merge_requires_its_exact_registered_trailers(self):
+        self.merged();feature=self.context['feature']
+        messages=['feat: task only title\n',
+                  f'feat: task\n\nSpec: {feature}\nTask: T001\nImplements: FR-002\n',
+                  f'feat: task\n\nSpec: {feature}\nTask: T002\nImplements: FR-002\n',
+                  f'feat: task\n\nSpec: {feature}\nTask: T001 T002\nImplements: FR-001 FR-002\n',
+                  'feat: task\n\nSpec: specs/demo-02-other\nTask: T001\nImplements: FR-001\n']
+        api=Mock(return_value=dict(commit=dict(verification=dict(verified=True,reason='valid'))))
+        for message in messages:
+            with self.subTest(message=message):
+                _,git,read=retained_fixture(self.context,message)
+                with (patch.object(milestone,'git',side_effect=git),patch.object(milestone,'read',side_effect=read),
+                      patch.object(milestone,'ancestor',return_value=True),patch('signatures.verify',return_value=True),
+                      patch('integration.assess_revision') as assess):
+                    with self.assertRaisesRegex(ValueError,'merge trailers failed'):
+                        recovery.verify_merged(self.root,self.context,self.observation['pr'],123,api)
+                    assess.assert_not_called()
+
+    def test_actual_merge_requires_authoritative_owner_merger(self):
+        self.merged()
+        for actor in [None,{},dict(login='someone-else')]:
+            with self.subTest(actor=actor):
+                self.observation['pr']['merged_by']=actor
+                with patch.object(milestone,'git') as git,patch('integration.assess_revision') as assess:
+                    with self.assertRaisesRegex(ValueError,'owner identity'):
+                        recovery.verify_merged(self.root,self.context,self.observation['pr'],123,Mock())
+                    git.assert_not_called();assess.assert_not_called()
+
+    def test_actual_checkpoint_merge_requires_planning_trailer(self):
+        self.merged(checkpoint=True)
+        api=Mock(return_value=dict(commit=dict(verification=dict(verified=True,reason='valid'))))
+        for trailer,valid in [('planning',True),('roadmap',False),('',False)]:
+            _,git,read=retained_fixture(self.context,'chore: checkpoint\n\n'+(
+                'SDD-Type: '+trailer+'\n' if trailer else ''),checkpoint=True)
+            with (patch.object(milestone,'git',side_effect=git),patch.object(milestone,'read',side_effect=read),
+                  patch.object(milestone,'ancestor',return_value=True),patch('signatures.verify',return_value=True),
+                  patch('integration.assess_revision',return_value=({},[])) as assess):
+                if valid:
+                    self.assertEqual(recovery.verify_merged(self.root,self.context,self.observation['pr'],123,api)['merge_sha'],MERGE)
+                    assess.assert_called_once()
+                else:
+                    with self.assertRaisesRegex(ValueError,'merge trailers failed'):
+                        recovery.verify_merged(self.root,self.context,self.observation['pr'],123,api)
+                    assess.assert_not_called()
 
     def test_mutation_envelope_rejects_extra_content_credentials_and_bad_ids(self):
         for mutation in [dict(kind='publication',token='forbidden'),dict(kind='merge',pr=True,head=HEAD,target=TARGET,evidence_comment=123),

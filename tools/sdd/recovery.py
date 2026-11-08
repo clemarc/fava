@@ -86,9 +86,12 @@ def verify_merged(root, context, pr, report, api=milestone.github):
     """Run the existing retained assessor at actual merge parents and cutoff."""
     from integration import assess_revision
     from signatures import verify
+    import sdd
     if (not pr.get('merged') or pr['base']['ref'] != context['milestone_branch']
             or type(report) is not int or report < 1):
         raise ValueError('actual milestone merge and independent evidence required')
+    if (pr.get('merged_by') or {}).get('login') != 'clemarc':
+        raise ValueError('actual milestone merge lacks verified owner identity')
     sha = pr.get('merge_commit_sha')
     parents = milestone.git(root, 'show', '-s', '--format=%P', sha).split()
     signature = api('api', f'repos/{REPOSITORY}/commits/{sha}')['commit']['verification']
@@ -101,6 +104,22 @@ def verify_merged(root, context, pr, report, api=milestone.github):
             != milestone.git(root, 'show', '-s', '--format=%T', parents[1]).strip()):
         raise ValueError('actual merge tree differs from reviewed source tree')
     canonical = json.loads(milestone.read(root, parents[0], context['ledger']))
+    message = milestone.git(root, 'show', '-s', '--format=%B', sha)
+    paths = milestone.git(root, 'diff', '--name-only', parents[0], sha).splitlines()
+    errors = sdd.validate_commit(message, paths, lambda path: milestone.read(root, parents[0], path))
+    mapped = sdd.trailers(message)
+    if pr['head']['ref'].startswith(context['checkpoint_branch_prefix']):
+        if mapped.get('SDD-Type') != ['planning']:
+            errors.append('checkpoint merge requires its planning trailer')
+    elif pr['head']['ref'].startswith(context['task_branch_prefix']):
+        expected = canonical.get('task_prs', {}).get(str(pr['number']), {}).get('tasks', [])
+        actual = set(re.findall(sdd.TASK, ' '.join(mapped.get('Task', []))))
+        if not expected or mapped.get('Spec') != [context['feature']] or actual != set(expected):
+            errors.append('task merge trailers differ from registered target task identity')
+    else:
+        errors.append('retained merge branch is outside task/checkpoint scope')
+    if errors:
+        raise ValueError('actual merge trailers failed: ' + '; '.join(errors))
     retained_context = dict(context, target_sha=parents[0], execution=canonical,
                             main_sha=canonical['specification_base'],
                             preparation_approval={'sha': canonical['planning_revision']})
