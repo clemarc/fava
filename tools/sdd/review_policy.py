@@ -3,6 +3,7 @@ import json
 import subprocess
 
 from signatures import owner_merge
+from metrics import historical_record, measured
 
 LEGACY = 'independent-and-codex-v1'
 CODEX_ONLY = 'codex-only-v1'
@@ -22,6 +23,7 @@ def record(root, ref, git):
         return None
 
 
+@measured('review_policy_history', historical='always')
 def policy_for(root, target, head, git, verify_pr=None):
     """Old targets retain old gates; new policy needs signed, actual main adoption.
 
@@ -40,6 +42,7 @@ def policy_for(root, target, head, git, verify_pr=None):
     from sdd import implementation_paths, trailers
     matches = []
     for sha in git(root, 'rev-list', '--merges', target).splitlines():
+        historical_record(('review_policy', sha))
         parents = git(root, 'show', '-s', '--format=%P', sha).split()
         if (len(parents) != 2 or record(root, sha, git) != RECORD_TEXT
                 or record(root, parents[1], git) != RECORD_TEXT
