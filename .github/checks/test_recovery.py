@@ -280,6 +280,61 @@ class RecoveryTests(unittest.TestCase):
                              parent=HEAD,tree=TARGET,message_sha256=None)]:
             with self.assertRaises(ValueError):recovery.pending_mutation(mutation)
 
+    def test_signed_merge_only_edits_are_rejected_before_assessing_parents(self):
+        self.merged()
+        def git(root,*args):
+            if args[:3]==('show','-s','--format=%P'):return TARGET+' '+HEAD
+            if args[:3]==('show','-s','--format=%T'):
+                return ('1' if args[-1]==HEAD else '2')*40
+            raise AssertionError(args)
+        api=Mock(return_value=dict(commit=dict(verification=dict(verified=True,reason='valid'))))
+        with (patch.object(milestone,'git',side_effect=git),patch.object(milestone,'ancestor',return_value=True),
+              patch('signatures.verify',return_value=True),patch('integration.assess_revision') as assess):
+            with self.assertRaisesRegex(ValueError,'tree differs'):
+                recovery.verify_merged(self.root,self.context,self.observation['pr'],123,api)
+            assess.assert_not_called()
+
+    def test_cli_supplied_report_recovers_merged_snapshot_saved_before_report(self):
+        self.merged();self.old['evidence_comment']=None
+        original_recover=recovery.recover
+        def verify(root,context,pr,report):
+            if report!=123:raise ValueError('actual milestone merge and independent evidence required')
+            return self.proof
+        gate=Mock(side_effect=verify)
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);prior=root/'prior.json';prior.write_text(json.dumps(self.old))
+            original=prior.read_text()
+            with (patch.object(sys,'argv',['milestone.py','R3.5','--phase','implement','--root',temp,
+                    '--recover',str(prior),'--session-report','123','--handoff']),
+                  patch.object(milestone,'inspect',return_value=self.context),
+                  patch.object(recovery,'live_observation',return_value=self.observation),
+                  patch.object(recovery,'recover',side_effect=lambda *a:original_recover(*a,gate=gate)),
+                  redirect_stdout(io.StringIO())):
+                with self.assertRaises(SystemExit) as stopped:milestone.main()
+                self.assertEqual(stopped.exception.code,0)
+            self.assertEqual(gate.call_args.args[-1],123)
+            saved=json.loads((root/'artifacts/sdd-session/r3.5/snapshot.json').read_text())
+            self.assertEqual(saved['evidence_comment'],123)
+            self.assertEqual(saved['pending_transition'],'prepare_standalone_completion_checkpoint')
+            self.assertEqual(prior.read_text(),original)
+
+    def test_cli_supplied_report_cannot_replace_ambiguous_merge_report_intent(self):
+        self.merged();self.old['evidence_comment']=None
+        self.old['ambiguous_mutation']=dict(kind='merge',pr=10,head=HEAD,target=TARGET,evidence_comment=124)
+        original_recover=recovery.recover;gate=Mock(return_value=dict(self.proof,evidence_comment=124))
+        with tempfile.TemporaryDirectory() as temp:
+            prior=Path(temp)/'prior.json';prior.write_text(json.dumps(self.old))
+            with (patch.object(sys,'argv',['milestone.py','R3.5','--phase','implement','--root',temp,
+                    '--recover',str(prior),'--session-report','123','--handoff']),
+                  patch.object(milestone,'inspect',return_value=self.context),
+                  patch.object(recovery,'live_observation',return_value=self.observation),
+                  patch.object(recovery,'recover',side_effect=lambda *a:original_recover(*a,gate=gate)),
+                  patch.object(recovery,'save') as save,redirect_stdout(io.StringIO()),redirect_stderr(io.StringIO())):
+                with self.assertRaises(SystemExit) as stopped:milestone.main()
+                self.assertEqual(stopped.exception.code,1)
+                save.assert_not_called()
+            self.assertEqual(gate.call_args.args[-1],124)
+
     def test_cli_null_snapshot_cannot_be_replaced_as_a_fresh_handoff(self):
         with tempfile.TemporaryDirectory() as temp:
             snapshot=Path(temp)/'snapshot.json'; snapshot.write_text('null')
