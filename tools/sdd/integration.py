@@ -16,15 +16,16 @@ from review_policy import CODEX_ONLY, LEGACY, policy_for
 from metrics import measured, invocation, PURPOSES
 
 
-def represented_task_ids(root, commits, target):
+def represented_task_ids(root, commits, target, git=None):
     """Pure target imports carry history trailers, not new worker task scope."""
+    git = git or sdd.git
     ids, errors = set(), []
     for sha in commits:
-        imported, findings = target_import(root, sha, target, sdd.git)
+        imported, findings = target_import(root, sha, target, git)
         if imported:
             errors += findings
             continue
-        ids.update(re.findall(sdd.TASK, ' '.join(sdd.trailers(sdd.git(root, 'show', '-s', '--format=%B', sha)).get('Task', []))))
+        ids.update(re.findall(sdd.TASK, ' '.join(sdd.trailers(git(root, 'show', '-s', '--format=%B', sha)).get('Task', []))))
     return ids, errors
 
 
